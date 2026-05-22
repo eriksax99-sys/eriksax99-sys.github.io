@@ -1,0 +1,918 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NQ30 Watchlist</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0c0f;
+    --bg2: #111418;
+    --bg3: #181c22;
+    --border: rgba(255,255,255,0.07);
+    --border2: rgba(255,255,255,0.12);
+    --text: #e8eaed;
+    --muted: #6b7280;
+    --dim: #3d4450;
+    --green: #22c55e;
+    --green-bg: rgba(34,197,94,0.1);
+    --green-border: rgba(34,197,94,0.25);
+    --red: #f43f5e;
+    --red-bg: rgba(244,63,94,0.1);
+    --red-border: rgba(244,63,94,0.25);
+    --amber: #f59e0b;
+    --amber-bg: rgba(245,158,11,0.1);
+    --blue: #3b82f6;
+    --blue-bg: rgba(59,130,246,0.08);
+    --accent: #00d4aa;
+    --accent2: #0af0c4;
+    --mono: 'IBM Plex Mono', monospace;
+    --sans: 'DM Sans', sans-serif;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 14px;
+    min-height: 100vh;
+    line-height: 1.5;
+  }
+
+  /* Grid background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,212,170,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,212,170,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 24px 60px;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* ── HEADER ── */
+  header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    padding: 36px 0 28px;
+    border-bottom: 1px solid var(--border);
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+
+  .header-left {}
+
+  .logo {
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.15em;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+
+  h1 {
+    font-family: var(--mono);
+    font-size: 28px;
+    font-weight: 600;
+    color: var(--text);
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+  }
+
+  h1 span { color: var(--accent); }
+
+  .header-meta {
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 6px;
+    font-family: var(--mono);
+  }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  /* API key setup */
+  .api-setup {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    border-radius: 8px;
+    padding: 8px 12px;
+  }
+
+  .api-setup label {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+
+  .api-setup input {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 12px;
+    padding: 5px 10px;
+    width: 200px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .api-setup input:focus { border-color: var(--accent); }
+  .api-setup input::placeholder { color: var(--dim); }
+
+  .btn-refresh {
+    background: var(--accent);
+    color: #000;
+    border: none;
+    border-radius: 6px;
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 600;
+    padding: 7px 16px;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .btn-refresh:hover { background: var(--accent2); transform: translateY(-1px); }
+  .btn-refresh:active { transform: translateY(0); }
+  .btn-refresh:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+  .spin { animation: spin 1s linear infinite; display: inline-block; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── STATUS BAR ── */
+  .status-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 0;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .status-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--dim);
+    flex-shrink: 0;
+  }
+  .status-dot.live { background: var(--green); box-shadow: 0 0 6px var(--green); animation: pulse 2s infinite; }
+  .status-dot.error { background: var(--red); }
+  @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.4; } }
+
+  /* ── SUMMARY CARDS ── */
+  .summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 12px;
+    padding: 20px 0 16px;
+  }
+
+  .sum-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 16px;
+    transition: border-color 0.2s;
+  }
+
+  .sum-card:hover { border-color: var(--border2); }
+
+  .sum-card.green { border-color: var(--green-border); background: var(--green-bg); }
+  .sum-card.red   { border-color: var(--red-border);   background: var(--red-bg); }
+
+  .sum-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+
+  .sum-val {
+    font-family: var(--mono);
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  .sum-val.green { color: var(--green); }
+  .sum-val.red   { color: var(--red); }
+  .sum-val.amber { color: var(--amber); }
+
+  .sum-sub {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 2px;
+    font-family: var(--mono);
+  }
+
+  /* ── CONTROLS ── */
+  .controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 0;
+    flex-wrap: wrap;
+  }
+
+  .filter-btn {
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--muted);
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 5px 12px;
+    cursor: pointer;
+    transition: all 0.15s;
+    letter-spacing: 0.05em;
+  }
+
+  .filter-btn:hover { border-color: var(--border2); color: var(--text); }
+  .filter-btn.active { background: var(--accent); border-color: var(--accent); color: #000; font-weight: 600; }
+  .filter-btn.active-bull { background: var(--green-bg); border-color: var(--green-border); color: var(--green); }
+  .filter-btn.active-bear { background: var(--red-bg); border-color: var(--red-border); color: var(--red); }
+
+  .sort-select {
+    margin-left: auto;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--muted);
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 5px 10px;
+    cursor: pointer;
+    outline: none;
+  }
+
+  .sort-select:focus { border-color: var(--accent); }
+
+  /* ── TABLE ── */
+  .table-wrap { overflow-x: auto; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 700px;
+  }
+
+  thead th {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--dim);
+    padding: 10px 12px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    user-select: none;
+    white-space: nowrap;
+    transition: color 0.15s;
+  }
+
+  thead th:hover { color: var(--muted); }
+  thead th.r { text-align: right; }
+
+  tbody tr {
+    border-bottom: 1px solid var(--border);
+    transition: background 0.1s;
+    cursor: default;
+  }
+
+  tbody tr:hover { background: var(--bg2); }
+
+  td {
+    padding: 11px 12px;
+    vertical-align: middle;
+    white-space: nowrap;
+  }
+
+  td.r { text-align: right; }
+
+  .ticker-sym {
+    font-family: var(--mono);
+    font-weight: 600;
+    font-size: 13px;
+    color: var(--text);
+    letter-spacing: 0.02em;
+  }
+
+  .ticker-name {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 1px;
+  }
+
+  .price-val {
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text);
+  }
+
+  .chg-pos { color: var(--green); font-family: var(--mono); font-size: 12px; }
+  .chg-neg { color: var(--red);   font-family: var(--mono); font-size: 12px; }
+  .chg-neu { color: var(--muted); font-family: var(--mono); font-size: 12px; }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 3px 9px;
+    border-radius: 4px;
+    border: 1px solid;
+  }
+
+  .badge-bull { background: var(--green-bg); border-color: var(--green-border); color: var(--green); }
+  .badge-bear { background: var(--red-bg);   border-color: var(--red-border);   color: var(--red); }
+  .badge-neut { background: var(--bg3);      border-color: var(--border);       color: var(--muted); }
+
+  .w52-bar {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .w52-track {
+    width: 60px;
+    height: 3px;
+    background: var(--bg3);
+    border-radius: 2px;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+
+  .w52-fill {
+    height: 100%;
+    border-radius: 2px;
+    background: var(--accent);
+    transition: width 0.4s ease;
+  }
+
+  .w52-pct {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--muted);
+    min-width: 28px;
+  }
+
+  .sig-text {
+    font-size: 11px;
+    color: var(--muted);
+    max-width: 160px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* Volume pill */
+  .vol-text {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--dim);
+  }
+
+  /* ── EMPTY / LOADING STATES ── */
+  .state-row td {
+    text-align: center;
+    padding: 48px;
+    color: var(--muted);
+    font-family: var(--mono);
+    font-size: 12px;
+  }
+
+  /* ── SETUP NOTICE ── */
+  .setup-notice {
+    background: var(--blue-bg);
+    border: 1px solid rgba(59,130,246,0.25);
+    border-radius: 10px;
+    padding: 20px 24px;
+    margin: 20px 0 0;
+    font-size: 13px;
+    color: #93c5fd;
+    line-height: 1.7;
+  }
+
+  .setup-notice strong { color: var(--text); font-weight: 500; }
+  .setup-notice a { color: var(--accent); text-decoration: none; }
+  .setup-notice a:hover { text-decoration: underline; }
+  .setup-notice code {
+    font-family: var(--mono);
+    font-size: 11px;
+    background: rgba(0,0,0,0.3);
+    padding: 1px 5px;
+    border-radius: 3px;
+    color: var(--accent);
+  }
+
+  ol { padding-left: 20px; margin-top: 8px; }
+  ol li { margin: 4px 0; }
+
+  /* ── AUTO-REFRESH COUNTDOWN ── */
+  .refresh-ring {
+    width: 28px; height: 28px;
+    flex-shrink: 0;
+    position: relative;
+  }
+
+  .refresh-ring svg { transform: rotate(-90deg); }
+  .refresh-ring circle {
+    fill: none;
+    stroke: var(--border);
+    stroke-width: 2;
+  }
+
+  .refresh-ring .prog {
+    stroke: var(--accent);
+    stroke-dasharray: 69.1;
+    stroke-dashoffset: 69.1;
+    transition: stroke-dashoffset 1s linear;
+    stroke-linecap: round;
+  }
+
+  /* ── FOOTER ── */
+  footer {
+    margin-top: 40px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--dim);
+    letter-spacing: 0.05em;
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 640px) {
+    h1 { font-size: 20px; }
+    .api-setup { flex-wrap: wrap; }
+    .api-setup input { width: 100%; }
+    header { flex-direction: column; align-items: flex-start; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- HEADER -->
+  <header>
+    <div class="header-left">
+      <div class="logo">▸ Market Terminal</div>
+      <h1>NQ<span>30</span> Watchlist</h1>
+      <div class="header-meta" id="headerMeta">Nasdaq 100 · Top 30 · Live via Finnhub</div>
+    </div>
+    <div class="header-right">
+      <div class="api-setup">
+        <label>API KEY</label>
+        <input type="text" id="apiKey" placeholder="your_finnhub_key" autocomplete="off" spellcheck="false">
+      </div>
+      <button class="btn-refresh" id="refreshBtn" onclick="fetchAll()">
+        <span id="refreshIcon">↻</span> Refresh
+      </button>
+    </div>
+  </header>
+
+  <!-- STATUS BAR -->
+  <div class="status-bar">
+    <div class="status-dot" id="statusDot"></div>
+    <span id="statusText">Enter your Finnhub API key and click Refresh to load live data</span>
+    <span style="margin-left:auto; display:flex; align-items:center; gap:8px;">
+      <span id="countdown"></span>
+      <div class="refresh-ring" id="refreshRing" style="display:none">
+        <svg width="28" height="28" viewBox="0 0 28 28">
+          <circle cx="14" cy="14" r="11"/>
+          <circle class="prog" id="ringProg" cx="14" cy="14" r="11"/>
+        </svg>
+      </div>
+    </span>
+  </div>
+
+  <!-- SUMMARY -->
+  <div class="summary">
+    <div class="sum-card green">
+      <div class="sum-label">Bullish</div>
+      <div class="sum-val green" id="sBull">—</div>
+      <div class="sum-sub">stocks</div>
+    </div>
+    <div class="sum-card red">
+      <div class="sum-label">Bearish</div>
+      <div class="sum-val red" id="sBear">—</div>
+      <div class="sum-sub">stocks</div>
+    </div>
+    <div class="sum-card">
+      <div class="sum-label">Neutral</div>
+      <div class="sum-val amber" id="sNeut">—</div>
+      <div class="sum-sub">stocks</div>
+    </div>
+    <div class="sum-card">
+      <div class="sum-label">Avg Move</div>
+      <div class="sum-val" id="sAvg">—</div>
+      <div class="sum-sub">today</div>
+    </div>
+    <div class="sum-card">
+      <div class="sum-label">Leaders</div>
+      <div class="sum-val green" id="sLeader" style="font-size:13px; padding-top:3px;">—</div>
+      <div class="sum-sub">top gainer</div>
+    </div>
+    <div class="sum-card">
+      <div class="sum-label">Laggard</div>
+      <div class="sum-val red" id="sLaggard" style="font-size:13px; padding-top:3px;">—</div>
+      <div class="sum-sub">top loser</div>
+    </div>
+  </div>
+
+  <!-- CONTROLS -->
+  <div class="controls">
+    <button class="filter-btn active" onclick="setFilter('all',this)" id="fAll">All 30</button>
+    <button class="filter-btn" onclick="setFilter('bull',this)" id="fBull">▲ Bullish</button>
+    <button class="filter-btn" onclick="setFilter('bear',this)" id="fBear">▼ Bearish</button>
+    <button class="filter-btn" onclick="setFilter('neutral',this)" id="fNeut">◆ Neutral</button>
+    <select class="sort-select" onchange="setSort(this.value)">
+      <option value="">Sort: Default</option>
+      <option value="chg_d">% Change ↓</option>
+      <option value="chg_a">% Change ↑</option>
+      <option value="price_d">Price ↓</option>
+      <option value="price_a">Price ↑</option>
+      <option value="az">Ticker A–Z</option>
+      <option value="mktcap_d">Mkt Cap ↓</option>
+    </select>
+  </div>
+
+  <!-- TABLE -->
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th onclick="setSort('az')">Ticker</th>
+          <th class="r" onclick="setSort('price_d')">Price</th>
+          <th class="r" onclick="setSort('chg_d')">Change</th>
+          <th class="r" onclick="setSort('chg_d')">% Chg</th>
+          <th class="r">52W Range</th>
+          <th class="r" onclick="setSort('mktcap_d')">Mkt Cap</th>
+          <th>Sentiment</th>
+          <th>Signal</th>
+          <th class="r">Volume</th>
+        </tr>
+      </thead>
+      <tbody id="tbody">
+        <tr class="state-row"><td colspan="9">Enter your API key above and click Refresh ↑</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- SETUP NOTICE -->
+  <div class="setup-notice" id="setupNotice">
+    <strong>🔑 How to get your free Finnhub API key:</strong>
+    <ol>
+      <li>Visit <a href="https://finnhub.io" target="_blank">finnhub.io</a> and create a free account (takes ~30 seconds)</li>
+      <li>Your API key appears on the dashboard — copy it</li>
+      <li>Paste it into the <code>API KEY</code> field above and click <strong>Refresh</strong></li>
+      <li>Data will auto-refresh every 60 seconds while the page is open</li>
+    </ol>
+    <br>
+    <strong>🚀 To host this on GitHub Pages:</strong>
+    <ol>
+      <li>Create a free account at <a href="https://github.com" target="_blank">github.com</a></li>
+      <li>Click <strong>New repository</strong> → name it <code>nq30-watchlist</code> → set to Public</li>
+      <li>Upload this HTML file, renaming it to <code>index.html</code></li>
+      <li>Go to <strong>Settings → Pages</strong> → Source: <em>Deploy from branch</em> → branch: <em>main</em> → Save</li>
+      <li>Your live URL will be: <code>https://yourusername.github.io/nq30-watchlist</code></li>
+    </ol>
+    <br>
+    <strong>💡 Tip:</strong> To hardcode your API key (so you don't need to enter it every visit), open this file in a text editor, find <code>const HARDCODED_KEY = ''</code> near the top of the script, and paste your key between the quotes.
+  </div>
+
+  <footer>
+    <span>NQ30 WATCHLIST · POWERED BY FINNHUB.IO</span>
+    <span>DATA DELAYED UP TO 15 MIN ON FREE TIER · NOT FINANCIAL ADVICE</span>
+  </footer>
+</div>
+
+<script>
+// ─── CONFIG ───────────────────────────────────────────────────────────────────
+// Paste your Finnhub key here to hardcode it (avoids typing it every visit)
+const HARDCODED_KEY = '';
+
+const TICKERS = [
+  {sym:'MSFT', name:'Microsoft',          mktCapB:3200},
+  {sym:'AAPL', name:'Apple',              mktCapB:4600},
+  {sym:'NVDA', name:'NVIDIA',             mktCapB:5400},
+  {sym:'AMZN', name:'Amazon',             mktCapB:2890},
+  {sym:'META', name:'Meta Platforms',     mktCapB:1500},
+  {sym:'GOOGL',name:'Alphabet',           mktCapB:2300},
+  {sym:'TSLA', name:'Tesla',              mktCapB:1570},
+  {sym:'AVGO', name:'Broadcom',           mktCapB:1980},
+  {sym:'COST', name:'Costco',             mktCapB:448},
+  {sym:'NFLX', name:'Netflix',            mktCapB:548},
+  {sym:'ASML', name:'ASML',              mktCapB:364},
+  {sym:'AMD',  name:'AMD',               mktCapB:735},
+  {sym:'CSCO', name:'Cisco',             mktCapB:275},
+  {sym:'ADBE', name:'Adobe',             mktCapB:174},
+  {sym:'PEP',  name:'PepsiCo',           mktCapB:202},
+  {sym:'INTC', name:'Intel',             mktCapB:498},
+  {sym:'INTU', name:'Intuit',            mktCapB:87},
+  {sym:'QCOM', name:'Qualcomm',          mktCapB:225},
+  {sym:'HON',  name:'Honeywell',         mktCapB:152},
+  {sym:'AMAT', name:'Applied Materials', mktCapB:364},
+  {sym:'ISRG', name:'Intuitive Surgical',mktCapB:207},
+  {sym:'BKNG', name:'Booking Holdings',  mktCapB:152},
+  {sym:'TXN',  name:'Texas Instruments', mktCapB:181},
+  {sym:'SBUX', name:'Starbucks',         mktCapB:99},
+  {sym:'GILD', name:'Gilead Sciences',   mktCapB:135},
+  {sym:'ADP',  name:'ADP',              mktCapB:125},
+  {sym:'VRTX', name:'Vertex Pharma',    mktCapB:134},
+  {sym:'PANW', name:'Palo Alto Networks',mktCapB:95},
+  {sym:'LRCX', name:'Lam Research',     mktCapB:137},
+  {sym:'MU',   name:'Micron',           mktCapB:551},
+];
+
+// ─── STATE ────────────────────────────────────────────────────────────────────
+let allData = [];
+let curFilter = 'all';
+let curSort = '';
+let refreshTimer = null;
+let countdownTimer = null;
+let secondsLeft = 0;
+const REFRESH_INTERVAL = 60; // seconds
+
+// ─── INIT ─────────────────────────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', () => {
+  const saved = localStorage.getItem('finnhub_key') || HARDCODED_KEY;
+  if (saved) document.getElementById('apiKey').value = saved;
+  if (HARDCODED_KEY) fetchAll();
+});
+
+// ─── FETCH ────────────────────────────────────────────────────────────────────
+async function fetchAll() {
+  const key = document.getElementById('apiKey').value.trim();
+  if (!key) {
+    setStatus('error', 'Please enter your Finnhub API key');
+    return;
+  }
+  localStorage.setItem('finnhub_key', key);
+
+  const btn = document.getElementById('refreshBtn');
+  const icon = document.getElementById('refreshIcon');
+  btn.disabled = true;
+  icon.classList.add('spin');
+  setStatus('loading', 'Fetching live data…');
+  clearTimers();
+
+  try {
+    const results = await Promise.allSettled(
+      TICKERS.map(t => fetchQuote(t.sym, key).then(q => ({ ...t, ...q })))
+    );
+
+    allData = results
+      .filter(r => r.status === 'fulfilled' && r.value.price != null)
+      .map(r => ({ ...r.value, sentiment: calcSentiment(r.value) }));
+
+    if (allData.length === 0) throw new Error('No data returned — check your API key');
+
+    render();
+    renderSummary();
+
+    const now = new Date();
+    setStatus('live', `Live · Updated ${now.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit', second:'2-digit'})} · ${allData.length}/30 stocks loaded`);
+
+    startCountdown();
+  } catch(e) {
+    setStatus('error', 'Error: ' + e.message);
+    console.error(e);
+  } finally {
+    btn.disabled = false;
+    icon.classList.remove('spin');
+  }
+}
+
+async function fetchQuote(sym, key) {
+  const [quoteRes, profileRes] = await Promise.all([
+    fetch(`https://finnhub.io/api/v1/quote?symbol=${sym}&token=${key}`),
+    fetch(`https://finnhub.io/api/v1/stock/metric?symbol=${sym}&metric=all&token=${key}`)
+  ]);
+
+  const quote = await quoteRes.json();
+  const profile = await profileRes.json();
+
+  if (!quote.c) return { price: null };
+
+  const price = quote.c;
+  const prev  = quote.pc;
+  const chg   = quote.d ?? (price - prev);
+  const chgPct= quote.dp ?? ((chg / prev) * 100);
+  const hi52  = profile?.metric?.['52WeekHigh'] ?? quote.h * 1.1;
+  const lo52  = profile?.metric?.['52WeekLow']  ?? quote.l * 0.9;
+  const vol   = quote.v ?? null;
+
+  return { price, prev, chg, chgPct, hi52, lo52, vol };
+}
+
+// ─── SENTIMENT ────────────────────────────────────────────────────────────────
+function calcSentiment(r) {
+  if (r.price == null) return 'neutral';
+  const pos52 = (r.hi52 > r.lo52) ? (r.price - r.lo52) / (r.hi52 - r.lo52) : 0.5;
+  let score = 0;
+  if (r.chgPct > 1.5) score += 2;
+  else if (r.chgPct > 0.3) score += 1;
+  else if (r.chgPct < -1.5) score -= 2;
+  else if (r.chgPct < -0.3) score -= 1;
+  if (pos52 > 0.75) score += 1;
+  else if (pos52 < 0.3) score -= 1;
+  if (score >= 2) return 'bull';
+  if (score <= -1) return 'bear';
+  return 'neutral';
+}
+
+// ─── RENDER ───────────────────────────────────────────────────────────────────
+function render() {
+  let rows = [...allData];
+  if (curFilter !== 'all') rows = rows.filter(r => r.sentiment === curFilter);
+
+  if (curSort === 'chg_d')     rows.sort((a,b) => (b.chgPct||0) - (a.chgPct||0));
+  else if (curSort === 'chg_a') rows.sort((a,b) => (a.chgPct||0) - (b.chgPct||0));
+  else if (curSort === 'price_d') rows.sort((a,b) => (b.price||0) - (a.price||0));
+  else if (curSort === 'price_a') rows.sort((a,b) => (a.price||0) - (b.price||0));
+  else if (curSort === 'az')    rows.sort((a,b) => a.sym.localeCompare(b.sym));
+  else if (curSort === 'mktcap_d') rows.sort((a,b) => (b.mktCapB||0) - (a.mktCapB||0));
+
+  const tbody = document.getElementById('tbody');
+  if (!rows.length) {
+    tbody.innerHTML = `<tr class="state-row"><td colspan="9">No stocks match this filter.</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = rows.map(r => {
+    const pc = r.chgPct > 0.05 ? 'chg-pos' : r.chgPct < -0.05 ? 'chg-neg' : 'chg-neu';
+    const chgSign = r.chg >= 0 ? '+' : '';
+    const pctSign = r.chgPct >= 0 ? '+' : '';
+    const priceFmt = r.price >= 1000
+      ? '$' + r.price.toLocaleString('en-US', {maximumFractionDigits:0})
+      : '$' + r.price.toFixed(2);
+
+    const pos52 = (r.hi52 > r.lo52) ? Math.max(0, Math.min(1, (r.price - r.lo52) / (r.hi52 - r.lo52))) : 0.5;
+    const barColor = pos52 > 0.7 ? 'var(--green)' : pos52 < 0.3 ? 'var(--red)' : 'var(--accent)';
+
+    const sent = r.sentiment;
+    const badgeCls = sent === 'bull' ? 'badge-bull' : sent === 'bear' ? 'badge-bear' : 'badge-neut';
+    const badgeLabel = sent === 'bull' ? '▲ BULL' : sent === 'bear' ? '▼ BEAR' : '◆ NEUT';
+    const signal = getSignal(r);
+    const mktCapFmt = r.mktCapB >= 1000 ? (r.mktCapB/1000).toFixed(1)+'T' : r.mktCapB+'B';
+    const volFmt = r.vol ? (r.vol >= 1e9 ? (r.vol/1e9).toFixed(1)+'B' : r.vol >= 1e6 ? (r.vol/1e6).toFixed(1)+'M' : (r.vol/1e3).toFixed(0)+'K') : '—';
+
+    return `<tr>
+      <td>
+        <div class="ticker-sym">${r.sym}</div>
+        <div class="ticker-name">${r.name}</div>
+      </td>
+      <td class="r"><span class="price-val">${priceFmt}</span></td>
+      <td class="r"><span class="${pc}">${chgSign}${r.chg.toFixed(2)}</span></td>
+      <td class="r"><span class="${pc}">${pctSign}${r.chgPct.toFixed(2)}%</span></td>
+      <td class="r">
+        <div class="w52-bar" style="justify-content:flex-end">
+          <span class="w52-pct">${Math.round(pos52*100)}%</span>
+          <div class="w52-track"><div class="w52-fill" style="width:${Math.round(pos52*100)}%; background:${barColor}"></div></div>
+        </div>
+      </td>
+      <td class="r" style="color:var(--muted); font-family:var(--mono); font-size:12px;">${mktCapFmt}</td>
+      <td><span class="badge ${badgeCls}">${badgeLabel}</span></td>
+      <td><span class="sig-text">${signal}</span></td>
+      <td class="r"><span class="vol-text">${volFmt}</span></td>
+    </tr>`;
+  }).join('');
+}
+
+function getSignal(r) {
+  if (r.chgPct > 4)  return 'Strong momentum surge';
+  if (r.chgPct > 2)  return 'Solid upside session';
+  if (r.chgPct > 1)  return 'Mild bullish drift';
+  if (r.chgPct < -4) return 'Heavy selling pressure';
+  if (r.chgPct < -2) return 'Notable pullback';
+  if (r.chgPct < -1) return 'Mild bearish drift';
+  const pos52 = (r.hi52 > r.lo52) ? (r.price - r.lo52) / (r.hi52 - r.lo52) : 0.5;
+  if (pos52 > 0.9)  return 'Near 52-week high';
+  if (pos52 < 0.15) return 'Near 52-week low';
+  return 'Consolidating';
+}
+
+function renderSummary() {
+  const bull = allData.filter(r => r.sentiment === 'bull').length;
+  const bear = allData.filter(r => r.sentiment === 'bear').length;
+  const neut = allData.filter(r => r.sentiment === 'neutral').length;
+  const avg  = allData.reduce((a, r) => a + (r.chgPct || 0), 0) / allData.length;
+
+  document.getElementById('sBull').textContent = bull;
+  document.getElementById('sBear').textContent = bear;
+  document.getElementById('sNeut').textContent = neut;
+
+  const avgEl = document.getElementById('sAvg');
+  avgEl.textContent = (avg >= 0 ? '+' : '') + avg.toFixed(2) + '%';
+  avgEl.className = 'sum-val ' + (avg > 0 ? 'green' : avg < 0 ? 'red' : 'amber');
+
+  const leader  = [...allData].sort((a,b) => b.chgPct - a.chgPct)[0];
+  const laggard = [...allData].sort((a,b) => a.chgPct - b.chgPct)[0];
+
+  document.getElementById('sLeader').textContent  = leader  ? `${leader.sym} +${leader.chgPct.toFixed(2)}%`  : '—';
+  document.getElementById('sLaggard').textContent = laggard ? `${laggard.sym} ${laggard.chgPct.toFixed(2)}%` : '—';
+}
+
+// ─── FILTER / SORT ────────────────────────────────────────────────────────────
+function setFilter(f, el) {
+  curFilter = f;
+  document.querySelectorAll('.filter-btn').forEach(b => {
+    b.classList.remove('active', 'active-bull', 'active-bear');
+  });
+  if (f === 'bull') el.classList.add('active-bull');
+  else if (f === 'bear') el.classList.add('active-bear');
+  else el.classList.add('active');
+  render();
+}
+
+function setSort(s) { curSort = s; render(); }
+
+// ─── STATUS ───────────────────────────────────────────────────────────────────
+function setStatus(type, msg) {
+  const dot  = document.getElementById('statusDot');
+  const text = document.getElementById('statusText');
+  dot.className = 'status-dot' + (type === 'live' ? ' live' : type === 'error' ? ' error' : '');
+  text.textContent = msg;
+}
+
+// ─── COUNTDOWN ────────────────────────────────────────────────────────────────
+function startCountdown() {
+  secondsLeft = REFRESH_INTERVAL;
+  document.getElementById('refreshRing').style.display = 'block';
+  updateRing();
+
+  countdownTimer = setInterval(() => {
+    secondsLeft--;
+    updateRing();
+    if (secondsLeft <= 0) {
+      clearTimers();
+      fetchAll();
+    }
+  }, 1000);
+}
+
+function updateRing() {
+  const prog = document.getElementById('ringProg');
+  const circ = 69.1;
+  const offset = circ - (circ * (1 - secondsLeft / REFRESH_INTERVAL));
+  prog.style.strokeDashoffset = offset;
+  const cd = document.getElementById('countdown');
+  cd.textContent = secondsLeft + 's';
+  cd.style.fontFamily = 'var(--mono)';
+  cd.style.fontSize = '10px';
+  cd.style.color = 'var(--muted)';
+}
+
+function clearTimers() {
+  if (refreshTimer) clearTimeout(refreshTimer);
+  if (countdownTimer) clearInterval(countdownTimer);
+  document.getElementById('refreshRing').style.display = 'none';
+  document.getElementById('countdown').textContent = '';
+}
+</script>
+</body>
+</html>
