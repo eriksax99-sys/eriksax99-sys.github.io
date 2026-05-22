@@ -180,14 +180,14 @@
   <div class="legend">
     <div class="legend-group">
       <span class="legend-title">B:</span>
-      <span class="legend-item"><span class="legend-dot" style="background:var(--green)"></span>Bullish — price above SMMA20</span>
-      <span class="legend-item"><span class="legend-dot" style="background:var(--red)"></span>Bearish — price below SMMA20</span>
+      <span class="legend-item"><span class="legend-dot" style="background:var(--green)"></span>Bullish — price above SMMA21 + ATR14×2.5 band</span>
+      <span class="legend-item"><span class="legend-dot" style="background:var(--red)"></span>Bearish — price below SMMA21 − ATR14×2.5 band</span>
       <span class="legend-item"><span class="legend-dot" style="background:var(--dim)"></span>Neutral</span>
     </div>
     <div class="legend-group">
       <span class="legend-title">L:</span>
-      <span class="legend-item"><span class="legend-dot" style="background:var(--amber)"></span>Gold — SMMA15 &gt; SMMA29 (uptrend)</span>
-      <span class="legend-item"><span class="legend-dot" style="background:var(--blue)"></span>Blue — SMMA15 &lt; SMMA29 (downtrend)</span>
+      <span class="legend-item"><span class="legend-dot" style="background:var(--amber)"></span>Gold — SMMA15(HL2) &gt; SMMA25(HL2) (uptrend)</span>
+      <span class="legend-item"><span class="legend-dot" style="background:var(--blue)"></span>Blue — SMMA15(HL2) &lt; SMMA25(HL2) (downtrend)</span>
       <span class="legend-item"><span class="legend-dot" style="background:var(--dim)"></span>Gray — crossing</span>
     </div>
   </div>
@@ -239,7 +239,7 @@
     <button class="filter-btn" onclick="setFilter('neutral',this)">◆ Neutral</button>
     <button class="filter-btn" onclick="setFilter('lgold',this)" style="border-color:var(--amber-border);color:var(--amber);">★ L:Gold</button>
     <button class="filter-btn" onclick="setFilter('lblue',this)" style="border-color:var(--blue-border);color:var(--blue);">● L:Blue</button>
-    <button class="filter-btn" onclick="setFilter('triple',this)" style="border-color:var(--accent);color:var(--accent);font-weight:600;">⚡ Triple Bull</button>
+    <button class="filter-btn" onclick="setFilter('triple',this)" style="border-color:var(--accent);color:var(--accent);font-weight:600;">&#9889; Triple Bull</button>
     <select class="sort-select" id="tfSelect" onchange="setTF(this.value)" style="margin-left:0; border-color:var(--accent); color:var(--accent);">
       <option value="D">Timeframe: Daily</option>
       <option value="4H">Timeframe: 4H</option>
@@ -269,9 +269,9 @@
           <th class="r">52W</th>
           <th class="r" onclick="setSort('mktcap_d')">Mkt Cap</th>
           <th class="c">Trend</th>
-          <th class="c b-col has-tip" data-tip="B = Momentum signal. Bullish = price above SMMA20. Bearish = price below SMMA20.">B</th>
+          <th class="c b-col has-tip" data-tip="B = Momentum signal. SMMA21 of close with ATR14×2.5 volatility band. State-based and sticky.">B</th>
           <th class="c has-tip" style="font-size:10px;color:var(--green);border-bottom:2px solid var(--green-border);cursor:pointer;" data-tip="When the B signal last flipped (CET). Click to sort." onclick="setSort('bflip_d')">B Flip <span id="bflipArrow"></span></th>
-          <th class="c l-col has-tip" data-tip="L = Trend signal. Gold = SMMA15 above SMMA29 (uptrend). Blue = SMMA15 below SMMA29 (downtrend).">L</th>
+          <th class="c l-col has-tip" data-tip="L = Ribbon signal. SMMA15 vs SMMA25 on (H+L)/2. Gold = uptrend, Blue = downtrend.">L</th>
           <th class="c has-tip" style="font-size:10px;color:var(--amber);border-bottom:2px solid var(--amber-border);cursor:pointer;" data-tip="When the L signal last flipped (CET). Click to sort." onclick="setSort('lflip_d')">L Flip <span id="lflipArrow"></span></th>
           <th class="r">Volume</th>
         </tr>
@@ -348,6 +348,12 @@ async function loadFromSupabase() {
       price:    r.price,
       chg:      r.chg,
       chgPct:   r.chg_pct,
+      chg4h:    r.chg_4h,
+      chgPct4h: r.chg_pct_4h,
+      chgW:     r.chg_w,
+      chgPctW:  r.chg_pct_w,
+      chgM:     r.chg_m,
+      chgPctM:  r.chg_pct_m,
       hi52:     r.hi52,
       lo52:     r.lo52,
       vol:      r.vol,
@@ -378,7 +384,7 @@ async function loadFromSupabase() {
         return 'neutral';
       })(),
       bSignal:   r.b_d,
-      lSignal:   r.l_d,
+      lSignal:   r.l_d, // daily — used for flip detection baseline only
     }));
 
     render();
@@ -407,15 +413,16 @@ function render() {
   if (curFilter === 'bull')    rows = rows.filter(r => r.sentiment === 'bull');
   else if (curFilter === 'bear')    rows = rows.filter(r => r.sentiment === 'bear');
   else if (curFilter === 'neutral') rows = rows.filter(r => r.sentiment === 'neutral');
-  else if (curFilter === 'lgold')   rows = rows.filter(r => r.lSignal === 'gold');
-  else if (curFilter === 'lblue')   rows = rows.filter(r => r.lSignal === 'blue');
+  else if (curFilter === 'lgold')   rows = rows.filter(r => ((r.tf||{})[curTF]||{}).l === 'gold');
+  else if (curFilter === 'lblue')   rows = rows.filter(r => ((r.tf||{})[curTF]||{}).l === 'blue');
   else if (curFilter === 'triple') {
-    // Triple Bull: Trend=Bull AND B=Bullish AND L=Gold
-    rows = rows.filter(r =>
-      r.sentiment === 'bull' &&
-      r.bSignal   === 'bull' &&
-      r.lSignal   === 'gold'
-    );
+    // Triple Bull: Trend=Bull AND B=Bullish AND L=Gold for the ACTIVE timeframe
+    rows = rows.filter(r => {
+      const activeTF = (r.tf || {})[curTF] || {b:'neutral', l:'gray'};
+      return r.sentiment === 'bull' &&
+             activeTF.b  === 'bull' &&
+             activeTF.l  === 'gold';
+    });
     // Auto-sort: most recent B flip first, L flip as tiebreaker
     rows.sort((a, b) => {
       const bDiff = parseDateStr(b.bFlipTime) - parseDateStr(a.bFlipTime);
@@ -426,8 +433,8 @@ function render() {
 
   // Sort (only if not triple — triple has its own sort)
   if (curFilter !== 'triple') {
-    if (curSort === 'chg_d')          rows.sort((a,b) => (b.chgPct||0)-(a.chgPct||0));
-    else if (curSort === 'chg_a')     rows.sort((a,b) => (a.chgPct||0)-(b.chgPct||0));
+    if (curSort === 'chg_d')          rows.sort((a,b) => getChgPct(b)-getChgPct(a));
+    else if (curSort === 'chg_a')     rows.sort((a,b) => getChgPct(a)-getChgPct(b));
     else if (curSort === 'price_d')   rows.sort((a,b) => (b.price||0)-(a.price||0));
     else if (curSort === 'price_a')   rows.sort((a,b) => (a.price||0)-(b.price||0));
     else if (curSort === 'az')        rows.sort((a,b) => a.sym.localeCompare(b.sym));
@@ -461,12 +468,21 @@ function render() {
     const lCls   = lSig==='gold'?'l-gold':lSig==='blue'?'l-blue':'l-gray';
     const lLabel = lSig==='gold'?'Gold':lSig==='blue'?'Blue':'Gray';
 
-    const pc = r.chgPct > 0.05 ? 'chg-pos' : r.chgPct < -0.05 ? 'chg-neg' : 'chg-neu';
+    // Use timeframe-specific change values
+    const tfChg    = curTF==='4H' ? (r.chg4h||r.chg)
+                   : curTF==='W'  ? (r.chgW||r.chg)
+                   : curTF==='M'  ? (r.chgM||r.chg)
+                   : r.chg;
+    const tfChgPct = curTF==='4H' ? (r.chgPct4h||r.chgPct)
+                   : curTF==='W'  ? (r.chgPctW||r.chgPct)
+                   : curTF==='M'  ? (r.chgPctM||r.chgPct)
+                   : r.chgPct;
+    const pc = tfChgPct > 0.05 ? 'chg-pos' : tfChgPct < -0.05 ? 'chg-neg' : 'chg-neu';
     const priceFmt = r.price >= 1000
       ? '$'+r.price.toLocaleString('en-US',{maximumFractionDigits:0})
       : '$'+Number(r.price).toFixed(2);
-    const chgSign = r.chg >= 0 ? '+' : '';
-    const pctSign = r.chgPct >= 0 ? '+' : '';
+    const chgSign = tfChg >= 0 ? '+' : '';
+    const pctSign = tfChgPct >= 0 ? '+' : '';
 
     const pos52 = (r.hi52 && r.lo52 && r.hi52>r.lo52)
       ? Math.max(0,Math.min(1,(r.price-r.lo52)/(r.hi52-r.lo52))) : 0.5;
@@ -486,8 +502,8 @@ function render() {
     return `<tr>
       <td><div class="ticker-sym">${r.sym}</div><div class="ticker-name">${r.name}</div></td>
       <td class="r"><span class="price-val">${priceFmt}</span></td>
-      <td class="r"><span class="${pc}">${chgSign}${Number(r.chg).toFixed(2)}</span></td>
-      <td class="r"><span class="${pc}">${pctSign}${Number(r.chgPct).toFixed(2)}%</span></td>
+      <td class="r"><span class="${pc}">${chgSign}${Number(tfChg).toFixed(2)}</span></td>
+      <td class="r"><span class="${pc}">${pctSign}${Number(tfChgPct).toFixed(2)}%</span></td>
       <td class="r">
         <div class="w52-bar">
           <span class="w52-pct">${Math.round(pos52*100)}%</span>
@@ -510,10 +526,11 @@ function renderSummary() {
   const bull  = allData.filter(r=>r.sentiment==='bull').length;
   const bear  = allData.filter(r=>r.sentiment==='bear').length;
   const neut  = allData.filter(r=>r.sentiment==='neutral').length;
-  const lgold = allData.filter(r=>r.lSignal==='gold').length;
-  const avg   = allData.length ? allData.reduce((a,r)=>a+(r.chgPct||0),0)/allData.length : 0;
-  const leader  = [...allData].sort((a,b)=>b.chgPct-a.chgPct)[0];
-  const laggard = [...allData].sort((a,b)=>a.chgPct-b.chgPct)[0];
+  const lgold = allData.filter(r=>((r.tf||{})[curTF]||{}).l==='gold').length;
+  const getChgPct = r => curTF==='4H'?(r.chgPct4h||r.chgPct):curTF==='W'?(r.chgPctW||r.chgPct):curTF==='M'?(r.chgPctM||r.chgPct):r.chgPct;
+  const avg   = allData.length ? allData.reduce((a,r)=>a+getChgPct(r),0)/allData.length : 0;
+  const leader  = [...allData].sort((a,b)=>getChgPct(b)-getChgPct(a))[0];
+  const laggard = [...allData].sort((a,b)=>getChgPct(a)-getChgPct(b))[0];
 
   document.getElementById('sBull').textContent    = bull;
   document.getElementById('sBear').textContent    = bear;
@@ -522,8 +539,8 @@ function renderSummary() {
   const avgEl = document.getElementById('sAvg');
   avgEl.textContent = (avg>=0?'+':'')+avg.toFixed(2)+'%';
   avgEl.className   = 'sum-val '+(avg>0?'green':avg<0?'red':'amber');
-  document.getElementById('sLeader').textContent  = leader  ?`${leader.sym} +${Number(leader.chgPct).toFixed(2)}%`:'—';
-  document.getElementById('sLaggard').textContent = laggard ?`${laggard.sym} ${Number(laggard.chgPct).toFixed(2)}%`:'—';
+  document.getElementById('sLeader').textContent  = leader  ?`${leader.sym} +${getChgPct(leader).toFixed(2)}%`:'—';
+  document.getElementById('sLaggard').textContent = laggard ?`${laggard.sym} ${getChgPct(laggard).toFixed(2)}%`:'—';
 }
 
 // ── CONTROLS ──────────────────────────────────────────────────────────────────
