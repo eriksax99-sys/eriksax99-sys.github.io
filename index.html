@@ -234,12 +234,13 @@
   <!-- CONTROLS -->
   <div class="controls">
     <button class="filter-btn active" onclick="setFilter('all',this)">All 30</button>
-    <button class="filter-btn" onclick="setFilter('bull',this)">▲ Bullish</button>
-    <button class="filter-btn" onclick="setFilter('bear',this)">▼ Bearish</button>
-    <button class="filter-btn" onclick="setFilter('neutral',this)">◆ Neutral</button>
+    <button class="filter-btn" onclick="setFilter('bull',this)">▲ Trend Bull</button>
+    <button class="filter-btn" onclick="setFilter('bear',this)">▼ Trend Bear</button>
+    <button class="filter-btn" onclick="setFilter('bbull',this)" style="border-color:var(--green-border);color:var(--green);">▲ B:Bull</button>
+    <button class="filter-btn" onclick="setFilter('bbear',this)" style="border-color:var(--red-border);color:var(--red);">▼ B:Bear</button>
     <button class="filter-btn" onclick="setFilter('lgold',this)" style="border-color:var(--amber-border);color:var(--amber);">★ L:Gold</button>
     <button class="filter-btn" onclick="setFilter('lblue',this)" style="border-color:var(--blue-border);color:var(--blue);">● L:Blue</button>
-    <button class="filter-btn" onclick="setFilter('triple',this)" style="border-color:var(--accent);color:var(--accent);font-weight:600;">&#9889; Triple Bull</button>
+    <button class="filter-btn" id="tripleBtn" onclick="setFilter('triple',this)" style="border-color:var(--accent);color:var(--accent);font-weight:600;">&#9889; Triple Bull</button>
     <select class="sort-select" id="tfSelect" onchange="setTF(this.value)" style="margin-left:0; border-color:var(--accent); color:var(--accent);">
       <option value="D">Timeframe: Daily</option>
       <option value="4H">Timeframe: 4H</option>
@@ -358,8 +359,14 @@ async function loadFromSupabase() {
       lo52:     r.lo52,
       vol:      r.vol,
       mktCapB:  r.mkt_cap_b,
-      bFlipTime: flipMap[r.sym]?.b_flip_time ?? null,
-      lFlipTime: flipMap[r.sym]?.l_flip_time ?? null,
+      bFlipTime:   flipMap[r.sym]?.b_flip_time    ?? null,
+      lFlipTime:   flipMap[r.sym]?.l_flip_time    ?? null,
+      bFlipTime4h: flipMap[r.sym]?.b_flip_time_4h ?? null,
+      lFlipTime4h: flipMap[r.sym]?.l_flip_time_4h ?? null,
+      bFlipTimeW:  flipMap[r.sym]?.b_flip_time_w  ?? null,
+      lFlipTimeW:  flipMap[r.sym]?.l_flip_time_w  ?? null,
+      bFlipTimeM:  flipMap[r.sym]?.b_flip_time_m  ?? null,
+      lFlipTimeM:  flipMap[r.sym]?.l_flip_time_m  ?? null,
       tf: {
         '4H': { b: r.b_4h, l: r.l_4h },
         'D':  { b: r.b_d,  l: r.l_d  },
@@ -389,11 +396,17 @@ async function loadFromSupabase() {
 
     render();
     renderSummary();
-    const updated = new Date(rows[0]?.updated_at);
-    const cetStr  = updated.toLocaleString('en-GB', {
+    // Show when data was last updated by Edge Function
+    const dataTime = new Date(rows[0]?.updated_at);
+    const dataCET  = dataTime.toLocaleString('en-GB', {
+      timeZone:'Europe/Stockholm', hour:'2-digit', minute:'2-digit', second:'2-digit', day:'2-digit', month:'2-digit'
+    });
+    // Also show when app last fetched from Supabase
+    const fetchTime = new Date();
+    const fetchCET  = fetchTime.toLocaleString('en-GB', {
       timeZone:'Europe/Stockholm', hour:'2-digit', minute:'2-digit', second:'2-digit'
     });
-    setStatus('live', `Live · Data as of ${cetStr} CET · ${allData.length}/30 loaded`);
+    setStatus('live', `Live · Fetched ${fetchCET} CET · Data updated ${dataCET} · ${allData.length}/30 loaded`);
     startCountdown();
 
   } catch(e) {
@@ -413,6 +426,8 @@ function render() {
   if (curFilter === 'bull')    rows = rows.filter(r => r.sentiment === 'bull');
   else if (curFilter === 'bear')    rows = rows.filter(r => r.sentiment === 'bear');
   else if (curFilter === 'neutral') rows = rows.filter(r => r.sentiment === 'neutral');
+  else if (curFilter === 'bbull')   rows = rows.filter(r => ((r.tf||{})[curTF]||{}).b === 'bull');
+  else if (curFilter === 'bbear')   rows = rows.filter(r => ((r.tf||{})[curTF]||{}).b === 'bear');
   else if (curFilter === 'lgold')   rows = rows.filter(r => ((r.tf||{})[curTF]||{}).l === 'gold');
   else if (curFilter === 'lblue')   rows = rows.filter(r => ((r.tf||{})[curTF]||{}).l === 'blue');
   else if (curFilter === 'triple') {
@@ -423,11 +438,11 @@ function render() {
              activeTF.b  === 'bull' &&
              activeTF.l  === 'gold';
     });
-    // Auto-sort: most recent B flip first, L flip as tiebreaker
+    // Auto-sort: most recent B flip first, L flip as tiebreaker (timeframe-aware)
     rows.sort((a, b) => {
-      const bDiff = parseDateStr(b.bFlipTime) - parseDateStr(a.bFlipTime);
+      const bDiff = parseDateStr(getBFlip(b)) - parseDateStr(getBFlip(a));
       if (bDiff !== 0) return bDiff;
-      return parseDateStr(b.lFlipTime) - parseDateStr(a.lFlipTime);
+      return parseDateStr(getLFlip(b)) - parseDateStr(getLFlip(a));
     });
   }
 
@@ -439,10 +454,10 @@ function render() {
     else if (curSort === 'price_a')   rows.sort((a,b) => (a.price||0)-(b.price||0));
     else if (curSort === 'az')        rows.sort((a,b) => a.sym.localeCompare(b.sym));
     else if (curSort === 'mktcap_d')  rows.sort((a,b) => (b.mktCapB||0)-(a.mktCapB||0));
-    else if (curSort === 'bflip_d')   rows.sort((a,b) => parseDateStr(b.bFlipTime) - parseDateStr(a.bFlipTime));
-    else if (curSort === 'bflip_a')   rows.sort((a,b) => parseDateStr(a.bFlipTime) - parseDateStr(b.bFlipTime));
-    else if (curSort === 'lflip_d')   rows.sort((a,b) => parseDateStr(b.lFlipTime) - parseDateStr(a.lFlipTime));
-    else if (curSort === 'lflip_a')   rows.sort((a,b) => parseDateStr(a.lFlipTime) - parseDateStr(b.lFlipTime));
+    else if (curSort === 'bflip_d')   rows.sort((a,b) => parseDateStr(getBFlip(b)) - parseDateStr(getBFlip(a)));
+    else if (curSort === 'bflip_a')   rows.sort((a,b) => parseDateStr(getBFlip(a)) - parseDateStr(getBFlip(b)));
+    else if (curSort === 'lflip_d')   rows.sort((a,b) => parseDateStr(getLFlip(b)) - parseDateStr(getLFlip(a)));
+    else if (curSort === 'lflip_a')   rows.sort((a,b) => parseDateStr(getLFlip(a)) - parseDateStr(getLFlip(b)));
   }
 
   // Update sort arrow indicators
@@ -495,6 +510,15 @@ function render() {
     const badgeCls   = sent==='bull'?'badge-bull':sent==='bear'?'badge-bear':'badge-neut';
     const badgeLabel  = sent==='bull'?'▲ BULL':sent==='bear'?'▼ BEAR':'◆ NEUT';
 
+    // Select flip date matching active timeframe
+    const getBFlip = r => curTF==='4H' ? (r.bFlipTime4h||r.bFlipTime)
+                        : curTF==='W'  ? (r.bFlipTimeW ||r.bFlipTime)
+                        : curTF==='M'  ? (r.bFlipTimeM ||r.bFlipTime)
+                        : r.bFlipTime;
+    const getLFlip = r => curTF==='4H' ? (r.lFlipTime4h||r.lFlipTime)
+                        : curTF==='W'  ? (r.lFlipTimeW ||r.lFlipTime)
+                        : curTF==='M'  ? (r.lFlipTimeM ||r.lFlipTime)
+                        : r.lFlipTime;
     const flipCell = (t) => t
       ? `<span class="flip-time" style="font-size:11px;">${t}</span>`
       : `<span style="color:var(--dim);font-family:var(--mono);font-size:11px;">—</span>`;
@@ -513,9 +537,9 @@ function render() {
       <td class="r" style="color:var(--muted);font-family:var(--mono);font-size:12px;">${mktFmt}</td>
       <td class="c"><span class="badge ${badgeCls}">${badgeLabel}</span></td>
       <td class="c"><span class="${bCls}">${bLabel}</span></td>
-      <td class="c">${flipCell(r.bFlipTime)}</td>
+      <td class="c">${flipCell(getBFlip(r))}</td>
       <td class="c"><span class="${lCls}">${lLabel}</span></td>
-      <td class="c">${flipCell(r.lFlipTime)}</td>
+      <td class="c">${flipCell(getLFlip(r))}</td>
       <td class="r"><span class="vol-text">${volFmt}</span></td>
     </tr>`;
   }).join('');
@@ -554,10 +578,25 @@ function parseDateStr(s) {
 
 function setFilter(f, el) {
   curFilter = f;
-  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active','active-bull','active-bear'));
-  if (f==='bull') el.classList.add('active-bull');
-  else if (f==='bear') el.classList.add('active-bear');
-  else el.classList.add('active');
+  document.querySelectorAll('.filter-btn').forEach(b => {
+    b.classList.remove('active','active-bull','active-bear');
+    b.style.color = b.style.color; // reset inline color
+  });
+  if (f==='bull' || f==='bear') {
+    f==='bull' ? el.classList.add('active-bull') : el.classList.add('active-bear');
+  } else if (f==='bbull') {
+    el.style.background = 'var(--green-bg)';
+    el.style.color = 'var(--green)';
+    el.classList.add('active-bull');
+  } else if (f==='bbear') {
+    el.style.background = 'var(--red-bg)';
+    el.style.color = 'var(--red)';
+    el.classList.add('active-bear');
+  } else if (f==='triple') {
+    el.classList.add('active'); // active class = teal bg, BLACK text ✓
+  } else {
+    el.classList.add('active');
+  }
   render();
 }
 function setSort(s) {
