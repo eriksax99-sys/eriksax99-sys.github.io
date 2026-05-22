@@ -218,7 +218,7 @@
     <div class="sum-card">
       <div class="sum-label">B: Gold</div>
       <div class="sum-val amber" id="sLGold">—</div>
-      <div class="sum-sub">Larsson Gold</div>
+      <div class="sum-sub">L Gold</div>
     </div>
     <div class="sum-card">
       <div class="sum-label">Top Gainer</div>
@@ -499,31 +499,23 @@ function calcRSI(closes, period = 14) {
 // The Money Line tracks whether price is above/below its trend line.
 // 52w position is the best available proxy without candle data.
 function calcBSignal(r) {
-  const { price, closes, chgPct, hi52, lo52 } = r;
+  const { price, closes, chgPct } = r;
   if (!price) return 'neutral';
 
-  // Primary: full EMA + RSI when real candle data is available
-  if (closes && closes.length >= 50) {
-    const ema20 = calcEMA(closes, 20);
-    const ema50 = calcEMA(closes, 50);
-    if (ema20 && ema50) {
-      const blendedEMA = (ema20 + ema50) / 2;
+  // Use SMMA approach (same as L) — needs only 29 bars, works on the synthetic closes.
+  // Money Line approximation: SMMA20 acts as the trend line.
+  // Bull = price above SMMA20, Bear = price below SMMA20.
+  // This is consistent with how L works and avoids the EMA neutrality trap.
+  if (closes && closes.length >= 20) {
+    const smma20 = calcSMMA(closes, 20);
+    if (smma20 != null) {
       const rsi = calcRSI(closes, 14) ?? 50;
-      if (price > blendedEMA && rsi < 75) return 'bull';
-      if (price < blendedEMA && rsi > 25) return 'bear';
-      return 'neutral';
+      if (price > smma20 && rsi < 75) return 'bull';
+      if (price < smma20 && rsi > 25) return 'bear';
+      // If RSI is extreme, flip the signal
+      if (rsi >= 75) return 'bear';
+      return 'bull'; // rsi <= 25, oversold in downtrend still bear
     }
-  }
-
-  // Fallback: 52w position — same mechanism that makes L work reliably.
-  // Price in upper 50% of annual range = above its long-run average = Bullish.
-  // Price in lower 50% = below its long-run average = Bearish.
-  const pos52 = (hi52 && lo52 && hi52 > lo52)
-    ? (price - lo52) / (hi52 - lo52) : null;
-
-  if (pos52 !== null) {
-    if (pos52 >= 0.50) return 'bull';
-    return 'bear';
   }
 
   // Last resort: today's momentum
@@ -550,7 +542,7 @@ function calcLSignal(r) {
   }
 
   // Fallback: use 52w position as trend proxy
-  // Larsson Gold = higher lows / uptrend = price well above 52w low
+  // L Gold = higher lows / uptrend = price well above 52w low
   const pos52 = (hi52 && lo52 && hi52 > lo52)
     ? (price - lo52) / (hi52 - lo52) : null;
 
