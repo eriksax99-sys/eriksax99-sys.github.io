@@ -117,6 +117,21 @@
   .w52-pct{font-family:var(--mono);font-size:10px;color:var(--muted);min-width:26px;}
   .vol-text{font-family:var(--mono);font-size:11px;color:var(--dim);}
   .sig-text{font-size:11px;color:var(--muted);max-width:130px;overflow:hidden;text-overflow:ellipsis;}
+  .flip-time{display:block;font-family:var(--mono);font-size:9px;color:var(--dim);margin-top:2px;letter-spacing:0.03em;}
+  .flip-time.new{color:var(--amber);}
+  /* Timeframe badge grid */
+  .tf-row{display:flex;gap:3px;align-items:center;justify-content:center;flex-wrap:nowrap;}
+  .tf-box{display:inline-flex;flex-direction:column;align-items:center;gap:1px;}
+  .tf-label{font-family:var(--mono);font-size:8px;color:var(--dim);letter-spacing:0.05em;line-height:1;}
+  .tf-dot{width:28px;height:16px;border-radius:3px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:8px;font-weight:700;letter-spacing:0.04em;}
+  /* B timeframe colours */
+  .tf-b-bull{background:var(--green-bg);border:1px solid var(--green-border);color:var(--green);}
+  .tf-b-bear{background:var(--red-bg);border:1px solid var(--red-border);color:var(--red);}
+  .tf-b-neut{background:var(--bg3);border:1px solid var(--border);color:var(--dim);}
+  /* L timeframe colours */
+  .tf-l-gold{background:var(--amber-bg);border:1px solid var(--amber-border);color:var(--amber);}
+  .tf-l-blue{background:var(--blue-bg);border:1px solid var(--blue-border);color:var(--blue);}
+  .tf-l-gray{background:var(--bg3);border:1px solid var(--border);color:var(--dim);}
 
   /* Tooltip on column headers */
   .has-tip{position:relative;}
@@ -341,10 +356,16 @@ let curFilter = 'all';
 let curSort = '';
 let countdownTimer = null;
 let secondsLeft = 0;
+let flipHistory = {}; // { SYM: { bSignal, lSignal, bFlipTime, lFlipTime } }
 
 window.addEventListener('DOMContentLoaded', () => {
   const saved = localStorage.getItem('finnhub_key') || HARDCODED_KEY;
   if (saved) document.getElementById('apiKey').value = saved;
+  // Load persisted flip history
+  try {
+    const fh = localStorage.getItem('nq30_flips');
+    if (fh) flipHistory = JSON.parse(fh);
+  } catch(e) { flipHistory = {}; }
   if (HARDCODED_KEY) fetchAll();
 });
 
@@ -370,15 +391,74 @@ async function fetchAll() {
       .filter(r => r.status === 'fulfilled' && r.value.price != null)
       .map(r => {
         const d = r.value;
-        return {
+        // Compute B+L for all 4 timeframes
+      const tf4h = tfSignals(d.closes4h, d.price);
+      const tfD  = tfSignals(d.closesD,  d.price);
+      const tfW  = tfSignals(d.closesW,  d.price);
+      const tfM  = tfSignals(d.closesM,  d.price);
+      return {
           ...d,
           sentiment: calcSentiment(d),
-          bSignal:   calcBSignal(d),
-          lSignal:   calcLSignal(d),
+          bSignal:   tfD.b,  // daily is the primary signal
+          lSignal:   tfD.l,
+          tf: { '4H': tf4h, 'D': tfD, 'W': tfW, 'M': tfM },
         };
       });
 
     if (!allData.length) throw new Error('No data returned — check your API key');
+
+    // Detect flips and record timestamps in CET
+    const nowCET = new Date().toLocaleString('sv-SE', {timeZone:'Europe/Stockholm'});
+    // Format: "260522 1039" = YYMMDD HHMM
+    const d = new Date();
+    const cetStr = d.toLocaleString('en-GB', {timeZone:'Europe/Stockholm',
+      year:'2-digit', month:'2-digit', day:'2-digit',
+      hour:'2-digit', minute:'2-digit', hour12:false
+    }).replace(',','').replace(/\//g,'').replace(' ','').replace(':','');
+    // cetStr now like "220526 1039" — reformat to YYMMDD HHMM
+    const cetParts = d.toLocaleString('en-GB', {timeZone:'Europe/Stockholm',
+      year:'2-digit', month:'2-digit', day:'2-digit',
+      hour:'2-digit', minute:'2-digit', hour12:false
+    });
+    // Build "YYMMDD HHMM" manually
+    const cetDate = new Date(d.toLocaleString('en-US', {timeZone:'Europe/Stockholm'}));
+    const yy = String(cetDate.getFullYear()).slice(2);
+    const mm = String(cetDate.getMonth()+1).padStart(2,'0');
+    const dd = String(cetDate.getDate()).padStart(2,'0');
+    const hh = String(cetDate.getHours()).padStart(2,'0');
+    const mi = String(cetDate.getMinutes()).padStart(2,'0');
+    const flipTs = yy + mm + dd + ' ' + hh + mi;
+
+    allData.forEach(r => {
+      const prev = flipHistory[r.sym] || {};
+      const entry = {
+        bSignal:   r.bSignal,
+        lSignal:   r.lSignal,
+        bFlipTime: prev.bFlipTime || flipTs,
+        lFlipTime: prev.lFlipTime || flipTs,
+        bIsNew:    false,
+        lIsNew:    false,
+      };
+      // B flip detected
+      if (prev.bSignal && prev.bSignal !== r.bSignal) {
+        entry.bFlipTime = flipTs;
+        entry.bIsNew = true;
+      }
+      // L flip detected
+      if (prev.lSignal && prev.lSignal !== r.lSignal) {
+        entry.lFlipTime = flipTs;
+        entry.lIsNew = true;
+      }
+      flipHistory[r.sym] = entry;
+      // Attach flip times to the data row for rendering
+      r.bFlipTime = entry.bFlipTime;
+      r.lFlipTime = entry.lFlipTime;
+      r.bIsNew    = entry.bIsNew;
+      r.lIsNew    = entry.lIsNew;
+      // bSignal/lSignal on r are already set to daily (tfD) values
+    });
+    // Persist flip history
+    try { localStorage.setItem('nq30_flips', JSON.stringify(flipHistory)); } catch(e){}
 
     render();
     renderSummary();
@@ -395,22 +475,21 @@ async function fetchAll() {
 }
 
 async function fetchQuote(sym, key) {
-  // Finnhub for live quote + 52w metrics
-  // Yahoo Finance v8 (no key needed) for 60-day daily candles → B & L indicators
-  const toTs  = Math.floor(Date.now() / 1000);
-  const fromTs = toTs - 120 * 24 * 3600; // 120 days — enough for SMMA29 + RSI14
+  const toTs   = Math.floor(Date.now() / 1000);
+  const from2y = toTs - 730 * 24 * 3600;  // 2 years daily → D, W, M signals
+  const from60d= toTs -  60 * 24 * 3600;  // 60 days hourly → 4H signal
 
-  const [quoteRes, metricRes, yahooRes] = await Promise.all([
+  const [quoteRes, metricRes, yahooDaily, yahooHourly] = await Promise.all([
     fetch(`https://finnhub.io/api/v1/quote?symbol=${sym}&token=${key}`),
     fetch(`https://finnhub.io/api/v1/stock/metric?symbol=${sym}&metric=all&token=${key}`),
-    fetch(`https://query1.finance.yahoo.com/v8/finance/chart/${sym}?interval=1d&period1=${fromTs}&period2=${toTs}`, {
-      headers: { 'Accept': 'application/json' }
-    }).catch(() => null)
+    fetch(`https://query1.finance.yahoo.com/v8/finance/chart/${sym}?interval=1d&period1=${from2y}&period2=${toTs}`)
+      .catch(() => null),
+    fetch(`https://query1.finance.yahoo.com/v8/finance/chart/${sym}?interval=1h&period1=${from60d}&period2=${toTs}`)
+      .catch(() => null),
   ]);
 
   const quote  = await quoteRes.json();
   const metric = await metricRes.json();
-
   if (!quote.c) return { price: null };
 
   const price  = quote.c;
@@ -421,35 +500,66 @@ async function fetchQuote(sym, key) {
   const lo52   = metric?.metric?.['52WeekLow']  ?? null;
   const vol    = quote.v ?? null;
 
-  // Parse Yahoo candle closes for B & L indicator calculation
-  let closes = [];
+  // Parse daily closes (2 years) → used for D, W, M timeframes
+  let closesD = [];
   try {
-    if (yahooRes && yahooRes.ok) {
-      const yData = await yahooRes.json();
-      const raw = yData?.chart?.result?.[0]?.indicators?.quote?.[0]?.close ?? [];
-      closes = raw.filter(v => v != null && !isNaN(v));
+    if (yahooDaily?.ok) {
+      const y = await yahooDaily.json();
+      closesD = (y?.chart?.result?.[0]?.indicators?.quote?.[0]?.close ?? [])
+        .filter(v => v != null && !isNaN(v));
     }
-  } catch(e) { closes = []; }
+  } catch(e) { closesD = []; }
 
-  // Fallback: if Yahoo failed or returned too few bars, derive a synthetic
-  // close series from quote data (open, high, low, current) so indicators
-  // still produce a signal rather than defaulting to neutral/gray.
-  if (closes.length < 30) {
-    // Use 52w hi/lo + current price to build a rough gradient of closes
+  // Parse hourly closes (60 days) → group into 4h bars
+  let closes4h = [];
+  try {
+    if (yahooHourly?.ok) {
+      const y = await yahooHourly.json();
+      const raw = (y?.chart?.result?.[0]?.indicators?.quote?.[0]?.close ?? [])
+        .filter(v => v != null && !isNaN(v));
+      // Group into 4h bars (take every 4th close)
+      for (let i = 3; i < raw.length; i += 4) closes4h.push(raw[i]);
+    }
+  } catch(e) { closes4h = []; }
+
+  // Synthetic fallback if Yahoo blocked (uses 52w range to build shaped path)
+  function synthetic(lo52, hi52, price, steps=80) {
     const lo = lo52 ?? price * 0.7;
     const hi = hi52 ?? price * 1.3;
-    const steps = 60;
-    // Simulate a path that ends at current price, anchored to 52w range
-    closes = [];
+    const mid = (lo + hi) / 2;
+    const arr = [];
     for (let i = 0; i < steps; i++) {
       const t = i / (steps - 1);
-      // Simple linear path from midpoint to current, with some curvature
-      const mid = (lo + hi) / 2;
-      closes.push(mid + (price - mid) * Math.pow(t, 0.7));
+      arr.push(mid + (price - mid) * Math.pow(t, 0.7));
     }
+    return arr;
   }
 
-  return { price, prev, chg, chgPct, hi52, lo52, vol, closes };
+  if (closesD.length < 30)  closesD  = synthetic(lo52, hi52, price, 80);
+  if (closes4h.length < 30) closes4h = synthetic(lo52, hi52, price, 80);
+
+  // Derive weekly closes: last close of each 5-day block
+  const closesW = [];
+  for (let i = 4; i < closesD.length; i += 5) closesW.push(closesD[i]);
+
+  // Derive monthly closes: last close of each 21-day block
+  const closesM = [];
+  for (let i = 20; i < closesD.length; i += 21) closesM.push(closesD[i]);
+  // Ensure monthly has at least current price as last bar
+  if (closesM.length < 2) closesM.push(...closesD.slice(-21));
+
+  return { price, prev, chg, chgPct, hi52, lo52, vol,
+    closes4h, closesD, closesW, closesM,
+    closes: closesD // keep for backward compat with existing signal fns
+  };
+}
+
+// ── MULTI-TIMEFRAME SIGNAL HELPER ────────────────────────────────────────────
+// Returns { b, l } for any closes array + current price
+function tfSignals(closes, price) {
+  const b = calcBSignalFromCloses(closes, price);
+  const l = calcLSignalFromCloses(closes);
+  return { b, l };
 }
 
 // ── SMMA (Smoothed Moving Average) ────────────────────────────────────────────
@@ -495,32 +605,19 @@ function calcRSI(closes, period = 14) {
 }
 
 // ── B SIGNAL: Bullmania Money Line approximation ───────────────────────────────
-// Uses same reliable 52w-position approach that powers L column.
-// The Money Line tracks whether price is above/below its trend line.
-// 52w position is the best available proxy without candle data.
+// Pure trend signal: price above SMMA20 = bull, below = bear.
+// RSI override removed — it caused inversions on strong trends (overbought = still bull).
+function calcBSignalFromCloses(closes, price) {
+  if (!closes || closes.length < 20) return 'neutral';
+  const smma20 = calcSMMA(closes, 20);
+  if (smma20 == null) return 'neutral';
+  return price > smma20 ? 'bull' : 'bear';
+}
 function calcBSignal(r) {
-  const { price, closes, chgPct } = r;
-  if (!price) return 'neutral';
-
-  // Use SMMA approach (same as L) — needs only 29 bars, works on the synthetic closes.
-  // Money Line approximation: SMMA20 acts as the trend line.
-  // Bull = price above SMMA20, Bear = price below SMMA20.
-  // This is consistent with how L works and avoids the EMA neutrality trap.
-  if (closes && closes.length >= 20) {
-    const smma20 = calcSMMA(closes, 20);
-    if (smma20 != null) {
-      const rsi = calcRSI(closes, 14) ?? 50;
-      if (price > smma20 && rsi < 75) return 'bull';
-      if (price < smma20 && rsi > 25) return 'bear';
-      // If RSI is extreme, flip the signal
-      if (rsi >= 75) return 'bear';
-      return 'bull'; // rsi <= 25, oversold in downtrend still bear
-    }
-  }
-
-  // Last resort: today's momentum
-  if (chgPct > 0.3)  return 'bull';
-  if (chgPct < -0.3) return 'bear';
+  const sig = calcBSignalFromCloses(r.closes, r.price);
+  if (sig !== 'neutral') return sig;
+  if (r.chgPct > 0.3)  return 'bull';
+  if (r.chgPct < -0.3) return 'bear';
   return 'neutral';
 }
 
@@ -614,13 +711,19 @@ function render() {
     const badgeCls = sent === 'bull' ? 'badge-bull' : sent === 'bear' ? 'badge-bear' : 'badge-neut';
     const badgeLabel = sent === 'bull' ? '▲ BULL' : sent === 'bear' ? '▼ BEAR' : '◆ NEUT';
 
-    // B column
-    const bCls   = r.bSignal === 'bull' ? 'b-bull' : r.bSignal === 'bear' ? 'b-bear' : 'b-neut';
-    const bLabel = r.bSignal === 'bull' ? 'Bullish' : r.bSignal === 'bear' ? 'Bearish' : 'Neutral';
-
-    // L column
-    const lCls   = r.lSignal === 'gold' ? 'l-gold' : r.lSignal === 'blue' ? 'l-blue' : 'l-gray';
-    const lLabel = r.lSignal === 'gold' ? 'Gold' : r.lSignal === 'blue' ? 'Blue' : 'Gray';
+    // B timeframe grid helper
+    const bBox = (tf, sig) => {
+      const cls = sig==='bull'?'tf-b-bull':sig==='bear'?'tf-b-bear':'tf-b-neut';
+      const lbl = sig==='bull'?'▲':sig==='bear'?'▼':'—';
+      return `<div class="tf-box"><div class="tf-label">${tf}</div><div class="tf-dot ${cls}">${lbl}</div></div>`;
+    };
+    // L timeframe grid helper
+    const lBox = (tf, sig) => {
+      const cls = sig==='gold'?'tf-l-gold':sig==='blue'?'tf-l-blue':'tf-l-gray';
+      const lbl = sig==='gold'?'G':sig==='blue'?'B':'—';
+      return `<div class="tf-box"><div class="tf-label">${tf}</div><div class="tf-dot ${cls}">${lbl}</div></div>`;
+    };
+    const tf = r.tf || { '4H':{b:'neutral',l:'gray'}, 'D':{b:'neutral',l:'gray'}, 'W':{b:'neutral',l:'gray'}, 'M':{b:'neutral',l:'gray'} };
 
     const mktFmt = r.mktCapB >= 1000 ? (r.mktCapB/1000).toFixed(1)+'T' : r.mktCapB+'B';
     const volFmt = !r.vol ? '—' : r.vol >= 1e9 ? (r.vol/1e9).toFixed(1)+'B'
@@ -639,8 +742,14 @@ function render() {
       </td>
       <td class="r" style="color:var(--muted);font-family:var(--mono);font-size:12px;">${mktFmt}</td>
       <td class="c"><span class="badge ${badgeCls}">${badgeLabel}</span></td>
-      <td class="c"><span class="${bCls}">${bLabel}</span></td>
-      <td class="c"><span class="${lCls}">${lLabel}</span></td>
+      <td class="c">
+        <div class="tf-row">${bBox('4H',tf['4H'].b)}${bBox('D',tf['D'].b)}${bBox('W',tf['W'].b)}${bBox('M',tf['M'].b)}</div>
+        ${r.bFlipTime ? `<span class="flip-time${r.bIsNew?' new':''}">${r.bFlipTime}</span>` : ''}
+      </td>
+      <td class="c">
+        <div class="tf-row">${lBox('4H',tf['4H'].l)}${lBox('D',tf['D'].l)}${lBox('W',tf['W'].l)}${lBox('M',tf['M'].l)}</div>
+        ${r.lFlipTime ? `<span class="flip-time${r.lIsNew?' new':''}">${r.lFlipTime}</span>` : ''}
+      </td>
       <td><span class="sig-text">${getSignal(r)}</span></td>
       <td class="r"><span class="vol-text">${volFmt}</span></td>
     </tr>`;
