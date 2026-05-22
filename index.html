@@ -495,39 +495,40 @@ function calcRSI(closes, period = 14) {
 }
 
 // ── B SIGNAL: Bullmania Money Line approximation ───────────────────────────────
-// Primary: EMA20/50 blend + RSI from candle data
-// Fallback: price position vs 52w range + today's momentum
+// Uses same reliable 52w-position approach that powers L column.
+// The Money Line tracks whether price is above/below its trend line.
+// 52w position is the best available proxy without candle data.
 function calcBSignal(r) {
   const { price, closes, chgPct, hi52, lo52 } = r;
   if (!price) return 'neutral';
 
-  // If we have enough candle data, use full EMA + RSI calculation
+  // Primary: full EMA + RSI when real candle data is available
   if (closes && closes.length >= 50) {
     const ema20 = calcEMA(closes, 20);
     const ema50 = calcEMA(closes, 50);
     if (ema20 && ema50) {
       const blendedEMA = (ema20 + ema50) / 2;
-      const rsi = calcRSI(closes, 14);
-      if (price > blendedEMA && (rsi == null || rsi < 75)) return 'bull';
-      if (price < blendedEMA && (rsi == null || rsi > 25)) return 'bear';
+      const rsi = calcRSI(closes, 14) ?? 50;
+      if (price > blendedEMA && rsi < 75) return 'bull';
+      if (price < blendedEMA && rsi > 25) return 'bear';
       return 'neutral';
     }
   }
 
-  // Fallback: use 52-week position + momentum as proxy for EMA trend
+  // Fallback: 52w position — same mechanism that makes L work reliably.
+  // Price in upper 50% of annual range = above its long-run average = Bullish.
+  // Price in lower 50% = below its long-run average = Bearish.
   const pos52 = (hi52 && lo52 && hi52 > lo52)
     ? (price - lo52) / (hi52 - lo52) : null;
 
   if (pos52 !== null) {
-    // Price in upper half of 52w range AND positive momentum → Bullish
-    if (pos52 > 0.55 && chgPct > -2) return 'bull';
-    // Price in lower half AND negative momentum → Bearish
-    if (pos52 < 0.45 && chgPct < 2)  return 'bear';
-  } else {
-    // No 52w data: just use today's move
-    if (chgPct > 0.5) return 'bull';
-    if (chgPct < -0.5) return 'bear';
+    if (pos52 >= 0.50) return 'bull';
+    return 'bear';
   }
+
+  // Last resort: today's momentum
+  if (chgPct > 0.3)  return 'bull';
+  if (chgPct < -0.3) return 'bear';
   return 'neutral';
 }
 
