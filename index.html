@@ -312,6 +312,11 @@
 const HARDCODED_KEY = '';
 const REFRESH_INTERVAL = 60;
 
+// ── SUPABASE CONFIG ───────────────────────────────────────────────────────────
+// Paste your values from Supabase → Settings → API
+const SUPABASE_URL  = 'https://ixcwtfrelsyjjiribpeo.supabase.co';   // e.g. https://xxxx.supabase.co
+const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml4Y3d0ZnJlbHN5amppcmlicGVvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0Mjk4MzMsImV4cCI6MjA5NTAwNTgzM30.KvvGWXbI91uH7PA-Nbj33BRqEUziXkt1el2a5ihf9Zg';
+
 const TICKERS = [
   {sym:'MSFT',name:'Microsoft',         mktCapB:3200},
   {sym:'AAPL',name:'Apple',             mktCapB:4600},
@@ -354,16 +359,82 @@ let countdownTimer = null;
 let secondsLeft = 0;
 let flipHistory = {}; // { SYM: { bSignal, lSignal, bFlipTime, lFlipTime } }
 
-window.addEventListener('DOMContentLoaded', () => {
+window.addEventListener('DOMContentLoaded', async () => {
   const saved = localStorage.getItem('finnhub_key') || HARDCODED_KEY;
   if (saved) document.getElementById('apiKey').value = saved;
-  // Load persisted flip history
-  try {
-    const fh = localStorage.getItem('nq30_flips');
-    if (fh) flipHistory = JSON.parse(fh);
-  } catch(e) { flipHistory = {}; }
-  if (HARDCODED_KEY) fetchAll();
+  // Load flip history from Supabase (falls back to localStorage if not configured)
+  await loadFlipHistory();
+  if (saved || HARDCODED_KEY) fetchAll();
 });
+
+// ── SUPABASE HELPERS ──────────────────────────────────────────────────────────
+function supabaseConfigured() {
+  return SUPABASE_URL !== 'YOUR_SUPABASE_URL' && SUPABASE_ANON !== 'YOUR_SUPABASE_ANON_KEY';
+}
+
+async function loadFlipHistory() {
+  if (!supabaseConfigured()) {
+    // Fallback: localStorage
+    try {
+      const fh = localStorage.getItem('nq30_flips');
+      if (fh) flipHistory = JSON.parse(fh);
+    } catch(e) { flipHistory = {}; }
+    return;
+  }
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/flip_history?select=*`, {
+      headers: {
+        'apikey': SUPABASE_ANON,
+        'Authorization': `Bearer ${SUPABASE_ANON}`,
+      }
+    });
+    if (res.ok) {
+      const rows = await res.json();
+      flipHistory = {};
+      rows.forEach(r => {
+        flipHistory[r.sym] = {
+          bSignal:   r.b_signal,
+          lSignal:   r.l_signal,
+          bFlipTime: r.b_flip_time,
+          lFlipTime: r.l_flip_time,
+        };
+      });
+    }
+  } catch(e) {
+    console.warn('Supabase load failed, using localStorage:', e);
+    try {
+      const fh = localStorage.getItem('nq30_flips');
+      if (fh) flipHistory = JSON.parse(fh);
+    } catch(e2) { flipHistory = {}; }
+  }
+}
+
+async function saveFlipToSupabase(sym, bSignal, lSignal, bFlipTime, lFlipTime) {
+  if (!supabaseConfigured()) {
+    // Fallback: localStorage
+    try { localStorage.setItem('nq30_flips', JSON.stringify(flipHistory)); } catch(e) {}
+    return;
+  }
+  try {
+    await fetch(`${SUPABASE_URL}/rest/v1/flip_history`, {
+      method: 'POST',
+      headers: {
+        'apikey': SUPABASE_ANON,
+        'Authorization': `Bearer ${SUPABASE_ANON}`,
+        'Content-Type': 'application/json',
+        'Prefer': 'resolution=merge-duplicates',
+      },
+      body: JSON.stringify({
+        sym, b_signal: bSignal, l_signal: lSignal,
+        b_flip_time: bFlipTime, l_flip_time: lFlipTime,
+        updated_at: new Date().toISOString(),
+      })
+    });
+  } catch(e) {
+    console.warn('Supabase save failed:', e);
+    try { localStorage.setItem('nq30_flips', JSON.stringify(flipHistory)); } catch(e2) {}
+  }
+}
 
 // ── FETCH ─────────────────────────────────────────────────────────────────────
 async function fetchAll() {
