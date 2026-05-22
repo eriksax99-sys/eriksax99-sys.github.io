@@ -309,7 +309,7 @@
 <script>
 // ── CONFIG ────────────────────────────────────────────────────────────────────
 // Paste your Finnhub key here to hardcode it (avoids typing every visit)
-const HARDCODED_KEY = '';
+const HARDCODED_KEY = 'd881kcpr01qmhakhqm0gd881kcpr01qmhakhqm10';
 const REFRESH_INTERVAL = 60;
 
 // ── SUPABASE CONFIG ───────────────────────────────────────────────────────────
@@ -362,9 +362,9 @@ let flipHistory = {}; // { SYM: { bSignal, lSignal, bFlipTime, lFlipTime } }
 window.addEventListener('DOMContentLoaded', async () => {
   const saved = localStorage.getItem('finnhub_key') || HARDCODED_KEY;
   if (saved) document.getElementById('apiKey').value = saved;
-  // Load flip history from Supabase (falls back to localStorage if not configured)
-  await loadFlipHistory();
-  if (saved || HARDCODED_KEY) fetchAll();
+  // Load flip history — always continue to fetchAll even if Supabase fails
+  try { await loadFlipHistory(); } catch(e) { console.warn('Flip history skipped:', e); }
+  if (saved) fetchAll();
 });
 
 // ── SUPABASE HELPERS ──────────────────────────────────────────────────────────
@@ -386,6 +386,8 @@ async function loadFlipHistory() {
       headers: {
         'apikey': SUPABASE_ANON,
         'Authorization': `Bearer ${SUPABASE_ANON}`,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
       }
     });
     if (res.ok) {
@@ -422,7 +424,8 @@ async function saveFlipToSupabase(sym, bSignal, lSignal, bFlipTime, lFlipTime) {
         'apikey': SUPABASE_ANON,
         'Authorization': `Bearer ${SUPABASE_ANON}`,
         'Content-Type': 'application/json',
-        'Prefer': 'resolution=merge-duplicates',
+        'Accept': 'application/json',
+        'Prefer': 'resolution=merge-duplicates,return=minimal',
       },
       body: JSON.stringify({
         sym, b_signal: bSignal, l_signal: lSignal,
