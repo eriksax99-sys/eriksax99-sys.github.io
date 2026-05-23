@@ -409,11 +409,11 @@ async function loadFromSupabase() {
       bFlipTimeM:  flipMap[r.sym]?.b_flip_time_m  ?? null,
       lFlipTimeM:  flipMap[r.sym]?.l_flip_time_m  ?? null,
       tf: {
-        '2H': { b: r.b_2h||r.b_4h||r.b_d, l: r.l_2h||r.l_4h||r.l_d },
-        '4H': { b: r.b_4h||r.b_d,         l: r.l_4h||r.l_d          },
-        'D':  { b: r.b_d,                  l: r.l_d                   },
-        'W':  { b: r.b_w ||r.b_d,          l: r.l_w ||r.l_d          },
-        'M':  { b: r.b_m ||r.b_w||r.b_d,  l: r.l_m ||r.l_w||r.l_d  },
+        '2H': { b: r.b_2h||r.b_4h, l: r.l_2h||r.l_4h },
+        '4H': { b: r.b_4h, l: r.l_4h },
+        'D':  { b: r.b_d,  l: r.l_d  },
+        'W':  { b: r.b_w,  l: r.l_w  },
+        'M':  { b: r.b_m,  l: r.l_m  },
       },
       // Trend = independent momentum signal from today's price action + 52w position
       // This is deliberately different from B (SMMA20) and L (SMMA15/29)
@@ -481,14 +481,12 @@ function render() {
              activeTF.b  === 'bull' &&
              activeTF.l  === 'gold';
     });
-    // Default sort when no column sort active: newest B flip first, L flip tiebreaker
-    if (!curSort) {
-      rows.sort((a, b) => {
-        const bDiff = parseDateStr(getBFlip(b)) - parseDateStr(getBFlip(a));
-        if (bDiff !== 0) return bDiff;
-        return parseDateStr(getLFlip(b)) - parseDateStr(getLFlip(a));
-      });
-    }
+    // Auto-sort: most recent B flip first, L flip as tiebreaker (timeframe-aware)
+    rows.sort((a, b) => {
+      const bDiff = parseDateStr(getBFlip(b)) - parseDateStr(getBFlip(a));
+      if (bDiff !== 0) return bDiff;
+      return parseDateStr(getLFlip(b)) - parseDateStr(getLFlip(a));
+    });
   }
 
   // Sort always applies -- filter first, then sort within filtered results
@@ -500,21 +498,17 @@ function render() {
   else if (curSort === 'price_d')  rows.sort((a,b) => (b.price||0)-(a.price||0));
   else if (curSort === 'price_a')  rows.sort((a,b) => (a.price||0)-(b.price||0));
   else if (curSort === 'az')       rows.sort((a,b) => a.sym.localeCompare(b.sym));
-  else if (curSort === 'mktcap_d') rows.sort((a,b) => {
-    if (!a.mktCapB && !b.mktCapB) return 0;
-    if (!a.mktCapB) return 1; if (!b.mktCapB) return -1;
-    return b.mktCapB - a.mktCapB;
-  });
-  else if (curSort === 'mktcap_a') rows.sort((a,b) => {
-    if (!a.mktCapB && !b.mktCapB) return 0;
-    if (!a.mktCapB) return 1; if (!b.mktCapB) return -1;
-    return a.mktCapB - b.mktCapB;
-  });
+  else if (curSort === 'mktcap_d') rows.sort((a,b) => (b.mktCapB||0)-(a.mktCapB||0));
+  else if (curSort === 'mktcap_a') rows.sort((a,b) => (a.mktCapB||0)-(b.mktCapB||0));
   else if (curSort === 'bflip_d')  rows.sort((a,b) => parseDateStr(getBFlip(b)) - parseDateStr(getBFlip(a)));
   else if (curSort === 'bflip_a')  rows.sort((a,b) => parseDateStr(getBFlip(a)) - parseDateStr(getBFlip(b)));
   else if (curSort === 'lflip_d')  rows.sort((a,b) => parseDateStr(getLFlip(b)) - parseDateStr(getLFlip(a)));
   else if (curSort === 'lflip_a')  rows.sort((a,b) => parseDateStr(getLFlip(a)) - parseDateStr(getLFlip(b)));
-  // Triple Bull: if no column sort active, the auto-sort inside the filter block applies
+  // Triple Bull default sort (newest B flip first) -- only when no other sort active
+  else if (curFilter === 'triple') rows.sort((a,b) => {
+    const bd = parseDateStr(getBFlip(b)) - parseDateStr(getBFlip(a));
+    return bd !== 0 ? bd : parseDateStr(getLFlip(b)) - parseDateStr(getLFlip(a));
+  });
 
   // Update sort arrow indicators
   document.getElementById('bflipArrow').textContent =
@@ -552,7 +546,7 @@ function render() {
     const pos52 = (r.hi52 && r.lo52 && r.hi52>r.lo52)
       ? Math.max(0,Math.min(1,(r.price-r.lo52)/(r.hi52-r.lo52))) : 0.5;
     const barColor = pos52>0.7?'var(--green)':pos52<0.3?'var(--red)':'var(--accent)';
-    const mktFmt   = !r.mktCapB ? '--' : r.mktCapB>=1000?(r.mktCapB/1000).toFixed(1)+'T':r.mktCapB+'B';
+    const mktFmt   = r.mktCapB>=1000?(r.mktCapB/1000).toFixed(1)+'T':r.mktCapB+'B';
     const volFmt   = !r.vol?'--':r.vol>=1e9?(r.vol/1e9).toFixed(1)+'B'
       :r.vol>=1e6?(r.vol/1e6).toFixed(1)+'M':(r.vol/1e3).toFixed(0)+'K';
 
@@ -612,16 +606,10 @@ function renderSummary() {
 // -- CONTROLS ------------------------------------------------------------------
 // Parse DDMMYY -> sortable integer YYYYMMDD (higher = more recent)
 function parseDateStr(s) {
-  // Handles both DDMMYY (6 chars) and DDMMYY HHMM (11 chars)
-  if (!s || s.length < 6) return 0;
-  const date = (parseInt(s.slice(4,6)) + 2000) * 10000
-             + parseInt(s.slice(2,4)) * 100
-             + parseInt(s.slice(0,2));
-  // Add time component for intraday (2H/4H) flip dates
-  const time = s.length >= 11 && s[6] === ' '
-    ? parseInt(s.slice(7,9)) * 100 + parseInt(s.slice(9,11))
-    : 0;
-  return date * 10000 + time; // YYYYMMDDHHMI sortable integer
+  if (!s || s.length !== 6) return 0;
+  return (parseInt(s.slice(4,6)) + 2000) * 10000
+       + parseInt(s.slice(2,4)) * 100
+       + parseInt(s.slice(0,2));
 }
 
 function setFilter(f, el) {
