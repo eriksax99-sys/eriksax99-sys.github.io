@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>NQ30 Watchlist</title>
+<title>Geestman's NQ60 Watchlist</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
@@ -156,8 +156,8 @@
   <header>
     <div class="header-left">
       <div class="logo">▸ Market Terminal</div>
-      <h1>NQ<span style="color:var(--accent)">100</span> Watchlist</h1>
-      <div class="header-meta">Nasdaq 100 · Powered by Supabase</div>
+      <h1>Geestman's NQ<span style="color:var(--accent)">60</span> Watchlist</h1>
+      <div class="header-meta">Nasdaq Top 60 · Powered by Supabase</div>
     </div>
     <div class="header-right">
       <button class="btn-refresh" id="refreshBtn" onclick="loadFromSupabase()">
@@ -208,39 +208,34 @@
   <!-- SUMMARY -->
   <div class="summary">
     <div class="sum-card green">
-      <div class="sum-label">Bullish</div>
+      <div class="sum-label">Trend Bullish</div>
       <div class="sum-val green" id="sBull">—</div>
       <div class="sum-sub">stocks</div>
     </div>
     <div class="sum-card red">
-      <div class="sum-label">Bearish</div>
+      <div class="sum-label">Trend Bearish</div>
       <div class="sum-val red" id="sBear">—</div>
       <div class="sum-sub">stocks</div>
     </div>
-    <div class="sum-card">
-      <div class="sum-label">Neutral</div>
-      <div class="sum-val amber" id="sNeut">—</div>
+    <div class="sum-card green">
+      <div class="sum-label">B Bullish</div>
+      <div class="sum-val green" id="sBBull">—</div>
+      <div class="sum-sub">stocks</div>
+    </div>
+    <div class="sum-card red">
+      <div class="sum-label">B Bearish</div>
+      <div class="sum-val red" id="sBBear">—</div>
       <div class="sum-sub">stocks</div>
     </div>
     <div class="sum-card">
-      <div class="sum-label">Avg Move</div>
-      <div class="sum-val" id="sAvg">—</div>
-      <div class="sum-sub">today</div>
-    </div>
-    <div class="sum-card">
-      <div class="sum-label">B: Gold</div>
+      <div class="sum-label">L Gold</div>
       <div class="sum-val amber" id="sLGold">—</div>
-      <div class="sum-sub">L Gold</div>
+      <div class="sum-sub">stocks</div>
     </div>
     <div class="sum-card">
-      <div class="sum-label">Top Gainer</div>
-      <div class="sum-val green" id="sLeader" style="font-size:13px;padding-top:4px;">—</div>
-      <div class="sum-sub">today</div>
-    </div>
-    <div class="sum-card">
-      <div class="sum-label">Top Loser</div>
-      <div class="sum-val red" id="sLaggard" style="font-size:13px;padding-top:4px;">—</div>
-      <div class="sum-sub">today</div>
+      <div class="sum-label">L Blue</div>
+      <div class="sum-val" style="color:#4fc3f7;" id="sLBlue">—</div>
+      <div class="sum-sub">stocks</div>
     </div>
   </div>
 
@@ -314,7 +309,7 @@
   </div><!-- /paneAlerts -->
 
   <footer>
-    <span>NQ100 WATCHLIST · POWERED BY SUPABASE + YAHOO FINANCE</span>
+    <span>GEESTMAN'S NQ60 WATCHLIST · POWERED BY SUPABASE + YAHOO FINANCE</span>
     <span>DATA UPDATES EVERY 30 MIN · NOT FINANCIAL ADVICE</span>
   </footer>
 </div>
@@ -591,22 +586,17 @@ function render() {
 function renderSummary() {
   const bull  = allData.filter(r=>r.sentiment==='bull').length;
   const bear  = allData.filter(r=>r.sentiment==='bear').length;
-  const neut  = allData.filter(r=>r.sentiment==='neutral').length;
+  const bbull = allData.filter(r=>((r.tf||{})[curTF]||{}).b==='bull').length;
+  const bbear = allData.filter(r=>((r.tf||{})[curTF]||{}).b==='bear').length;
   const lgold = allData.filter(r=>((r.tf||{})[curTF]||{}).l==='gold').length;
-  // getChgPct is at module scope
-  const avg   = allData.length ? allData.reduce((a,r)=>a+getChgPct(r),0)/allData.length : 0;
-  const leader  = [...allData].sort((a,b)=>getChgPct(b)-getChgPct(a))[0];
-  const laggard = [...allData].sort((a,b)=>getChgPct(a)-getChgPct(b))[0];
+  const lblue = allData.filter(r=>((r.tf||{})[curTF]||{}).l==='blue').length;
 
-  document.getElementById('sBull').textContent    = bull;
-  document.getElementById('sBear').textContent    = bear;
-  document.getElementById('sNeut').textContent    = neut;
-  document.getElementById('sLGold').textContent   = lgold;
-  const avgEl = document.getElementById('sAvg');
-  avgEl.textContent = (avg>=0?'+':'')+avg.toFixed(2)+'%';
-  avgEl.className   = 'sum-val '+(avg>0?'green':avg<0?'red':'amber');
-  document.getElementById('sLeader').textContent  = leader  ?`${leader.sym} +${getChgPct(leader).toFixed(2)}%`:'--';
-  document.getElementById('sLaggard').textContent = laggard ?`${laggard.sym} ${getChgPct(laggard).toFixed(2)}%`:'--';
+  document.getElementById('sBull').textContent   = bull;
+  document.getElementById('sBear').textContent   = bear;
+  document.getElementById('sBBull').textContent  = bbull;
+  document.getElementById('sBBear').textContent  = bbear;
+  document.getElementById('sLGold').textContent  = lgold;
+  document.getElementById('sLBlue').textContent  = lblue;
 }
 
 // -- CONTROLS ------------------------------------------------------------------
