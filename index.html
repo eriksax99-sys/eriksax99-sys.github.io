@@ -1055,7 +1055,6 @@ function cryptoRender() {
     const pos52    = (r.hi52 && r.lo52 && r.hi52 > r.lo52)
                    ? Math.round((r.price - r.lo52)/(r.hi52 - r.lo52)*100) : null;
     const pos52Str = pos52 !== null ? pos52+'%' : '--';
-                   ? (r.mktCapB/1000).toFixed(1)+'T' : r.mktCapB.toFixed(1)+'B';
     return `<tr>
       <td><span class="sym">${r.sym}</span><span class="co-name">${r.name}</span></td>
       <td class="c mono">${priceFmt}<br><span class="${pc}" style="font-size:11px;">${chgSign}${Number(chg).toFixed(r.price>=1?2:6)}</span></td>
