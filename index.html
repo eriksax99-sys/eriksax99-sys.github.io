@@ -635,7 +635,7 @@ function render() {
     const pos52 = (r.hi52 && r.lo52 && r.hi52>r.lo52)
       ? Math.max(0,Math.min(1,(r.price-r.lo52)/(r.hi52-r.lo52))) : 0.5;
     const barColor = pos52>0.7?'var(--green)':pos52<0.3?'var(--red)':'var(--accent)';
-      :r.vol>=1e6?(r.vol/1e6).toFixed(1)+'M':(r.vol/1e3).toFixed(0)+'K';
+    const volFmt = !r.vol ? '--' : r.vol>=1e9?(r.vol/1e9).toFixed(1)+'B':r.vol>=1e6?(r.vol/1e6).toFixed(1)+'M':(r.vol/1e3).toFixed(0)+'K';
 
     const sent = r.sentiment;
     const badgeCls   = sent==='bull'?'badge-bull':sent==='bear'?'badge-bear':'badge-neut';
