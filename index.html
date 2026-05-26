@@ -23,9 +23,9 @@
   body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,212,170,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,212,170,0.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0;}
   .container{max-width:1340px;margin:0 auto;padding:0 24px 60px;position:relative;z-index:1;}
 
-  header{display:flex;align-items:flex-end;justify-content:space-between;padding:16px 0 14px;border-bottom:1px solid var(--border);gap:12px;flex-wrap:wrap;}
+  header{display:flex;align-items:flex-end;justify-content:space-between;padding:36px 0 28px;border-bottom:1px solid var(--border);gap:20px;flex-wrap:wrap;}
   .logo{font-family:var(--mono);font-size:11px;font-weight:500;letter-spacing:0.15em;color:var(--accent);text-transform:uppercase;margin-bottom:6px;}
-  h1{font-family:var(--mono);font-size:22px;font-weight:600;letter-spacing:-0.02em;}
+  h1{font-family:var(--mono);font-size:28px;font-weight:600;letter-spacing:-0.02em;}
   h1 span{color:var(--accent);}
   .header-meta{font-size:12px;color:var(--muted);margin-top:6px;font-family:var(--mono);}
   .header-right{display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
@@ -47,18 +47,18 @@
   @keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.4;}}
 
   /* LEGEND */
-  .legend{display:flex;gap:8px;padding:8px 0 6px;flex-wrap:wrap;border-bottom:1px solid var(--border);}
+  .legend{display:flex;gap:24px;padding:14px 0 6px;flex-wrap:wrap;border-bottom:1px solid var(--border);}
   .legend-group{display:flex;align-items:center;gap:10px;}
   .legend-title{font-family:var(--mono);font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:var(--dim);margin-right:2px;}
   .legend-item{display:flex;align-items:center;gap:5px;font-family:var(--mono);font-size:10px;color:var(--muted);}
   .legend-dot{width:8px;height:8px;border-radius:2px;flex-shrink:0;}
 
-  .summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px;padding:8px 0;}
-  .sum-card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;}
+  .summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;padding:16px 0;}
+  .sum-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px 16px;}
   .sum-card.green{border-color:var(--green-border);background:var(--green-bg);}
   .sum-card.red{border-color:var(--red-border);background:var(--red-bg);}
-  .sum-label{font-family:var(--mono);font-size:9px;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);margin-bottom:3px;}
-  .sum-val{font-family:var(--mono);font-size:18px;font-weight:600;}
+  .sum-label{font-family:var(--mono);font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin-bottom:6px;}
+  .sum-val{font-family:var(--mono);font-size:22px;font-weight:600;}
   .sum-val.green{color:var(--green);}
   .sum-val.red{color:var(--red);}
   .sum-val.amber{color:var(--amber);}
@@ -101,12 +101,12 @@
   .badge-bear{background:var(--red-bg);border-color:var(--red-border);color:var(--red);}
   .badge-neut{background:var(--bg3);border-color:var(--border);color:var(--muted);}
 
-  /* B column -- momentum trend signal (price vs SMMA20) */
+  /* B column — momentum trend signal (price vs SMMA20) */
   .b-bull{font-family:var(--mono);font-size:10px;font-weight:700;padding:3px 8px;border-radius:4px;border:1px solid var(--green-border);background:var(--green-bg);color:var(--green);letter-spacing:0.05em;display:inline-block;}
   .b-bear{font-family:var(--mono);font-size:10px;font-weight:700;padding:3px 8px;border-radius:4px;border:1px solid var(--red-border);background:var(--red-bg);color:var(--red);letter-spacing:0.05em;display:inline-block;}
   .b-neut{font-family:var(--mono);font-size:10px;font-weight:700;padding:3px 8px;border-radius:4px;border:1px solid var(--border);background:var(--bg3);color:var(--muted);letter-spacing:0.05em;display:inline-block;}
 
-  /* L column -- dual SMMA trend signal (SMMA15 vs SMMA29) */
+  /* L column — dual SMMA trend signal (SMMA15 vs SMMA29) */
   .l-gold{font-family:var(--mono);font-size:10px;font-weight:700;padding:3px 8px;border-radius:4px;border:1px solid var(--amber-border);background:var(--amber-bg);color:var(--amber);letter-spacing:0.05em;display:inline-block;}
   .l-blue{font-family:var(--mono);font-size:10px;font-weight:700;padding:3px 8px;border-radius:4px;border:1px solid var(--blue-border);background:var(--blue-bg);color:var(--blue);letter-spacing:0.05em;display:inline-block;}
   .l-gray{font-family:var(--mono);font-size:10px;font-weight:700;padding:3px 8px;border-radius:4px;border:1px solid var(--border);background:var(--bg3);color:var(--muted);letter-spacing:0.05em;display:inline-block;}
@@ -143,9 +143,9 @@
 
   footer{margin-top:40px;padding-top:20px;border-top:1px solid var(--border);font-family:var(--mono);font-size:10px;color:var(--dim);letter-spacing:0.05em;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;}
 
-  /* ?????? TABS ?????? */
-  .tab-nav{display:flex;gap:0;border-bottom:1px solid var(--border);margin:20px 0 0;}  .tab-btn{font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;padding:10px 20px;border:none;background:transparent;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all 0.15s;}  .tab-btn:hover{color:var(--text);}  .tab-btn.active{color:var(--accent);border-bottom-color:var(--accent);}  .alert-star{margin-left:4px;font-size:12px;display:inline-block;transition:color 0.3s;}  .tab-pane{display:none;}  .tab-pane.active{display:block;}
-  /* ?????? ALERTS TAB ?????? */
+  /* ── TABS ── */
+  .tab-nav{display:flex;gap:0;border-bottom:1px solid var(--border);margin:20px 0 0;}  .tab-btn{font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;padding:10px 20px;border:none;background:transparent;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all 0.15s;}  .tab-btn:hover{color:var(--text);}  .tab-btn.active{color:var(--accent);border-bottom-color:var(--accent);}  .tab-pane{display:none;}  .tab-pane.active{display:block;}
+  /* ── ALERTS TAB ── */
   .alert-controls{display:flex;align-items:center;gap:12px;padding:16px 0 12px;flex-wrap:wrap;}  .alert-label{font-family:var(--mono);font-size:11px;color:var(--muted);letter-spacing:0.05em;}  .alert-window-btn{background:transparent;border:1px solid var(--border);border-radius:6px;color:var(--muted);font-family:var(--mono);font-size:11px;padding:5px 14px;cursor:pointer;transition:all 0.15s;letter-spacing:0.05em;}  .alert-window-btn:hover{border-color:var(--border2);color:var(--text);}  .alert-window-btn.active{background:var(--accent);border-color:var(--accent);color:#000;font-weight:600;}  .alert-count{font-family:var(--mono);font-size:11px;color:var(--muted);margin-left:auto;}  .alert-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px 18px;display:grid;grid-template-columns:1fr auto auto auto auto;align-items:center;gap:16px;transition:background 0.1s;margin-bottom:8px;}  .alert-card:hover{background:var(--bg3);border-color:var(--border2);}  .alert-card-ticker{font-family:var(--mono);font-weight:700;font-size:14px;}  .alert-card-name{font-size:11px;color:var(--muted);margin-top:2px;}  .alert-card-price{font-family:var(--mono);font-size:13px;font-weight:500;text-align:right;}  .alert-card-chg{font-family:var(--mono);font-size:12px;text-align:right;}  .alert-flip-info{text-align:right;}  .alert-flip-label{font-family:var(--mono);font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:var(--dim);}  .alert-flip-time{font-family:var(--mono);font-size:12px;color:var(--accent);font-weight:600;}  .alert-badges{display:flex;gap:6px;justify-content:flex-end;}  .alert-empty{text-align:center;padding:60px;font-family:var(--mono);font-size:12px;color:var(--muted);}  .alert-empty-icon{font-size:32px;margin-bottom:12px;opacity:0.4;}  .alert-section-title{font-family:var(--mono);font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:var(--dim);margin:16px 0 8px;}
   @media(max-width:640px){h1{font-size:20px;}.api-setup{flex-wrap:wrap;}.api-setup input{width:100%;}header{flex-direction:column;align-items:flex-start;}}
 </style>
@@ -155,20 +155,20 @@
 
   <header>
     <div class="header-left">
-      <div class="logo">??? Market Terminal</div>
+      <div class="logo">▸ Market Terminal</div>
       <h1>Geestman's NQ<span style="color:var(--accent)">60</span> Watchlist</h1>
-      <div class="header-meta">Nasdaq Top 60 ?? Powered by Supabase</div>
+      <div class="header-meta">Nasdaq Top 60 · Powered by Supabase</div>
     </div>
     <div class="header-right">
       <button class="btn-refresh" id="refreshBtn" onclick="loadFromSupabase()">
-        <span id="refreshIcon">???</span> Refresh
+        <span id="refreshIcon">↻</span> Refresh
       </button>
     </div>
   </header>
 
   <div class="status-bar">
     <div class="status-dot" id="statusDot"></div>
-    <span id="statusText">Loading data from database???</span>
+    <span id="statusText">Loading data from database…</span>
     <span style="margin-left:auto;display:flex;align-items:center;gap:8px;">
       <span id="countdown"></span>
       <div class="refresh-ring" id="refreshRing" style="display:none">
@@ -183,7 +183,7 @@
   <!-- TAB NAVIGATION -->
   <nav class="tab-nav">
     <button class="tab-btn active" id="tabWatchlist" onclick="switchTab('watchlist')">Watchlist</button>
-    <button class="tab-btn" id="tabAlerts" onclick="switchTab('alerts')">&#9889; Alerts<span id="alertStar" class="alert-star">&#11088;</span></button>
+    <button class="tab-btn" id="tabAlerts" onclick="switchTab('alerts')">&#9889; Alerts</button>
     <button class="tab-btn" id="tabCrypto" onclick="switchTab('crypto')">&#9679; Crypto</button>
   </nav>
 
@@ -194,15 +194,15 @@
   <div class="legend">
     <div class="legend-group">
       <span class="legend-title">B:</span>
-      <span class="legend-item"><span class="legend-dot" style="background:var(--green)"></span>Bullish -- price above SMMA21 + ATR14x2.5 band</span>
-      <span class="legend-item"><span class="legend-dot" style="background:var(--red)"></span>Bearish -- price below SMMA21 ??? ATR14x2.5 band</span>
+      <span class="legend-item"><span class="legend-dot" style="background:var(--green)"></span>Bullish — price above SMMA21 + ATR14×2.5 band</span>
+      <span class="legend-item"><span class="legend-dot" style="background:var(--red)"></span>Bearish — price below SMMA21 − ATR14×2.5 band</span>
       <span class="legend-item"><span class="legend-dot" style="background:var(--dim)"></span>Neutral</span>
     </div>
     <div class="legend-group">
       <span class="legend-title">L:</span>
-      <span class="legend-item"><span class="legend-dot" style="background:var(--amber)"></span>Gold -- SMMA15(HL2) &gt; SMMA25(HL2) (uptrend)</span>
-      <span class="legend-item"><span class="legend-dot" style="background:var(--blue)"></span>Blue -- SMMA15(HL2) &lt; SMMA25(HL2) (downtrend)</span>
-      <span class="legend-item"><span class="legend-dot" style="background:var(--dim)"></span>Gray -- crossing</span>
+      <span class="legend-item"><span class="legend-dot" style="background:var(--amber)"></span>Gold — SMMA15(HL2) &gt; SMMA25(HL2) (uptrend)</span>
+      <span class="legend-item"><span class="legend-dot" style="background:var(--blue)"></span>Blue — SMMA15(HL2) &lt; SMMA25(HL2) (downtrend)</span>
+      <span class="legend-item"><span class="legend-dot" style="background:var(--dim)"></span>Gray — crossing</span>
     </div>
   </div>
 
@@ -210,32 +210,32 @@
   <div class="summary">
     <div class="sum-card green">
       <div class="sum-label">Trend Bullish</div>
-      <div class="sum-val green" id="sBull">--</div>
+      <div class="sum-val green" id="sBull">—</div>
       <div class="sum-sub">stocks</div>
     </div>
     <div class="sum-card red">
       <div class="sum-label">Trend Bearish</div>
-      <div class="sum-val red" id="sBear">--</div>
+      <div class="sum-val red" id="sBear">—</div>
       <div class="sum-sub">stocks</div>
     </div>
     <div class="sum-card green">
       <div class="sum-label">B Bullish</div>
-      <div class="sum-val green" id="sBBull">--</div>
+      <div class="sum-val green" id="sBBull">—</div>
       <div class="sum-sub">stocks</div>
     </div>
     <div class="sum-card red">
       <div class="sum-label">B Bearish</div>
-      <div class="sum-val red" id="sBBear">--</div>
+      <div class="sum-val red" id="sBBear">—</div>
       <div class="sum-sub">stocks</div>
     </div>
     <div class="sum-card">
       <div class="sum-label">L Gold</div>
-      <div class="sum-val amber" id="sLGold">--</div>
+      <div class="sum-val amber" id="sLGold">—</div>
       <div class="sum-sub">stocks</div>
     </div>
     <div class="sum-card">
       <div class="sum-label">L Blue</div>
-      <div class="sum-val" style="color:#4fc3f7;" id="sLBlue">--</div>
+      <div class="sum-val" style="color:#4fc3f7;" id="sLBlue">—</div>
       <div class="sum-sub">stocks</div>
     </div>
   </div>
@@ -243,12 +243,12 @@
   <!-- CONTROLS -->
   <div class="controls">
     <button class="filter-btn active" onclick="setFilter('all',this)">All</button>
-    <button class="filter-btn" onclick="setFilter('bull',this)">??? Trend Bull</button>
-    <button class="filter-btn" onclick="setFilter('bear',this)">??? Trend Bear</button>
-    <button class="filter-btn" onclick="setFilter('bbull',this)" style="border-color:var(--green-border);color:var(--green);">??? B:Bull</button>
-    <button class="filter-btn" onclick="setFilter('bbear',this)" style="border-color:var(--red-border);color:var(--red);">??? B:Bear</button>
-    <button class="filter-btn" onclick="setFilter('lgold',this)" style="border-color:var(--amber-border);color:var(--amber);">??? L:Gold</button>
-    <button class="filter-btn" onclick="setFilter('lblue',this)" style="border-color:var(--blue-border);color:var(--blue);">??? L:Blue</button>
+    <button class="filter-btn" onclick="setFilter('bull',this)">▲ Trend Bull</button>
+    <button class="filter-btn" onclick="setFilter('bear',this)">▼ Trend Bear</button>
+    <button class="filter-btn" onclick="setFilter('bbull',this)" style="border-color:var(--green-border);color:var(--green);">▲ B:Bull</button>
+    <button class="filter-btn" onclick="setFilter('bbear',this)" style="border-color:var(--red-border);color:var(--red);">▼ B:Bear</button>
+    <button class="filter-btn" onclick="setFilter('lgold',this)" style="border-color:var(--amber-border);color:var(--amber);">★ L:Gold</button>
+    <button class="filter-btn" onclick="setFilter('lblue',this)" style="border-color:var(--blue-border);color:var(--blue);">● L:Blue</button>
     <button class="filter-btn" id="tripleBtn" onclick="setFilter('triple',this)" style="border-color:var(--accent);color:var(--accent);font-weight:600;">&#9889; Triple Bull</button>
     <select class="sort-select" id="tfSelect" onchange="setTF(this.value)" style="margin-left:0; border-color:var(--accent); color:var(--accent);">
       <option value="2H">Timeframe: 2H</option>
@@ -259,12 +259,12 @@
     </select>
     <select class="sort-select" onchange="setSort(this.value)">
       <option value="">Sort: Default</option>
-      <option value="chg_d">% Change v</option>
-      <option value="chg_a">% Change ^</option>
-      <option value="price_d">Price v</option>
-      <option value="price_a">Price ^</option>
-      <option value="az">Ticker A-Z</option>
-
+      <option value="chg_d">% Change ↓</option>
+      <option value="chg_a">% Change ↑</option>
+      <option value="price_d">Price ↓</option>
+      <option value="price_a">Price ↑</option>
+      <option value="az">Ticker A–Z</option>
+      <option value="mktcap_d">Mkt Cap ↓</option>
     </select>
   </div>
 
@@ -277,10 +277,10 @@
           <th class="r" style="cursor:pointer;" onclick="setSort(curSort==='price_d'?'price_a':'price_d')" title="Sort by Price">Price</th>
           <th class="r" style="cursor:pointer;" onclick="setSort(curSort==='chgabs_d'?'chgabs_a':'chgabs_d')" title="Sort by absolute change">Chg</th>
           <th class="r" style="cursor:pointer;" onclick="setSort(curSort==='chg_d'?'chg_a':'chg_d')" title="Sort by % change">% Chg</th>
-          <th class="r" style="cursor:pointer;" onclick="setSort(curSort==='w52_d'?'w52_a':'w52_d')" title="Sort by 52W range position">52W</th>
-
+          <th class="r">52W</th>
+          <th class="r" onclick="setSort(curSort==='mktcap_d'?'mktcap_a':'mktcap_d')" title="Sort by Market Cap">Mkt Cap</th>
           <th class="c">Trend</th>
-          <th class="c b-col has-tip" data-tip="B = Momentum signal. SMMA21 of close with ATR14x2.5 volatility band. State-based and sticky.">B</th>
+          <th class="c b-col has-tip" data-tip="B = Momentum signal. SMMA21 of close with ATR14×2.5 volatility band. State-based and sticky.">B</th>
           <th class="c has-tip" style="font-size:10px;color:var(--green);border-bottom:2px solid var(--green-border);cursor:pointer;" data-tip="When the B signal last flipped (CET). Click to sort." onclick="setSort(curSort==='bflip_d'?'bflip_a':'bflip_d')" title="Sort by B Flip date">B Flip <span id="bflipArrow"></span></th>
           <th class="c l-col has-tip" data-tip="L = Ribbon signal. SMMA15 vs SMMA25 on (H+L)/2. Gold = uptrend, Blue = downtrend.">L</th>
           <th class="c has-tip" style="font-size:10px;color:var(--amber);border-bottom:2px solid var(--amber-border);cursor:pointer;" data-tip="When the L signal last flipped (CET). Click to sort." onclick="setSort(curSort==='lflip_d'?'lflip_a':'lflip_d')" title="Sort by L Flip date">L Flip <span id="lflipArrow"></span></th>
@@ -288,7 +288,7 @@
         </tr>
       </thead>
       <tbody id="tbody">
-        <tr class="state-row"><td colspan="12">Loading data from database???</td></tr>
+        <tr class="state-row"><td colspan="12">Loading data from database…</td></tr>
       </tbody>
     </table>
   </div>
@@ -387,8 +387,8 @@
   </div><!-- /paneCrypto -->
 
   <footer>
-    <span>GEESTMAN'S NQ60 WATCHLIST ?? POWERED BY SUPABASE + YAHOO FINANCE</span>
-    <span>DATA UPDATES EVERY 30 MIN ?? NOT FINANCIAL ADVICE</span>
+    <span>GEESTMAN'S NQ60 WATCHLIST · POWERED BY SUPABASE + YAHOO FINANCE</span>
+    <span>DATA UPDATES EVERY 30 MIN · NOT FINANCIAL ADVICE</span>
   </footer>
 </div>
 
@@ -583,16 +583,6 @@ function render() {
     if (!a.mktCapB) return 1; if (!b.mktCapB) return -1;
     return a.mktCapB - b.mktCapB;
   });
-  else if (curSort === 'w52_d')     rows.sort((a,b) => {
-    const pa = (a.hi52&&a.lo52&&a.hi52>a.lo52)?Math.max(0,Math.min(1,(a.price-a.lo52)/(a.hi52-a.lo52))):0.5;
-    const pb = (b.hi52&&b.lo52&&b.hi52>b.lo52)?Math.max(0,Math.min(1,(b.price-b.lo52)/(b.hi52-b.lo52))):0.5;
-    return pb-pa;
-  });
-  else if (curSort === 'w52_a')     rows.sort((a,b) => {
-    const pa = (a.hi52&&a.lo52&&a.hi52>a.lo52)?Math.max(0,Math.min(1,(a.price-a.lo52)/(a.hi52-a.lo52))):0.5;
-    const pb = (b.hi52&&b.lo52&&b.hi52>b.lo52)?Math.max(0,Math.min(1,(b.price-b.lo52)/(b.hi52-b.lo52))):0.5;
-    return pa-pb;
-  });
   else if (curSort === 'bflip_d')  rows.sort((a,b) => parseDateStr(getBFlip(b)) - parseDateStr(getBFlip(a)));
   else if (curSort === 'bflip_a')  rows.sort((a,b) => parseDateStr(getBFlip(a)) - parseDateStr(getBFlip(b)));
   else if (curSort === 'lflip_d')  rows.sort((a,b) => parseDateStr(getLFlip(b)) - parseDateStr(getLFlip(a)));
@@ -635,7 +625,9 @@ function render() {
     const pos52 = (r.hi52 && r.lo52 && r.hi52>r.lo52)
       ? Math.max(0,Math.min(1,(r.price-r.lo52)/(r.hi52-r.lo52))) : 0.5;
     const barColor = pos52>0.7?'var(--green)':pos52<0.3?'var(--red)':'var(--accent)';
-    const volFmt = !r.vol ? '--' : r.vol>=1e9?(r.vol/1e9).toFixed(1)+'B':r.vol>=1e6?(r.vol/1e6).toFixed(1)+'M':(r.vol/1e3).toFixed(0)+'K';
+    const mktFmt   = !r.mktCapB ? '--' : r.mktCapB>=1000?(r.mktCapB/1000).toFixed(1)+'T':r.mktCapB+'B';
+    const volFmt   = !r.vol?'--':r.vol>=1e9?(r.vol/1e9).toFixed(1)+'B'
+      :r.vol>=1e6?(r.vol/1e6).toFixed(1)+'M':(r.vol/1e3).toFixed(0)+'K';
 
     const sent = r.sentiment;
     const badgeCls   = sent==='bull'?'badge-bull':sent==='bear'?'badge-bear':'badge-neut';
@@ -657,7 +649,7 @@ function render() {
           <div class="w52-track"><div class="w52-fill" style="width:${Math.round(pos52*100)}%;background:${barColor}"></div></div>
         </div>
       </td>
-      
+      <td class="r" style="color:var(--muted);font-family:var(--mono);font-size:12px;">${mktFmt}</td>
       <td class="c"><span class="badge ${badgeCls}">${badgeLabel}</span></td>
       <td class="c"><span class="${bCls}">${bLabel}</span></td>
       <td class="c">${flipCell(getBFlip(r))}</td>
@@ -878,9 +870,7 @@ function renderAlerts() {
     return aAgo - bAgo; // ascending = most recent first
   });
 
-  countEl.textContent = recent.length ? `${recent.length} alert${recent.length!=='1'?'s':''}` : '';
-  const starEl = document.getElementById('alertStar');
-  if (starEl) starEl.style.color = recent.length > 0 ? 'var(--amber)' : 'var(--green)';
+  countEl.textContent = recent.length ? `${recent.length} alert${recent.length!==1?'s':''}` : '';
 
   if (!recent.length) {
     const label = nowHrs === 1 ? 'last hour' : `last ${nowHrs} hours`;
@@ -1064,13 +1054,14 @@ function cryptoRender() {
     const pos52    = (r.hi52 && r.lo52 && r.hi52 > r.lo52)
                    ? Math.round((r.price - r.lo52)/(r.hi52 - r.lo52)*100) : null;
     const pos52Str = pos52 !== null ? pos52+'%' : '--';
+    const mktFmt   = (!r.mktCapB || r.mktCapB < 0.1) ? '--' : r.mktCapB >= 1000
                    ? (r.mktCapB/1000).toFixed(1)+'T' : r.mktCapB.toFixed(1)+'B';
     return `<tr>
       <td><span class="sym">${r.sym}</span><span class="co-name">${r.name}</span></td>
       <td class="c mono">${priceFmt}<br><span class="${pc}" style="font-size:11px;">${chgSign}${Number(chg).toFixed(r.price>=1?2:6)}</span></td>
       <td class="c mono ${pc}">${chgPct >= 0 ? '+' : ''}${Number(chgPct).toFixed(2)}%</td>
       <td class="c mono">${pos52Str}</td>
-      
+      <td class="c mono">${mktFmt}</td>
       <td class="c"><span class="trend-pill ${sentCls}">${sentLbl}</span></td>
       <td class="c"><span class="${bCls}">${bLabel}</span></td>
       <td class="c">${flipCell(cryptoGetBFlip(r))}</td>
