@@ -191,53 +191,29 @@
   <!-- WATCHLIST TAB -->
   <div class="tab-pane active" id="paneWatchlist">
 
-  <!-- LEGEND -->
-  <div class="legend">
-    <div class="legend-group">
-      <span class="legend-title">B:</span>
-      <span class="legend-item"><span class="legend-dot" style="background:var(--green)"></span>Bullish — price above SMMA21 + ATR14×2.5 band</span>
-      <span class="legend-item"><span class="legend-dot" style="background:var(--red)"></span>Bearish — price below SMMA21 − ATR14×2.5 band</span>
-      <span class="legend-item"><span class="legend-dot" style="background:var(--dim)"></span>Neutral</span>
+  <!-- LEGEND + SUMMARY combined row -->
+  <div style="display:flex;align-items:center;gap:16px;padding:6px 0;flex-wrap:wrap;border-bottom:1px solid var(--border);">
+    <div class="legend" style="border:none;padding:0;margin:0;flex:1;min-width:300px;">
+      <div class="legend-group">
+        <span class="legend-title">B:</span>
+        <span class="legend-item"><span class="legend-dot" style="background:var(--green)"></span>Bull</span>
+        <span class="legend-item"><span class="legend-dot" style="background:var(--red)"></span>Bear</span>
+        <span class="legend-item"><span class="legend-dot" style="background:var(--dim)"></span>Neutral</span>
+      </div>
+      <div class="legend-group">
+        <span class="legend-title">L:</span>
+        <span class="legend-item"><span class="legend-dot" style="background:var(--amber)"></span>Gold</span>
+        <span class="legend-item"><span class="legend-dot" style="background:var(--blue)"></span>Blue</span>
+        <span class="legend-item"><span class="legend-dot" style="background:var(--dim)"></span>Gray</span>
+      </div>
     </div>
-    <div class="legend-group">
-      <span class="legend-title">L:</span>
-      <span class="legend-item"><span class="legend-dot" style="background:var(--amber)"></span>Gold — SMMA15(HL2) &gt; SMMA25(HL2) (uptrend)</span>
-      <span class="legend-item"><span class="legend-dot" style="background:var(--blue)"></span>Blue — SMMA15(HL2) &lt; SMMA25(HL2) (downtrend)</span>
-      <span class="legend-item"><span class="legend-dot" style="background:var(--dim)"></span>Gray — crossing</span>
-    </div>
-  </div>
-
-  <!-- SUMMARY -->
-  <div class="summary">
-    <div class="sum-card green">
-      <div class="sum-label">Trend Bullish</div>
-      <div class="sum-val green" id="sBull">—</div>
-      <div class="sum-sub">stocks</div>
-    </div>
-    <div class="sum-card red">
-      <div class="sum-label">Trend Bearish</div>
-      <div class="sum-val red" id="sBear">—</div>
-      <div class="sum-sub">stocks</div>
-    </div>
-    <div class="sum-card green">
-      <div class="sum-label">B Bullish</div>
-      <div class="sum-val green" id="sBBull">—</div>
-      <div class="sum-sub">stocks</div>
-    </div>
-    <div class="sum-card red">
-      <div class="sum-label">B Bearish</div>
-      <div class="sum-val red" id="sBBear">—</div>
-      <div class="sum-sub">stocks</div>
-    </div>
-    <div class="sum-card">
-      <div class="sum-label">L Gold</div>
-      <div class="sum-val amber" id="sLGold">—</div>
-      <div class="sum-sub">stocks</div>
-    </div>
-    <div class="sum-card">
-      <div class="sum-label">L Blue</div>
-      <div class="sum-val" style="color:#4fc3f7;" id="sLBlue">—</div>
-      <div class="sum-sub">stocks</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <div class="sum-card" style="min-width:60px;text-align:center;"><div class="sum-label">▲ Trend</div><div class="sum-val green" id="sBull">—</div></div>
+      <div class="sum-card" style="min-width:60px;text-align:center;"><div class="sum-label">▼ Trend</div><div class="sum-val red" id="sBear">—</div></div>
+      <div class="sum-card" style="min-width:60px;text-align:center;"><div class="sum-label">B Bull</div><div class="sum-val green" id="sBBull">—</div></div>
+      <div class="sum-card" style="min-width:60px;text-align:center;"><div class="sum-label">B Bear</div><div class="sum-val red" id="sBBear">—</div></div>
+      <div class="sum-card" style="min-width:60px;text-align:center;"><div class="sum-label">L Gold</div><div class="sum-val amber" id="sLGold">—</div></div>
+      <div class="sum-card" style="min-width:60px;text-align:center;"><div class="sum-label">L Blue</div><div class="sum-val" style="color:#4fc3f7;" id="sLBlue">—</div></div>
     </div>
   </div>
 
@@ -250,7 +226,7 @@
     <button class="filter-btn" onclick="setFilter('bbear',this)" style="border-color:var(--red-border);color:var(--red);">▼ B:Bear</button>
     <button class="filter-btn" onclick="setFilter('lgold',this)" style="border-color:var(--amber-border);color:var(--amber);">★ L:Gold</button>
     <button class="filter-btn" onclick="setFilter('lblue',this)" style="border-color:var(--blue-border);color:var(--blue);">● L:Blue</button>
-    <button class="filter-btn" id="tripleBtn" onclick="setFilter('triple',this)" style="border-color:var(--accent);color:var(--accent);font-weight:600;">&#9889; Triple Bull</button>
+    <button class="filter-btn has-tip" id="tripleBtn" onclick="setFilter('triple',this)" style="border-color:var(--accent);color:var(--accent);font-weight:600;" data-tip="Triple Bull: Trend bullish + B bullish + L gold on selected timeframe">&#9889; Triple Bull</button>
     <select class="sort-select" id="tfSelect" onchange="setTF(this.value)" style="margin-left:0; border-color:var(--accent); color:var(--accent);">
       <option value="2H">Timeframe: 2H</option>
       <option value="4H">Timeframe: 4H</option>
