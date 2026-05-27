@@ -185,6 +185,7 @@
     <button class="tab-btn active" id="tabWatchlist" onclick="switchTab('watchlist')">Watchlist</button>
     <button class="tab-btn" id="tabAlerts" onclick="switchTab('alerts')">&#9889; Alerts<span id="alertStar" class="alert-star" style="color:var(--green)">&#9733;</span></button>
     <button class="tab-btn" id="tabCrypto" onclick="switchTab('crypto')">&#9679; Crypto</button>
+    <button class="tab-btn" id="tabOMX" onclick="switchTab('omx')">&#11088; OMX 10</button>
   </nav>
 
   <!-- WATCHLIST TAB -->
@@ -383,6 +384,97 @@
     </div>
 
   </div><!-- /paneCrypto -->
+
+  <!-- OMX 10 TAB -->
+  <div class="tab-pane" id="paneOMX">
+
+    <!-- Summary cards -->
+    <div class="summary" id="omxSumGrid">
+      <div class="sum-card"><div class="sum-val green" id="osBBull">--</div><div class="sum-label">B Bullish</div><div class="sum-sub">B signal</div></div>
+      <div class="sum-card"><div class="sum-val red"   id="osBBear">--</div><div class="sum-label">B Bearish</div><div class="sum-sub">B signal</div></div>
+      <div class="sum-card"><div class="sum-val amber" id="osLGold">--</div><div class="sum-label">L Gold</div><div class="sum-sub">L signal</div></div>
+      <div class="sum-card"><div class="sum-val blue"  id="osLBlue">--</div><div class="sum-label">L Blue</div><div class="sum-sub">L signal</div></div>
+      <div class="sum-card"><div class="sum-val green" id="osTriple">--</div><div class="sum-label">Triple Bull</div><div class="sum-sub">B+L+Trend</div></div>
+      <div class="sum-card"><div class="sum-val" id="osCount" style="color:var(--muted)">--</div><div class="sum-label">Stocks</div><div class="sum-sub">loaded</div></div>
+    </div>
+
+    <!-- Legend -->
+    <div class="legend" style="margin-top:8px;">
+      <div class="legend-group">
+        <span class="legend-title">B:</span>
+        <span class="legend-item"><span class="legend-dot" style="background:var(--green)"></span>Bullish</span>
+        <span class="legend-item"><span class="legend-dot" style="background:var(--red)"></span>Bearish</span>
+        <span class="legend-item"><span class="legend-dot" style="background:var(--dim)"></span>Neutral</span>
+      </div>
+      <div class="legend-group">
+        <span class="legend-title">L:</span>
+        <span class="legend-item"><span class="legend-dot" style="background:var(--amber)"></span>Gold — SMMA15 &gt; SMMA25</span>
+        <span class="legend-item"><span class="legend-dot" style="background:var(--blue)"></span>Blue — SMMA15 &lt; SMMA25</span>
+      </div>
+    </div>
+
+    <!-- Filters + TF + Sort -->
+    <div class="controls" style="margin-top:4px;">
+      <button class="filter-btn active" onclick="setOMXFilter('all',this)">All</button>
+      <button class="filter-btn" onclick="setOMXFilter('bbull',this)" style="border-color:var(--green-border);color:var(--green);">B:Bull</button>
+      <button class="filter-btn" onclick="setOMXFilter('bbear',this)" style="border-color:var(--red-border);color:var(--red);">B:Bear</button>
+      <button class="filter-btn" onclick="setOMXFilter('lgold',this)" style="border-color:var(--amber-border);color:var(--amber);">&#9733; L:Gold</button>
+      <button class="filter-btn" onclick="setOMXFilter('lblue',this)" style="border-color:var(--blue-border);color:var(--blue);">&#9679; L:Blue</button>
+      <button class="filter-btn" onclick="setOMXFilter('triple',this)" style="border-color:var(--accent);color:var(--accent);">&#9650; Triple Bull</button>
+      <select class="sort-select" id="omxTfSelect" onchange="setOMXTF(this.value)" style="margin-left:8px;border-color:var(--accent);color:var(--accent);">
+        <option value="2H">2H</option>
+        <option value="4H">4H</option>
+        <option value="D" selected>Daily</option>
+        <option value="W">Weekly</option>
+        <option value="M">Monthly</option>
+      </select>
+      <select class="sort-select" onchange="setOMXSort(this.value)" style="margin-left:4px;">
+        <option value="">Sort: Default</option>
+        <option value="chg_d">% Change &#8595;</option>
+        <option value="chg_a">% Change &#8593;</option>
+        <option value="price_d">Price &#8595;</option>
+        <option value="price_a">Price &#8593;</option>
+        <option value="az">Ticker A-Z</option>
+        <option value="w52_d">52W &#8595;</option>
+        <option value="w52_a">52W &#8593;</option>
+        <option value="bflip_d">B Flip &#8595;</option>
+        <option value="lflip_d">L Flip &#8595;</option>
+      </select>
+      <span id="omxStatus" style="margin-left:12px;font-size:11px;color:var(--muted);font-family:var(--mono);">Loading...</span>
+    </div>
+
+    <!-- Table -->
+    <div class="table-wrap" style="margin-top:8px;">
+      <table>
+        <thead>
+          <tr>
+            <th style="text-align:left;" onclick="setOMXSort(omxCurSort==='az'?'':'az')" title="Sort by Ticker">Ticker</th>
+            <th class="r" style="cursor:pointer;" onclick="setOMXSort(omxCurSort==='price_d'?'price_a':'price_d')" title="Sort by Price">Price</th>
+            <th class="r" style="cursor:pointer;" onclick="setOMXSort(omxCurSort==='chg_d'?'chg_a':'chg_d')" title="Sort by % change">Chg %</th>
+            <th class="r" style="cursor:pointer;" onclick="setOMXSort(omxCurSort==='w52_d'?'w52_a':'w52_d')" title="Sort by 52-week position">52W</th>
+            <th class="c">Trend</th>
+            <th class="c b-col has-tip" data-tip="B signal: bull/bear based on highest-high / lowest-low + ATR14x2.5 bands">B</th>
+            <th class="c has-tip" data-tip="Date of last B signal flip (DDMMYY HHMM)">B Flip</th>
+            <th class="c l-col has-tip" data-tip="L signal: SMMA15 vs SMMA25 on HL2. Gold = uptrend, Blue = downtrend.">L</th>
+            <th class="c has-tip" data-tip="Date of last L signal flip (DDMMYY HHMM)">L Flip</th>
+            <th class="r">Volume</th>
+          </tr>
+        </thead>
+        <tbody id="omxTbody">
+          <tr class="state-row"><td colspan="10">Loading OMX data...</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Data source note -->
+    <div class="legend" style="margin-top:16px;">
+      <strong style="color:var(--muted);font-size:10px;">DATA SOURCE</strong>
+      <span class="legend-item">Yahoo Finance (Stockholm Exchange · .ST tickers)</span>
+      <span class="legend-item">Updates every 5 min (batch processing)</span>
+      <span class="legend-item">Prices in SEK</span>
+    </div>
+
+  </div><!-- /paneOMX -->
 
   <footer>
     <span>GEESTMAN'S NQ60 WATCHLIST · POWERED BY SUPABASE + YAHOO FINANCE</span>
@@ -769,11 +861,14 @@ function switchTab(tab) {
   document.getElementById('paneWatchlist').classList.toggle('active', tab === 'watchlist');
   document.getElementById('paneAlerts').classList.toggle('active',    tab === 'alerts');
   document.getElementById('paneCrypto').classList.toggle('active',    tab === 'crypto');
+  document.getElementById('paneOMX').classList.toggle('active',       tab === 'omx');
   document.getElementById('tabWatchlist').classList.toggle('active',  tab === 'watchlist');
   document.getElementById('tabAlerts').classList.toggle('active',     tab === 'alerts');
   document.getElementById('tabCrypto').classList.toggle('active',     tab === 'crypto');
+  document.getElementById('tabOMX').classList.toggle('active',        tab === 'omx');
   if (tab === 'alerts') renderAlerts();
   if (tab === 'crypto' && cryptoAllData.length === 0) loadCryptoData();
+  if (tab === 'omx'    && omxAllData.length === 0)    loadOMXData();
 }
 
 function setAlertWindow(hrs, btn) {
@@ -1054,14 +1149,11 @@ function cryptoRender() {
     const pos52    = (r.hi52 && r.lo52 && r.hi52 > r.lo52)
                    ? Math.round((r.price - r.lo52)/(r.hi52 - r.lo52)*100) : null;
     const pos52Str = pos52 !== null ? pos52+'%' : '--';
-    const mktFmt   = (!r.mktCapB || r.mktCapB < 0.1) ? '--' : r.mktCapB >= 1000
-                   ? (r.mktCapB/1000).toFixed(1)+'T' : r.mktCapB.toFixed(1)+'B';
     return `<tr>
       <td><span class="sym">${r.sym}</span><span class="co-name">${r.name}</span></td>
       <td class="c mono">${priceFmt}<br><span class="${pc}" style="font-size:11px;">${chgSign}${Number(chg).toFixed(r.price>=1?2:6)}</span></td>
       <td class="c mono ${pc}">${chgPct >= 0 ? '+' : ''}${Number(chgPct).toFixed(2)}%</td>
       <td class="c mono">${pos52Str}</td>
-      <td class="c mono">${mktFmt}</td>
       <td class="c"><span class="trend-pill ${sentCls}">${sentLbl}</span></td>
       <td class="c"><span class="${bCls}">${bLabel}</span></td>
       <td class="c">${flipCell(cryptoGetBFlip(r))}</td>
@@ -1173,6 +1265,253 @@ async function loadCryptoData() {
 setInterval(() => {
   if (document.getElementById('paneCrypto')?.classList.contains('active')) {
     loadCryptoData();
+  }
+}, 5 * 60 * 1000);
+
+// ============================================================
+// OMX 10 TAB -- Completely isolated from stocks and crypto
+// Reads ONLY from omx_price_data and omx_flip_history
+// All functions prefixed with omx or setOMX
+// ============================================================
+
+let omxAllData    = [];
+let omxCurFilter  = 'all';
+let omxCurSort    = '';
+let omxCurTF      = 'D';
+
+// Timeframe helpers -- same logic as stocks, isolated scope
+function omxGetChgPct(r) {
+  return omxCurTF==='2H'?(r.chgPct2h||r.chgPct4h||r.chgPct)
+       : omxCurTF==='4H'?(r.chgPct4h||r.chgPct)
+       : omxCurTF==='W' ?(r.chgPctW||r.chgPct)
+       : omxCurTF==='M' ?(r.chgPctM||r.chgPct)
+       : r.chgPct;
+}
+function omxGetChg(r) {
+  return omxCurTF==='2H'?(r.chg2h||r.chg4h||r.chg)
+       : omxCurTF==='4H'?(r.chg4h||r.chg)
+       : omxCurTF==='W' ?(r.chgW||r.chg)
+       : omxCurTF==='M' ?(r.chgM||r.chg)
+       : r.chg;
+}
+function omxGetBFlip(r) {
+  return omxCurTF==='2H'?(r.bFlipTime2h||r.bFlipTime4h||r.bFlipTime)
+       : omxCurTF==='4H'?(r.bFlipTime4h||r.bFlipTime)
+       : omxCurTF==='W' ?(r.bFlipTimeW||r.bFlipTime)
+       : omxCurTF==='M' ?(r.bFlipTimeM||r.bFlipTimeW||r.bFlipTime)
+       : r.bFlipTime;
+}
+function omxGetLFlip(r) {
+  return omxCurTF==='2H'?(r.lFlipTime2h||r.lFlipTime4h||r.lFlipTime)
+       : omxCurTF==='4H'?(r.lFlipTime4h||r.lFlipTime)
+       : omxCurTF==='W' ?(r.lFlipTimeW||r.lFlipTime)
+       : omxCurTF==='M' ?(r.lFlipTimeM||r.lFlipTimeW||r.lFlipTime)
+       : r.lFlipTime;
+}
+function omxParseDateStr(s) {
+  if (!s || s.length < 6) return 0;
+  const d = s.slice(0,6);
+  return (parseInt(d.slice(4,6))+2000)*10000 + parseInt(d.slice(2,4))*100 + parseInt(d.slice(0,2));
+}
+
+function omxRender() {
+  const tbody = document.getElementById('omxTbody');
+  if (!tbody) return;
+  if (!omxAllData.length) {
+    tbody.innerHTML = '<tr class="state-row"><td colspan="10">No OMX data yet. Deploy omx-processor edge function.</td></tr>';
+    return;
+  }
+  let rows = [...omxAllData];
+
+  // Filter
+  if (omxCurFilter === 'bbull')  rows = rows.filter(r => ((r.tf||{})[omxCurTF]||{}).b === 'bull');
+  else if (omxCurFilter === 'bbear')  rows = rows.filter(r => ((r.tf||{})[omxCurTF]||{}).b === 'bear');
+  else if (omxCurFilter === 'lgold')  rows = rows.filter(r => ((r.tf||{})[omxCurTF]||{}).l === 'gold');
+  else if (omxCurFilter === 'lblue')  rows = rows.filter(r => ((r.tf||{})[omxCurTF]||{}).l === 'blue');
+  else if (omxCurFilter === 'triple') rows = rows.filter(r => {
+    const tf = ((r.tf||{})[omxCurTF]||{});
+    return r.sentiment==='bull' && tf.b==='bull' && tf.l==='gold';
+  });
+
+  // Sort
+  if      (omxCurSort === 'chg_d')   rows.sort((a,b) => omxGetChgPct(b)-omxGetChgPct(a));
+  else if (omxCurSort === 'chg_a')   rows.sort((a,b) => omxGetChgPct(a)-omxGetChgPct(b));
+  else if (omxCurSort === 'price_d') rows.sort((a,b) => (b.price||0)-(a.price||0));
+  else if (omxCurSort === 'price_a') rows.sort((a,b) => (a.price||0)-(b.price||0));
+  else if (omxCurSort === 'az')      rows.sort((a,b) => a.sym.localeCompare(b.sym));
+  else if (omxCurSort === 'w52_d')   rows.sort((a,b) => {
+    const pa=(a.hi52&&a.lo52&&a.hi52>a.lo52)?Math.max(0,Math.min(1,(a.price-a.lo52)/(a.hi52-a.lo52))):0.5;
+    const pb=(b.hi52&&b.lo52&&b.hi52>b.lo52)?Math.max(0,Math.min(1,(b.price-b.lo52)/(b.hi52-b.lo52))):0.5;
+    return pb-pa;
+  });
+  else if (omxCurSort === 'w52_a')   rows.sort((a,b) => {
+    const pa=(a.hi52&&a.lo52&&a.hi52>a.lo52)?Math.max(0,Math.min(1,(a.price-a.lo52)/(a.hi52-a.lo52))):0.5;
+    const pb=(b.hi52&&b.lo52&&b.hi52>b.lo52)?Math.max(0,Math.min(1,(b.price-b.lo52)/(b.hi52-b.lo52))):0.5;
+    return pa-pb;
+  });
+  else if (omxCurSort === 'bflip_d') rows.sort((a,b) => omxParseDateStr(omxGetBFlip(b))-omxParseDateStr(omxGetBFlip(a)));
+  else if (omxCurSort === 'lflip_d') rows.sort((a,b) => omxParseDateStr(omxGetLFlip(b))-omxParseDateStr(omxGetLFlip(a)));
+
+  const flipCell = t => t
+    ? `<span class="flip-time">${t}</span>`
+    : `<span style="color:var(--dim)">--</span>`;
+
+  const fmtVol = v => {
+    if (!v) return '--';
+    if (v >= 1e9) return (v/1e9).toFixed(1)+'B';
+    if (v >= 1e6) return (v/1e6).toFixed(1)+'M';
+    if (v >= 1e3) return (v/1e3).toFixed(1)+'K';
+    return v.toFixed(0);
+  };
+
+  tbody.innerHTML = rows.map(r => {
+    const tf       = r.tf || {};
+    const activeTF = tf[omxCurTF] || {b:'neutral', l:'gray'};
+    const bSig     = activeTF.b || 'neutral';
+    const lSig     = activeTF.l || 'gray';
+    const bCls     = bSig==='bull'?'b-bull':bSig==='bear'?'b-bear':'b-neut';
+    const bLabel   = bSig==='bull'?'Bullish':bSig==='bear'?'Bearish':'Neutral';
+    const lCls     = lSig==='gold'?'l-gold':lSig==='blue'?'l-blue':'l-gray';
+    const lLabel   = lSig==='gold'?'Gold':lSig==='blue'?'Blue':'Gray';
+    const chgPct   = omxGetChgPct(r);
+    const chg      = omxGetChg(r);
+    const pc       = chgPct > 0.05 ? 'chg-pos' : chgPct < -0.05 ? 'chg-neg' : 'chg-neu';
+    const priceFmt = r.price >= 1000
+                   ? r.price.toLocaleString('sv-SE',{maximumFractionDigits:0})+' kr'
+                   : Number(r.price).toFixed(2)+' kr';
+    const chgSign  = chg >= 0 ? '+' : '';
+    const sentCls  = r.sentiment==='bull'?'chg-pos':r.sentiment==='bear'?'chg-neg':'chg-neu';
+    const sentLbl  = r.sentiment==='bull'?'BULL':r.sentiment==='bear'?'BEAR':'NEUT';
+    const pos52    = (r.hi52 && r.lo52 && r.hi52 > r.lo52)
+                   ? Math.max(0,Math.min(1,(r.price-r.lo52)/(r.hi52-r.lo52))) : null;
+    const barColor = pos52!==null?(pos52>0.7?'var(--green)':pos52<0.3?'var(--red)':'var(--accent)'):'var(--dim)';
+    return `<tr>
+      <td><div class="ticker-sym">${r.sym.replace('.ST','')}</div><div class="ticker-name">${r.name}</div></td>
+      <td class="r"><span class="price-val">${priceFmt}</span></td>
+      <td class="r"><span class="${pc}">${chgSign}${Number(chgPct).toFixed(2)}%</span></td>
+      <td class="r">
+        <div class="w52-bar">
+          <span class="w52-pct">${pos52!==null?Math.round(pos52*100)+'%':'--'}</span>
+          <div class="w52-track"><div class="w52-fill" style="width:${pos52!==null?Math.round(pos52*100):0}%;background:${barColor};"></div></div>
+        </div>
+      </td>
+      <td class="c"><span class="trend-pill ${sentCls}">${sentLbl}</span></td>
+      <td class="c"><span class="${bCls}">${bLabel}</span></td>
+      <td class="c">${flipCell(omxGetBFlip(r))}</td>
+      <td class="c"><span class="${lCls}">${lLabel}</span></td>
+      <td class="c">${flipCell(omxGetLFlip(r))}</td>
+      <td class="r"><span class="vol-text">${fmtVol(r.vol)}</span></td>
+    </tr>`;
+  }).join('');
+
+  omxRenderSummary();
+}
+
+function omxRenderSummary() {
+  const rows = omxAllData;
+  if (!rows.length) return;
+  const bbull  = rows.filter(r => ((r.tf||{})[omxCurTF]||{}).b==='bull').length;
+  const bbear  = rows.filter(r => ((r.tf||{})[omxCurTF]||{}).b==='bear').length;
+  const lgold  = rows.filter(r => ((r.tf||{})[omxCurTF]||{}).l==='gold').length;
+  const lblue  = rows.filter(r => ((r.tf||{})[omxCurTF]||{}).l==='blue').length;
+  const triple = rows.filter(r => {
+    const tf = ((r.tf||{})[omxCurTF]||{});
+    return r.sentiment==='bull' && tf.b==='bull' && tf.l==='gold';
+  }).length;
+  const el = id => document.getElementById(id);
+  if (el('osBBull'))  el('osBBull').textContent  = bbull;
+  if (el('osBBear'))  el('osBBear').textContent  = bbear;
+  if (el('osLGold'))  el('osLGold').textContent  = lgold;
+  if (el('osLBlue'))  el('osLBlue').textContent  = lblue;
+  if (el('osTriple')) el('osTriple').textContent = triple;
+  if (el('osCount'))  el('osCount').textContent  = rows.length;
+}
+
+function setOMXFilter(f, btn) {
+  omxCurFilter = f;
+  document.querySelectorAll('#paneOMX .filter-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  omxRender();
+}
+function setOMXSort(s)  { omxCurSort = s; omxRender(); }
+function setOMXTF(tf)   { omxCurTF = tf; omxRenderSummary(); omxRender(); }
+
+async function loadOMXData() {
+  const statusEl = document.getElementById('omxStatus');
+  if (statusEl) statusEl.textContent = 'Loading...';
+  try {
+    const headers = {
+      'apikey':        SUPABASE_ANON,
+      'Authorization': 'Bearer ' + SUPABASE_ANON,
+    };
+    const [priceRes, flipRes] = await Promise.all([
+      fetch(SUPABASE_URL + '/rest/v1/omx_price_data?select=*',    {headers}),
+      fetch(SUPABASE_URL + '/rest/v1/omx_flip_history?select=*',  {headers}),
+    ]);
+    if (!priceRes.ok) throw new Error('omx_price_data HTTP ' + priceRes.status);
+    if (!flipRes.ok)  throw new Error('omx_flip_history HTTP ' + flipRes.status);
+
+    const priceData = await priceRes.json();
+    const flipData  = await flipRes.json();
+
+    const flipMap = {};
+    for (const r of flipData) flipMap[r.sym] = r;
+
+    omxAllData = priceData.map(r => ({
+      sym: r.sym, name: r.name, price: r.price,
+      chg: r.chg, chgPct: r.chg_pct,
+      chg2h: r.chg_2h, chgPct2h: r.chg_pct_2h,
+      chg4h: r.chg_4h, chgPct4h: r.chg_pct_4h,
+      chgW:  r.chg_w,  chgPctW:  r.chg_pct_w,
+      chgM:  r.chg_m,  chgPctM:  r.chg_pct_m,
+      hi52: r.hi52, lo52: r.lo52, vol: r.vol,
+      bFlipTime:   flipMap[r.sym]?.b_flip_time    ?? null,
+      lFlipTime:   flipMap[r.sym]?.l_flip_time    ?? null,
+      bFlipTime2h: flipMap[r.sym]?.b_flip_time_2h ?? null,
+      lFlipTime2h: flipMap[r.sym]?.l_flip_time_2h ?? null,
+      bFlipTime4h: flipMap[r.sym]?.b_flip_time_4h ?? null,
+      lFlipTime4h: flipMap[r.sym]?.l_flip_time_4h ?? null,
+      bFlipTimeW:  flipMap[r.sym]?.b_flip_time_w  ?? null,
+      lFlipTimeW:  flipMap[r.sym]?.l_flip_time_w  ?? null,
+      bFlipTimeM:  flipMap[r.sym]?.b_flip_time_m  ?? null,
+      lFlipTimeM:  flipMap[r.sym]?.l_flip_time_m  ?? null,
+      tf: {
+        '2H': {b: r.b_2h||r.b_4h||r.b_d, l: r.l_2h||r.l_4h||r.l_d},
+        '4H': {b: r.b_4h||r.b_d,          l: r.l_4h||r.l_d},
+        'D':  {b: r.b_d,                  l: r.l_d},
+        'W':  {b: r.b_w||r.b_d,           l: r.l_w||r.l_d},
+        'M':  {b: r.b_m||r.b_w||r.b_d,   l: r.l_m||r.l_w||r.l_d},
+      },
+      sentiment: (()=>{
+        const c=r.chg_pct||0, p=(r.hi52&&r.lo52&&r.hi52>r.lo52)?(r.price-r.lo52)/(r.hi52-r.lo52):0.5;
+        let s=0;
+        if(c>1.5)s+=2;else if(c>0.3)s+=1;else if(c<-1.5)s-=2;else if(c<-0.3)s-=1;
+        if(p>0.75)s+=1;else if(p<0.3)s-=1;
+        return s>=2?'bull':s<=-1?'bear':'neutral';
+      })(),
+    }));
+
+    if (statusEl && omxAllData.length > 0) {
+      const latest = priceData.reduce((a,b) => new Date(a.updated_at)>new Date(b.updated_at)?a:b);
+      const updTime = new Date(latest.updated_at).toLocaleString('en-GB',{timeZone:'Europe/Stockholm',day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
+      statusEl.textContent = `Updated: ${updTime} CET`;
+    } else if (statusEl) {
+      statusEl.textContent = 'No OMX data yet -- deploy omx-processor';
+    }
+
+    omxRender();
+  } catch(e) {
+    console.error('OMX load error:', e);
+    const tbody = document.getElementById('omxTbody');
+    if (tbody) tbody.innerHTML = `<tr class="state-row"><td colspan="10">Error loading OMX data: ${e.message}</td></tr>`;
+    if (statusEl) statusEl.textContent = 'Error loading OMX data';
+  }
+}
+
+// Reload OMX every 5 minutes when tab is active
+setInterval(() => {
+  if (document.getElementById('paneOMX')?.classList.contains('active')) {
+    loadOMXData();
   }
 }, 5 * 60 * 1000);
 
