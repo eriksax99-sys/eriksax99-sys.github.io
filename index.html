@@ -467,6 +467,24 @@
       <button id="deletePortfolioBtn" onclick="deletePortfolio()" style="display:none;background:none;border:1px solid var(--red);color:var(--red);border-radius:4px;padding:5px 10px;cursor:pointer;font-size:12px;">Delete Portfolio</button>
       <span id="portfolioStatus" style="font-size:11px;color:var(--muted);font-family:var(--mono);">Loading...</span>
     </div>
+    <!-- Portfolio filters + TF -->
+    <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:6px 0;">
+      <button class="filter-btn active" id="pfAll"    onclick="setPortFilter('all',this)">All</button>
+      <button class="filter-btn"        id="pfBull"   onclick="setPortFilter('bull',this)">▲ Trend Bull</button>
+      <button class="filter-btn"        id="pfBear"   onclick="setPortFilter('bear',this)">▼ Trend Bear</button>
+      <button class="filter-btn"        id="pfBBull"  onclick="setPortFilter('bbull',this)"  style="border-color:var(--green-border);color:var(--green);">▲ B:Bull</button>
+      <button class="filter-btn"        id="pfBBear"  onclick="setPortFilter('bbear',this)"  style="border-color:var(--red-border);color:var(--red);">▼ B:Bear</button>
+      <button class="filter-btn"        id="pfLGold"  onclick="setPortFilter('lgold',this)"  style="border-color:var(--amber-border);color:var(--amber);">★ L:Gold</button>
+      <button class="filter-btn"        id="pfLBlue"  onclick="setPortFilter('lblue',this)"  style="border-color:var(--blue-border);color:var(--blue);">● L:Blue</button>
+      <button class="filter-btn has-tip" id="pfTriple" onclick="setPortFilter('triple',this)" style="border-color:var(--accent);color:var(--accent);font-weight:600;" data-tip="Triple Bull: Trend bullish + B bullish + L gold on selected timeframe">&#9889; Triple Bull</button>
+      <div style="margin-left:auto;display:flex;gap:4px;">
+        <button class="tf-btn" onclick="setPortTF('2H',this)">2H</button>
+        <button class="tf-btn" onclick="setPortTF('4H',this)">4H</button>
+        <button class="tf-btn active" onclick="setPortTF('D',this)">D</button>
+        <button class="tf-btn" onclick="setPortTF('W',this)">W</button>
+        <button class="tf-btn" onclick="setPortTF('M',this)">M</button>
+      </div>
+    </div>
     <div class="table-wrap">
       <table>
         <thead>
@@ -1549,6 +1567,7 @@ const SUPA_URL = 'https://ixcwtfrelsyjjiribpeo.supabase.co';
 const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml4Y3d0ZnJlbHN5amppcmlicGVvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0Mjk4MzMsImV4cCI6MjA5NTAwNTgzM30.KvvGWXbI91uH7PA-Nbj33BRqEUziXkt1el2a5ihf9Zg';
 
 let portfolios      = [];   // [{id, name}]
+let portFilter      = 'all'; // portfolio filter state
 let allHoldings     = [];   // [{id, portfolio_id, sym}]
 let activePortfolio = null; // currently selected portfolio id
 let pendingAddSym   = null; // sym waiting to be added to portfolio
@@ -1703,8 +1722,29 @@ function renderPortfolioTable() {
     document.getElementById('portfolioStatus').textContent = '0 stocks';
     return;
   }
+  // Apply filter
+  const filteredHoldings = holdings.filter(holding => {
+    const r = allData.find(d => d.sym === holding.sym);
+    if (!r) return portFilter === 'all';
+    if (portFilter === 'all')    return true;
+    if (portFilter === 'bull')   return r.sentiment === 'bull';
+    if (portFilter === 'bear')   return r.sentiment === 'bear';
+    if (portFilter === 'bbull')  return r.bSignal === 'bull';
+    if (portFilter === 'bbear')  return r.bSignal === 'bear';
+    if (portFilter === 'lgold')  return r.lSignal === 'gold';
+    if (portFilter === 'lblue')  return r.lSignal === 'blue';
+    if (portFilter === 'triple') return r.sentiment==='bull' && r.bSignal==='bull' && r.lSignal==='gold';
+    return true;
+  });
+
+  if (filteredHoldings.length === 0) {
+    tbody.innerHTML = '<tr class="state-row"><td colspan="10">No stocks match the current filter.</td></tr>';
+    document.getElementById('portfolioStatus').textContent = `0 / ${holdings.length} stocks`;
+    return;
+  }
+
   // Get stock data from allData for each holding
-  const rows = holdings.map(holding => {
+  const rows = filteredHoldings.map(holding => {
     const r = allData.find(d => d.sym === holding.sym);
     if (!r) return `<tr><td>${holding.sym}</td><td colspan="9" style="color:var(--muted);font-size:11px;">Data not available</td></tr>`;
     const tfChgPct = getChgPct(r);
@@ -1745,7 +1785,7 @@ function renderPortfolioTable() {
     </tr>`;
   }).join('');
   tbody.innerHTML = rows;
-  document.getElementById('portfolioStatus').textContent = `${holdings.length} stock${holdings.length!==1?'s':''}`;
+  document.getElementById('portfolioStatus').textContent = `${filteredHoldings.length} / ${holdings.length} stock${holdings.length!==1?'s':''}`;
 }
 
 async function loadPortfolioTab() {
@@ -1758,6 +1798,26 @@ async function loadPortfolioTab() {
   }
   renderPortfolioTable();
   render(); // refresh "In" column in Nasdaq60
+}
+
+function setPortFilter(f, el) {
+  portFilter = f;
+  document.querySelectorAll('#panePortfolio .filter-btn').forEach(b => {
+    b.classList.remove('active','active-bull','active-bear');
+  });
+  if (el) {
+    if (f==='bull'||f==='bbull'||f==='lgold'||f==='triple') el.classList.add('active-bull');
+    else if (f==='bear'||f==='bbear')                        el.classList.add('active-bear');
+    else                                                      el.classList.add('active');
+  }
+  renderPortfolioTable();
+}
+
+function setPortTF(tf, el) {
+  curTF = tf;
+  document.querySelectorAll('#panePortfolio .tf-btn').forEach(b => b.classList.remove('active'));
+  if (el) el.classList.add('active');
+  renderPortfolioTable();
 }
 
 </script>
