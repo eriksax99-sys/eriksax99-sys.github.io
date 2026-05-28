@@ -432,6 +432,8 @@
             <th style="text-align:left;" onclick="setOMXSort(omxCurSort==='az'?'':'az')" title="Sort by Ticker">Ticker</th>
             <th class="r" style="cursor:pointer;" onclick="setOMXSort(omxCurSort==='price_d'?'price_a':'price_d')" title="Sort by Price">Price</th>
             <th class="r" style="cursor:pointer;" onclick="setOMXSort(omxCurSort==='chg_d'?'chg_a':'chg_d')" title="Sort by % change">Chg %</th>
+            <th class="c" style="width:28px;" title="Add to portfolio">+</th>
+            <th class="c" style="width:70px;font-size:10px;">In</th>
             <th class="r" style="cursor:pointer;" onclick="setOMXSort(omxCurSort==='w52_d'?'w52_a':'w52_d')" title="Sort by 52-week position">52W</th>
             <th class="c" style="cursor:pointer;" onclick="setOMXSort(omxCurSort==='trend_d'?'trend_a':'trend_d')">Trend</th>
             <th class="c b-col has-tip" data-tip="B signal: bull/bear based on highest-high / lowest-low + ATR14x2.5 bands">B</th>
@@ -442,7 +444,7 @@
           </tr>
         </thead>
         <tbody id="omxTbody">
-          <tr class="state-row"><td colspan="10">Loading OMX data...</td></tr>
+          <tr class="state-row"><td colspan="12">Loading OMX data...</td></tr>
         </tbody>
       </table>
     </div>
@@ -477,12 +479,22 @@
       <button class="filter-btn"        id="pfLGold"  onclick="setPortFilter('lgold',this)"  style="border-color:var(--amber-border);color:var(--amber);">★ L:Gold</button>
       <button class="filter-btn"        id="pfLBlue"  onclick="setPortFilter('lblue',this)"  style="border-color:var(--blue-border);color:var(--blue);">● L:Blue</button>
       <button class="filter-btn has-tip" id="pfTriple" onclick="setPortFilter('triple',this)" style="border-color:var(--accent);color:var(--accent);font-weight:600;" data-tip="Triple Bull: Trend bullish + B bullish + L gold on selected timeframe">&#9889; Triple Bull</button>
-      <div style="margin-left:auto;display:flex;gap:4px;">
-        <button class="tf-btn" onclick="setPortTF('2H',this)">2H</button>
-        <button class="tf-btn" onclick="setPortTF('4H',this)">4H</button>
-        <button class="tf-btn active" onclick="setPortTF('D',this)">D</button>
-        <button class="tf-btn" onclick="setPortTF('W',this)">W</button>
-        <button class="tf-btn" onclick="setPortTF('M',this)">M</button>
+      <div style="margin-left:auto;display:flex;align-items:center;gap:6px;">
+        <select id="portSortSelect" onchange="setPortSort(this.value)" style="background:var(--bg2);color:var(--fg);border:1px solid var(--border);border-radius:4px;padding:4px 8px;font-size:11px;">
+          <option value="">Sort: Default</option>
+          <option value="az">Ticker A-Z</option>
+          <option value="chg_d">% Chg Down</option>
+          <option value="chg_a">% Chg Up</option>
+          <option value="bflip_d">B Flip Recent</option>
+          <option value="lflip_d">L Flip Recent</option>
+        </select>
+        <div style="display:flex;gap:4px;">
+          <button class="tf-btn" onclick="setPortTF('2H',this)">2H</button>
+          <button class="tf-btn" onclick="setPortTF('4H',this)">4H</button>
+          <button class="tf-btn active" onclick="setPortTF('D',this)">D</button>
+          <button class="tf-btn" onclick="setPortTF('W',this)">W</button>
+          <button class="tf-btn" onclick="setPortTF('M',this)">M</button>
+        </div>
       </div>
     </div>
     <div class="table-wrap">
@@ -631,6 +643,7 @@ async function loadFromSupabase() {
       lSignal:   r.l_d, // daily -- used for flip detection baseline only
     }));
 
+    window._rawData = rows; // store raw rows for portfolio TF-aware filtering
     render();
     renderSummary();
     if (curTab === 'alerts') renderAlerts();
@@ -1433,6 +1446,10 @@ function omxRender() {
       <td><div class="ticker-sym">${r.sym.replace('.ST','')}</div><div class="ticker-name">${r.name}</div></td>
       <td class="r"><span class="price-val">${priceFmt}</span></td>
       <td class="r"><span class="${pc}">${chgSign}${Number(chgPct).toFixed(2)}%</span></td>
+      <td class="c" style="width:28px;">
+        <button onclick="openAddToPortfolio('${r.sym}')" style="background:none;border:1px solid var(--muted);color:var(--muted);border-radius:3px;width:20px;height:20px;cursor:pointer;font-size:13px;line-height:1;padding:0;" title="Add to portfolio">+</button>
+      </td>
+      <td class="c" style="width:70px;font-size:10px;color:var(--muted);">${getPortfolioLabel(r.sym)}</td>
       <td class="r">
         <div class="w52-bar">
           <span class="w52-pct">${pos52!==null?Math.round(pos52*100)+'%':'--'}</span>
@@ -1568,6 +1585,7 @@ const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsI
 
 let portfolios      = [];   // [{id, name}]
 let portFilter      = 'all'; // portfolio filter state
+let portSort        = '';    // portfolio sort state
 let allHoldings     = [];   // [{id, portfolio_id, sym}]
 let activePortfolio = null; // currently selected portfolio id
 let pendingAddSym   = null; // sym waiting to be added to portfolio
@@ -1722,18 +1740,24 @@ function renderPortfolioTable() {
     document.getElementById('portfolioStatus').textContent = '0 stocks';
     return;
   }
-  // Apply filter
+  // Apply filter -- TF-aware using raw signal fields
   const filteredHoldings = holdings.filter(holding => {
     const r = allData.find(d => d.sym === holding.sym);
     if (!r) return portFilter === 'all';
+    // Get TF-aware signals from raw data
+    const raw = (window._rawData || []).find(d => d.sym === holding.sym) || {};
+    const bSig = curTF==='2H'?(raw.b_2h||raw.b_d): curTF==='4H'?(raw.b_4h||raw.b_d):
+                 curTF==='W'?(raw.b_w||raw.b_d): curTF==='M'?(raw.b_m||raw.b_d): raw.b_d;
+    const lSig = curTF==='2H'?(raw.l_2h||raw.l_d): curTF==='4H'?(raw.l_4h||raw.l_d):
+                 curTF==='W'?(raw.l_w||raw.l_d): curTF==='M'?(raw.l_m||raw.l_d): raw.l_d;
     if (portFilter === 'all')    return true;
     if (portFilter === 'bull')   return r.sentiment === 'bull';
     if (portFilter === 'bear')   return r.sentiment === 'bear';
-    if (portFilter === 'bbull')  return r.bSignal === 'bull';
-    if (portFilter === 'bbear')  return r.bSignal === 'bear';
-    if (portFilter === 'lgold')  return r.lSignal === 'gold';
-    if (portFilter === 'lblue')  return r.lSignal === 'blue';
-    if (portFilter === 'triple') return r.sentiment==='bull' && r.bSignal==='bull' && r.lSignal==='gold';
+    if (portFilter === 'bbull')  return bSig === 'bull';
+    if (portFilter === 'bbear')  return bSig === 'bear';
+    if (portFilter === 'lgold')  return lSig === 'gold';
+    if (portFilter === 'lblue')  return lSig === 'blue';
+    if (portFilter === 'triple') return r.sentiment==='bull' && bSig==='bull' && lSig==='gold';
     return true;
   });
 
@@ -1741,6 +1765,21 @@ function renderPortfolioTable() {
     tbody.innerHTML = '<tr class="state-row"><td colspan="10">No stocks match the current filter.</td></tr>';
     document.getElementById('portfolioStatus').textContent = `0 / ${holdings.length} stocks`;
     return;
+  }
+
+  // Apply sort
+  if (portSort) {
+    filteredHoldings.sort((a, b) => {
+      const ra = allData.find(d => d.sym === a.sym);
+      const rb = allData.find(d => d.sym === b.sym);
+      if (!ra || !rb) return 0;
+      if (portSort === 'az')     return ra.sym.localeCompare(rb.sym);
+      if (portSort === 'chg_d')  return (ra.chgPct||0) - (rb.chgPct||0);
+      if (portSort === 'chg_a')  return (rb.chgPct||0) - (ra.chgPct||0);
+      if (portSort === 'bflip_d') return parseDateStr(getBFlip(rb)) - parseDateStr(getBFlip(ra));
+      if (portSort === 'lflip_d') return parseDateStr(getLFlip(rb)) - parseDateStr(getLFlip(ra));
+      return 0;
+    });
   }
 
   // Get stock data from allData for each holding
@@ -1759,10 +1798,16 @@ function renderPortfolioTable() {
     const sent = r.sentiment;
     const badgeCls = sent==='bull'?'badge-bull':sent==='bear'?'badge-bear':'badge-neut';
     const badgeLabel = sent==='bull'?' BULL':sent==='bear'?' BEAR':' NEUT';
-    const bCls = r.bSignal==='bull'?'sig-bull':r.bSignal==='bear'?'sig-bear':'sig-neut';
-    const bLabel = r.bSignal==='bull'?'●':r.bSignal==='bear'?'●':'○';
-    const lCls = r.lSignal==='gold'?'sig-gold':r.lSignal==='blue'?'sig-blue':'sig-gray';
-    const lLabel = r.lSignal==='gold'?'●':r.lSignal==='blue'?'●':'○';
+    // TF-aware B/L signals for portfolio display
+    const raw = (window._rawData || []).find(d => d.sym === holding.sym) || {};
+    const bSigTF = curTF==='2H'?(raw.b_2h||raw.b_d): curTF==='4H'?(raw.b_4h||raw.b_d):
+                   curTF==='W'?(raw.b_w||raw.b_d): curTF==='M'?(raw.b_m||raw.b_d): raw.b_d;
+    const lSigTF = curTF==='2H'?(raw.l_2h||raw.l_d): curTF==='4H'?(raw.l_4h||raw.l_d):
+                   curTF==='W'?(raw.l_w||raw.l_d): curTF==='M'?(raw.l_m||raw.l_d): raw.l_d;
+    const bCls = bSigTF==='bull'?'sig-bull':bSigTF==='bear'?'sig-bear':'sig-neut';
+    const bLabel = bSigTF==='bull'?'●':bSigTF==='bear'?'●':'○';
+    const lCls = lSigTF==='gold'?'sig-gold':lSigTF==='blue'?'sig-blue':'sig-gray';
+    const lLabel = lSigTF==='gold'?'●':lSigTF==='blue'?'●':'○';
     const flipCell = (t) => t
       ? `<span class="flip-time" style="font-size:11px;">${t}</span>`
       : `<span style="color:var(--dim);font-family:var(--mono);font-size:11px;">--</span>`;
@@ -1817,6 +1862,11 @@ function setPortTF(tf, el) {
   curTF = tf;
   document.querySelectorAll('#panePortfolio .tf-btn').forEach(b => b.classList.remove('active'));
   if (el) el.classList.add('active');
+  renderPortfolioTable();
+}
+
+function setPortSort(s) {
+  portSort = s;
   renderPortfolioTable();
 }
 
