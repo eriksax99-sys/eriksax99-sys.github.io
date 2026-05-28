@@ -192,30 +192,14 @@
   <!-- WATCHLIST TAB -->
   <div class="tab-pane active" id="paneWatchlist">
 
-  <!-- LEGEND + SUMMARY combined row -->
-  <div style="display:flex;align-items:center;gap:16px;padding:6px 0;flex-wrap:wrap;border-bottom:1px solid var(--border);">
-    <div class="legend" style="border:none;padding:0;margin:0;flex:1;min-width:300px;">
-      <div class="legend-group">
-        <span class="legend-title">B:</span>
-        <span class="legend-item"><span class="legend-dot" style="background:var(--green)"></span>Bull</span>
-        <span class="legend-item"><span class="legend-dot" style="background:var(--red)"></span>Bear</span>
-        <span class="legend-item"><span class="legend-dot" style="background:var(--dim)"></span>Neutral</span>
-      </div>
-      <div class="legend-group">
-        <span class="legend-title">L:</span>
-        <span class="legend-item"><span class="legend-dot" style="background:var(--amber)"></span>Gold</span>
-        <span class="legend-item"><span class="legend-dot" style="background:var(--blue)"></span>Blue</span>
-        <span class="legend-item"><span class="legend-dot" style="background:var(--dim)"></span>Gray</span>
-      </div>
-    </div>
-    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+  <!-- SUMMARY -->
+  <div style="display:flex;gap:8px;flex-wrap:wrap;padding:4px 0;border-bottom:1px solid var(--border);">
       <div class="sum-card" style="min-width:60px;text-align:center;"><div class="sum-label">▲ Trend</div><div class="sum-val green" id="sBull">—</div></div>
       <div class="sum-card" style="min-width:60px;text-align:center;"><div class="sum-label">▼ Trend</div><div class="sum-val red" id="sBear">—</div></div>
       <div class="sum-card" style="min-width:60px;text-align:center;"><div class="sum-label">B Bull</div><div class="sum-val green" id="sBBull">—</div></div>
       <div class="sum-card" style="min-width:60px;text-align:center;"><div class="sum-label">B Bear</div><div class="sum-val red" id="sBBear">—</div></div>
       <div class="sum-card" style="min-width:60px;text-align:center;"><div class="sum-label">L Gold</div><div class="sum-val amber" id="sLGold">—</div></div>
       <div class="sum-card" style="min-width:60px;text-align:center;"><div class="sum-label">L Blue</div><div class="sum-val" style="color:#4fc3f7;" id="sLBlue">—</div></div>
-    </div>
   </div>
 
   <!-- CONTROLS -->
@@ -353,14 +337,7 @@
       </table>
     </div>
 
-    <!-- Legend -->
-    <div class="legend" style="margin-top:16px;">
-      <strong style="color:var(--muted);font-size:10px;">DATA SOURCE</strong>
-      <span class="legend-item">Bybit spot market (world #2 by volume)</span>
-      <span class="legend-item">Rankings by CoinGecko market cap</span>
-      <span class="legend-item">Updates every 5 min (batch processing)</span>
-      <span class="legend-item" style="color:var(--accent);">Future: trading via Bybit MCP Server</span>
-    </div>
+
 
   </div><!-- /paneCrypto -->
 
@@ -375,21 +352,6 @@
       <div class="sum-card"><div class="sum-val blue"  id="osLBlue">--</div><div class="sum-label">L Blue</div><div class="sum-sub">L signal</div></div>
       <div class="sum-card"><div class="sum-val green" id="osTriple">--</div><div class="sum-label">Triple Bull</div><div class="sum-sub">B+L+Trend</div></div>
       <div class="sum-card"><div class="sum-val" id="osCount" style="color:var(--muted)">--</div><div class="sum-label">Stocks</div><div class="sum-sub">loaded</div></div>
-    </div>
-
-    <!-- Legend -->
-    <div class="legend" style="margin-top:8px;">
-      <div class="legend-group">
-        <span class="legend-title">B:</span>
-        <span class="legend-item"><span class="legend-dot" style="background:var(--green)"></span>Bullish</span>
-        <span class="legend-item"><span class="legend-dot" style="background:var(--red)"></span>Bearish</span>
-        <span class="legend-item"><span class="legend-dot" style="background:var(--dim)"></span>Neutral</span>
-      </div>
-      <div class="legend-group">
-        <span class="legend-title">L:</span>
-        <span class="legend-item"><span class="legend-dot" style="background:var(--amber)"></span>Gold — SMMA15 &gt; SMMA25</span>
-        <span class="legend-item"><span class="legend-dot" style="background:var(--blue)"></span>Blue — SMMA15 &lt; SMMA25</span>
-      </div>
     </div>
 
     <!-- Filters + TF + Sort -->
@@ -489,13 +451,13 @@
           <option value="bflip_d">B Flip Recent</option>
           <option value="lflip_d">L Flip Recent</option>
         </select>
-        <div style="display:flex;gap:4px;">
-          <button class="tf-btn" onclick="setPortTF('2H',this)">2H</button>
-          <button class="tf-btn" onclick="setPortTF('4H',this)">4H</button>
-          <button class="tf-btn active" onclick="setPortTF('D',this)">D</button>
-          <button class="tf-btn" onclick="setPortTF('W',this)">W</button>
-          <button class="tf-btn" onclick="setPortTF('M',this)">M</button>
-        </div>
+        <select class="sort-select" id="portTFSelect" onchange="setPortTF(this.value)" style="border-color:var(--accent);color:var(--accent);">
+          <option value="2H">Timeframe: 2H</option>
+          <option value="4H">Timeframe: 4H</option>
+          <option value="D" selected>Timeframe: Daily</option>
+          <option value="W">Timeframe: Weekly</option>
+          <option value="M">Timeframe: Monthly</option>
+        </select>
       </div>
     </div>
     <div class="table-wrap">
@@ -543,8 +505,21 @@ let secondsLeft    = 0;
 
 // -- TIMEFRAME HELPERS ---------------------------------------------------------
 // Defined as functions (not const) so they are hoisted and available everywhere
-function getBFlip(r)  { return curTF==='2H'?(r.bFlipTime2h||r.bFlipTime4h||r.bFlipTime):curTF==='4H'?(r.bFlipTime4h||r.bFlipTime):curTF==='W'?(r.bFlipTimeW||r.bFlipTime):curTF==='M'?(r.bFlipTimeM||r.bFlipTime):r.bFlipTime; }
-function getLFlip(r)  { return curTF==='2H'?(r.lFlipTime2h||r.lFlipTime4h||r.lFlipTime):curTF==='4H'?(r.lFlipTime4h||r.lFlipTime):curTF==='W'?(r.lFlipTimeW||r.lFlipTime):curTF==='M'?(r.lFlipTimeM||r.lFlipTime):r.lFlipTime; }
+function trimDaily(t) { return (t && t.length > 6) ? t.slice(0,6) : t; }
+function getBFlip(r)  {
+  if (curTF==='2H') return r.bFlipTime2h||r.bFlipTime4h||trimDaily(r.bFlipTime);
+  if (curTF==='4H') return r.bFlipTime4h||trimDaily(r.bFlipTime);
+  if (curTF==='W')  return r.bFlipTimeW||trimDaily(r.bFlipTime);
+  if (curTF==='M')  return r.bFlipTimeM||trimDaily(r.bFlipTime);
+  return trimDaily(r.bFlipTime);
+}
+function getLFlip(r)  {
+  if (curTF==='2H') return r.lFlipTime2h||r.lFlipTime4h||trimDaily(r.lFlipTime);
+  if (curTF==='4H') return r.lFlipTime4h||trimDaily(r.lFlipTime);
+  if (curTF==='W')  return r.lFlipTimeW||trimDaily(r.lFlipTime);
+  if (curTF==='M')  return r.lFlipTimeM||trimDaily(r.lFlipTime);
+  return trimDaily(r.lFlipTime);
+}
 function getChgPct(r) { return curTF==='2H'?(r.chgPct2h||r.chgPct4h||r.chgPct):curTF==='4H'?(r.chgPct4h||r.chgPct):curTF==='W'?(r.chgPctW||r.chgPct):curTF==='M'?(r.chgPctM||r.chgPct):r.chgPct; }
 function getTfChg(r)  { return curTF==='2H'?(r.chg2h||r.chg4h||r.chg):curTF==='4H'?(r.chg4h||r.chg):curTF==='W'?(r.chgW||r.chg):curTF==='M'?(r.chgM||r.chg):r.chg; }
 
@@ -1867,10 +1842,8 @@ function setPortFilter(f, el) {
   renderPortfolioTable();
 }
 
-function setPortTF(tf, el) {
+function setPortTF(tf) {
   curTF = tf;
-  document.querySelectorAll('#panePortfolio .tf-btn').forEach(b => b.classList.remove('active'));
-  if (el) el.classList.add('active');
   renderPortfolioTable();
 }
 
