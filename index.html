@@ -1,2277 +1,406 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Geestman's Trading Dashboard</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
-<style>
-  :root {
-    --bg:#0a0c0f; --bg2:#111418; --bg3:#181c22;
-    --border:rgba(255,255,255,0.07); --border2:rgba(255,255,255,0.12);
-    --text:#e8eaed; --muted:#6b7280; --dim:#3d4450;
-    --green:#22c55e; --green-bg:rgba(34,197,94,0.1); --green-border:rgba(34,197,94,0.25);
-    --red:#f43f5e; --red-bg:rgba(244,63,94,0.1); --red-border:rgba(244,63,94,0.25);
-    --amber:#f59e0b; --amber-bg:rgba(245,158,11,0.1); --amber-border:rgba(245,158,11,0.35);
-    --blue:#3b82f6; --blue-bg:rgba(59,130,246,0.1); --blue-border:rgba(59,130,246,0.3);
-    --accent:#00d4aa; --accent2:#0af0c4;
-    --mono:'IBM Plex Mono',monospace; --sans:'DM Sans',sans-serif;
-  }
-  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-  body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14px;min-height:100vh;line-height:1.5;}
-  body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,212,170,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,212,170,0.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0;}
-  .container{max-width:1340px;margin:0 auto;padding:0 24px 60px;isolation:isolate;}
+// ============================================================
+// CRYPTO PROCESSOR -- Binance spot API
+// Supabase Edge Function: dynamic-service (rename or redeploy as crypto-processor)
+// Fetches top-25 crypto by market cap from CoinGecko
+// Price + OHLCV data from Binance spot API (free, no auth)
+// Computes B, L signals and flip dates -- stores to Supabase
+// Touches ONLY: crypto_price_data, crypto_flip_history, metadata
+// ============================================================
 
-  header{display:flex;align-items:flex-end;justify-content:space-between;padding:8px 0 6px;border-bottom:1px solid var(--border);gap:8px;flex-wrap:wrap;}
-  .logo{font-family:var(--mono);font-size:11px;font-weight:500;letter-spacing:0.15em;color:var(--accent);text-transform:uppercase;margin-bottom:6px;}
-  h1{font-family:var(--mono);font-size:22px;font-weight:600;letter-spacing:-0.02em;}
-  h1 span{color:var(--accent);}
-  .header-meta{font-size:12px;color:var(--muted);margin-top:2px;font-family:var(--mono);}
-  .header-right{display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
-  .api-setup{display:flex;align-items:center;gap:8px;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:8px 12px;}
-  .api-setup label{font-family:var(--mono);font-size:11px;color:var(--muted);white-space:nowrap;}
-  .api-setup input{background:var(--bg2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:var(--mono);font-size:12px;padding:5px 10px;width:200px;outline:none;transition:border-color 0.2s;}
-  .api-setup input:focus{border-color:var(--accent);}
-  .api-setup input::placeholder{color:var(--dim);}
-  .btn-refresh{background:var(--accent);color:#000;border:none;border-radius:6px;font-family:var(--mono);font-size:12px;font-weight:600;padding:7px 16px;cursor:pointer;transition:all 0.15s;white-space:nowrap;display:flex;align-items:center;gap:6px;}
-  .btn-refresh:hover{background:var(--accent2);transform:translateY(-1px);}
-  .btn-refresh:disabled{opacity:0.4;cursor:not-allowed;transform:none;}
-  .spin{animation:spin 1s linear infinite;display:inline-block;}
-  @keyframes spin{to{transform:rotate(360deg);}}
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-  .status-bar{display:flex;align-items:center;gap:8px;padding:10px 0;font-family:var(--mono);font-size:11px;color:var(--muted);border-bottom:1px solid var(--border);}
-  .status-dot{width:6px;height:6px;border-radius:50%;background:var(--dim);flex-shrink:0;}
-  .status-dot.live{background:var(--green);box-shadow:0 0 6px var(--green);animation:pulse 2s infinite;}
-  .status-dot.error{background:var(--red);}
-  @keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.4;}}
+const SUPABASE_URL  = Deno.env.get("SUPABASE_URL")!;
+const SUPABASE_KEY  = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const supabase      = createClient(SUPABASE_URL, SUPABASE_KEY);
+const TG_TOKEN      = Deno.env.get("TELEGRAM_BOT_TOKEN") || "";
+const TG_CHAT_ID    = Deno.env.get("TELEGRAM_CHAT_ID")   || "";
 
-  /* LEGEND */
-  .legend{display:flex;gap:8px;padding:4px 0 3px;flex-wrap:wrap;border-bottom:1px solid var(--border);}
-  .legend-group{display:flex;align-items:center;gap:10px;}
-  .legend-title{font-family:var(--mono);font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:var(--dim);margin-right:2px;}
-  .legend-item{display:flex;align-items:center;gap:5px;font-family:var(--mono);font-size:10px;color:var(--muted);}
-  .legend-dot{width:8px;height:8px;border-radius:2px;flex-shrink:0;}
+const BATCH_SIZE    = 5;
+const FULL_INTERVAL = 15; // minutes
 
-  .summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px;padding:8px 0;}
-  .sum-card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;}
-  .sum-card.green{border-color:var(--green-border);background:var(--green-bg);}
-  .sum-card.red{border-color:var(--red-border);background:var(--red-bg);}
-  .sum-label{font-family:var(--mono);font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin-bottom:3px;}
-  .sum-val{font-family:var(--mono);font-size:18px;font-weight:600;}
-  .sum-val.green{color:var(--green);}
-  .sum-val.red{color:var(--red);}
-  .sum-val.amber{color:var(--amber);}
-  .sum-sub{font-size:11px;color:var(--muted);margin-top:2px;font-family:var(--mono);}
-
-  .controls{display:flex;align-items:center;gap:8px;padding:6px 0;flex-wrap:wrap;}
-  .filter-btn{background:transparent;border:1px solid var(--border);border-radius:6px;color:var(--muted);font-family:var(--mono);font-size:11px;padding:5px 12px;cursor:pointer;transition:all 0.15s;letter-spacing:0.05em;}
-  .filter-btn:hover{border-color:var(--border2);color:var(--text);}
-  .filter-btn.active{background:var(--accent);border-color:var(--accent);color:#000;font-weight:600;}
-  .filter-btn.active-bull{background:var(--green-bg);border-color:var(--green-border);color:var(--green);}
-  .filter-btn.active-bear{background:var(--red-bg);border-color:var(--red-border);color:var(--red);}
-  .sort-select{margin-left:auto;background:var(--bg2);border:1px solid var(--border);border-radius:6px;color:var(--muted);font-family:var(--mono);font-size:11px;padding:5px 10px;cursor:pointer;outline:none;}
-  .sort-select:focus{border-color:var(--accent);}
-
-  .table-wrap{overflow-x:auto;}
-  table{width:100%;border-collapse:collapse;min-width:1000px;}
-  thead th{font-family:var(--mono);font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--dim);padding:10px 10px;text-align:left;border-bottom:1px solid var(--border);cursor:pointer;user-select:none;white-space:nowrap;transition:color 0.15s;}
-  thead th:hover{color:var(--muted);}
-  thead th.r{text-align:right;}
-  thead th.c{text-align:center;}
-  /* Highlight B and L column headers */
-  thead th.b-col{text-align:center;color:var(--green);border-bottom:2px solid var(--green-border);}
-  thead th.l-col{text-align:center;color:var(--amber);border-bottom:2px solid var(--amber-border);}
-  tbody tr{border-bottom:1px solid var(--border);transition:background 0.1s;}
-  tbody tr:hover{background:var(--bg2);}
-  td{padding:10px 10px;vertical-align:middle;white-space:nowrap;}
-  td.r{text-align:right;}
-  td.c{text-align:center;}
-
-  .ticker-sym{font-family:var(--mono);font-weight:600;font-size:13px;color:var(--text);}
-  .ticker-name{font-size:11px;color:var(--muted);margin-top:1px;}
-  .price-val{font-family:var(--mono);font-size:13px;font-weight:500;}
-  .chg-pos{color:var(--green);font-family:var(--mono);font-size:12px;}
-  .chg-neg{color:var(--red);font-family:var(--mono);font-size:12px;}
-  .chg-neu{color:var(--muted);font-family:var(--mono);font-size:12px;}
-
-  /* Main sentiment badge */
-  .badge{display:inline-flex;align-items:center;gap:4px;font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;padding:3px 8px;border-radius:4px;border:1px solid;}
-  .badge-bull{background:var(--green-bg);border-color:var(--green-border);color:var(--green);}
-  .badge-bear{background:var(--red-bg);border-color:var(--red-border);color:var(--red);}
-  .badge-neut{background:var(--bg3);border-color:var(--border);color:var(--muted);}
-
-  /* B column — momentum trend signal (price vs SMMA20) */
-  .b-bull{font-family:var(--mono);font-size:10px;font-weight:700;padding:3px 8px;border-radius:4px;border:1px solid var(--green-border);background:var(--green-bg);color:var(--green);letter-spacing:0.05em;display:inline-block;}
-  .b-bear{font-family:var(--mono);font-size:10px;font-weight:700;padding:3px 8px;border-radius:4px;border:1px solid var(--red-border);background:var(--red-bg);color:var(--red);letter-spacing:0.05em;display:inline-block;}
-  .b-neut{font-family:var(--mono);font-size:10px;font-weight:700;padding:3px 8px;border-radius:4px;border:1px solid var(--border);background:var(--bg3);color:var(--muted);letter-spacing:0.05em;display:inline-block;}
-
-  /* L column — dual SMMA trend signal (SMMA15 vs SMMA29) */
-  .l-gold{font-family:var(--mono);font-size:10px;font-weight:700;padding:3px 8px;border-radius:4px;border:1px solid var(--amber-border);background:var(--amber-bg);color:var(--amber);letter-spacing:0.05em;display:inline-block;}
-  .l-blue{font-family:var(--mono);font-size:10px;font-weight:700;padding:3px 8px;border-radius:4px;border:1px solid var(--blue-border);background:var(--blue-bg);color:var(--blue);letter-spacing:0.05em;display:inline-block;}
-  .l-gray{font-family:var(--mono);font-size:10px;font-weight:700;padding:3px 8px;border-radius:4px;border:1px solid var(--border);background:var(--bg3);color:var(--muted);letter-spacing:0.05em;display:inline-block;}
-
-  .w52-bar{display:flex;align-items:center;gap:6px;justify-content:flex-end;}
-  .w52-track{width:54px;height:3px;background:var(--bg3);border-radius:2px;overflow:hidden;flex-shrink:0;}
-  .w52-fill{height:100%;border-radius:2px;}
-  .w52-pct{font-family:var(--mono);font-size:10px;color:var(--muted);min-width:26px;}
-  .vol-text{font-family:var(--mono);font-size:11px;color:var(--dim);}
-  .sig-text{font-size:11px;color:var(--muted);max-width:130px;overflow:hidden;text-overflow:ellipsis;}
-  .flip-time{display:block;font-family:var(--mono);font-size:11px;color:rgba(255,255,255,0.35);letter-spacing:0.04em;font-weight:400;}
-  .flip-time.new{color:var(--amber);font-weight:500;}
-
-
-  /* Tooltip on column headers */
-  .has-tip{position:relative;}
-  .has-tip::after{content:attr(data-tip);position:absolute;bottom:130%;left:50%;transform:translateX(-50%);background:var(--bg3);border:1px solid var(--border2);color:var(--text);font-family:var(--sans);font-size:11px;font-weight:400;text-transform:none;letter-spacing:0;padding:6px 10px;border-radius:6px;white-space:nowrap;opacity:0;pointer-events:none;transition:opacity 0.15s;z-index:20;min-width:220px;text-align:center;}
-  .has-tip:hover::after{opacity:1;}
-
-  .state-row td{text-align:center;padding:48px;color:var(--muted);font-family:var(--mono);font-size:12px;}
-
-  .setup-notice{background:var(--blue-bg);border:1px solid var(--blue-border);border-radius:10px;padding:20px 24px;margin:20px 0 0;font-size:13px;color:#93c5fd;line-height:1.7;}
-  .setup-notice strong{color:var(--text);font-weight:500;}
-  .setup-notice a{color:var(--accent);text-decoration:none;}
-  .setup-notice a:hover{text-decoration:underline;}
-  .setup-notice code{font-family:var(--mono);font-size:11px;background:rgba(0,0,0,0.3);padding:1px 5px;border-radius:3px;color:var(--accent);}
-  ol{padding-left:20px;margin-top:8px;}
-  ol li{margin:4px 0;}
-
-  .refresh-ring{width:28px;height:28px;flex-shrink:0;}
-  .refresh-ring svg{transform:rotate(-90deg);}
-  .refresh-ring circle{fill:none;stroke:var(--border);stroke-width:2;}
-  .refresh-ring .prog{stroke:var(--accent);stroke-dasharray:69.1;stroke-dashoffset:69.1;transition:stroke-dashoffset 1s linear;stroke-linecap:round;}
-
-  footer{margin-top:40px;padding-top:20px;border-top:1px solid var(--border);font-family:var(--mono);font-size:10px;color:var(--dim);letter-spacing:0.05em;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;}
-
-  /* ── TABS ── */
-  .tab-nav{display:flex;gap:0;border-bottom:1px solid var(--border);margin:4px 0 0;position:-webkit-sticky;position:sticky;top:0;z-index:100;background:var(--bg);}  .tab-btn{font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;padding:6px 16px;border:none;background:transparent;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all 0.15s;}  .tab-btn:hover{color:var(--text);}  .tab-btn.active{color:var(--accent);border-bottom-color:var(--accent);}  .alert-star{margin-left:4px;font-size:12px;transition:color 0.3s;}  .tab-pane{display:none;}  .tab-pane.active{display:block;}
-  /* ── ALERTS TAB ── */
-  .alert-controls{display:flex;align-items:center;gap:12px;padding:16px 0 12px;flex-wrap:wrap;}  .alert-label{font-family:var(--mono);font-size:11px;color:var(--muted);letter-spacing:0.05em;}  .alert-window-btn{background:transparent;border:1px solid var(--border);border-radius:6px;color:var(--muted);font-family:var(--mono);font-size:11px;padding:5px 14px;cursor:pointer;transition:all 0.15s;letter-spacing:0.05em;}  .alert-window-btn:hover{border-color:var(--border2);color:var(--text);}  .alert-window-btn.active{background:var(--accent);border-color:var(--accent);color:#000;font-weight:600;}  .alert-count{font-family:var(--mono);font-size:11px;color:var(--muted);margin-left:auto;}  .alert-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px 18px;display:grid;grid-template-columns:1fr auto auto auto auto;align-items:center;gap:16px;transition:background 0.1s;margin-bottom:8px;}  .alert-card:hover{background:var(--bg3);border-color:var(--border2);}  .alert-card-ticker{font-family:var(--mono);font-weight:700;font-size:14px;}  .alert-card-name{font-size:11px;color:var(--muted);margin-top:2px;}  .alert-card-price{font-family:var(--mono);font-size:13px;font-weight:500;text-align:right;}  .alert-card-chg{font-family:var(--mono);font-size:12px;text-align:right;}  .alert-flip-info{text-align:right;}  .alert-flip-label{font-family:var(--mono);font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:var(--dim);}  .alert-flip-time{font-family:var(--mono);font-size:12px;color:var(--accent);font-weight:600;}  .alert-badges{display:flex;gap:6px;justify-content:flex-end;}  .alert-empty{text-align:center;padding:60px;font-family:var(--mono);font-size:12px;color:var(--muted);}  .alert-empty-icon{font-size:32px;margin-bottom:12px;opacity:0.4;}  .alert-section-title{font-family:var(--mono);font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:var(--dim);margin:16px 0 8px;}
-  @media(max-width:640px){h1{font-size:20px;}.api-setup{flex-wrap:wrap;}.api-setup input{width:100%;}header{flex-direction:column;align-items:flex-start;}}
-</style>
-</head>
-<body>
-<div id="authWall" style="display:flex;position:fixed;inset:0;background:var(--bg);z-index:9999;align-items:center;justify-content:center;flex-direction:column;gap:16px;">
-  <div style="font-family:var(--mono);font-size:22px;color:var(--accent);font-weight:700;">▸ Geestman's Trading Dashboard</div>
-  <div style="font-family:var(--mono);font-size:12px;color:var(--muted);margin-bottom:8px;">Enter password to continue</div>
-  <input id="pwInput" type="password" placeholder="Password" onkeydown="if(event.key==='Enter')checkPw()" style="background:var(--bg2);color:var(--fg);border:1px solid var(--border);border-radius:4px;padding:10px 16px;font-size:14px;font-family:var(--mono);width:240px;outline:none;" autofocus />
-  <button onclick="checkPw()" style="background:var(--accent);color:#000;border:none;border-radius:4px;padding:8px 24px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--mono);">Enter</button>
-  <div id="pwError" style="color:var(--red);font-size:12px;font-family:var(--mono);display:none;">Incorrect password</div>
-</div>
-
-<div class="container">
-
-  <header>
-    <div class="header-left">
-      <div class="logo">▸ Market Terminal</div>
-      <h1>Geestman's Trading Dashboard</h1>
-      <div class="header-meta">Powered by Supabase</div>
-    </div>
-    <div class="header-right">
-      <button class="btn-refresh" id="refreshBtn" onclick="loadFromSupabase()">
-        <span id="refreshIcon">↻</span> Refresh
-      </button>
-    </div>
-  </header>
-
-  <div class="status-bar">
-    <div class="status-dot" id="statusDot"></div>
-    <span id="statusText">Loading data from database…</span>
-    <span style="margin-left:auto;display:flex;align-items:center;gap:8px;">
-      <span id="countdown"></span>
-      <div class="refresh-ring" id="refreshRing" style="display:none">
-        <svg width="28" height="28" viewBox="0 0 28 28">
-          <circle cx="14" cy="14" r="11"/>
-          <circle class="prog" id="ringProg" cx="14" cy="14" r="11"/>
-        </svg>
-      </div>
-    </span>
-  </div>
-
-  <!-- TAB NAVIGATION -->
-  <nav class="tab-nav">
-    <button class="tab-btn active" id="tabWatchlist" onclick="switchTab('watchlist')">Nasdaq60</button>
-    <button class="tab-btn" id="tabOMX" onclick="switchTab('omx')">OMX50</button>
-    <button class="tab-btn" id="tabCrypto" onclick="switchTab('crypto')">Crypto50</button>
-    <button class="tab-btn" id="tabWatchlist2" onclick="switchTab('watchlist2')">Watchlist</button>
-    <button class="tab-btn" id="tabPortfolio" onclick="switchTab('portfolio')">Portfolio</button>
-    <button class="tab-btn" id="tabAlerts" onclick="switchTab('alerts')" style="margin-left:auto;">&#9889; Alerts<span id="alertStar" class="alert-star" style="color:var(--green)">&#9733;</span></button>
-  </nav>
-
-  <!-- WATCHLIST TAB -->
-  <div class="tab-pane active" id="paneWatchlist">
-
-  <!-- SUMMARY: compact single-line chips -->
-  <div style="display:flex;gap:6px;flex-wrap:wrap;padding:3px 0;border-bottom:1px solid var(--border);align-items:center;position:-webkit-sticky;position:sticky;top:33px;z-index:9;background:var(--bg);">
-    <span style="font-family:var(--mono);font-size:10px;color:var(--muted);">▲ Trend <span class="green" id="sBull" style="font-weight:700;">—</span></span>
-    <span style="font-family:var(--mono);font-size:10px;color:var(--muted);">▼ Trend <span class="red" id="sBear" style="font-weight:700;">—</span></span>
-    <span style="font-family:var(--mono);font-size:10px;color:var(--muted);">B Bull <span class="green" id="sBBull" style="font-weight:700;">—</span></span>
-    <span style="font-family:var(--mono);font-size:10px;color:var(--muted);">B Bear <span class="red" id="sBBear" style="font-weight:700;">—</span></span>
-    <span style="font-family:var(--mono);font-size:10px;color:var(--muted);">L Gold <span style="color:var(--amber);font-weight:700;" id="sLGold">—</span></span>
-    <span style="font-family:var(--mono);font-size:10px;color:var(--muted);">L Blue <span style="color:#4fc3f7;font-weight:700;" id="sLBlue">—</span></span>
-  </div>
-
-  <!-- CONTROLS -->
-  <div class="controls" style="position:-webkit-sticky;position:sticky;top:52px;z-index:9;background:var(--bg);">
-    <button class="filter-btn active" onclick="setFilter('all',this)">All</button>
-    <button class="filter-btn" onclick="setFilter('bull',this)">▲ Trend Bull</button>
-    <button class="filter-btn" onclick="setFilter('bear',this)">▼ Trend Bear</button>
-    <button class="filter-btn" onclick="setFilter('bbull',this)" style="border-color:var(--green-border);color:var(--green);">▲ B:Bull</button>
-    <button class="filter-btn" onclick="setFilter('bbear',this)" style="border-color:var(--red-border);color:var(--red);">▼ B:Bear</button>
-    <button class="filter-btn" onclick="setFilter('lgold',this)" style="border-color:var(--amber-border);color:var(--amber);">★ L:Gold</button>
-    <button class="filter-btn" onclick="setFilter('lblue',this)" style="border-color:var(--blue-border);color:var(--blue);">● L:Blue</button>
-    <button class="filter-btn has-tip" id="tripleBtn" onclick="setFilter('triple',this)" style="border-color:var(--accent);color:var(--accent);font-weight:600;" data-tip="Triple Bull: Trend bullish + B bullish + L gold on selected timeframe">&#9889; Triple Bull</button>
-    <select class="sort-select" id="tfSelect" onchange="setTF(this.value)" style="margin-left:0; border-color:var(--accent); color:var(--accent);">
-      <option value="2H">Timeframe: 2H</option>
-      <option value="4H">Timeframe: 4H</option>
-      <option value="D" selected>Timeframe: Daily</option>
-      <option value="W">Timeframe: Weekly</option>
-      <option value="M">Timeframe: Monthly</option>
-    </select>
-    <select class="sort-select" onchange="setSort(this.value)">
-      <option value="">Sort: Default</option>
-      <option value="chg_d">% Change ↓</option>
-      <option value="chg_a">% Change ↑</option>
-      <option value="price_d">Price ↓</option>
-      <option value="price_a">Price ↑</option>
-      <option value="az">Ticker A–Z</option>
-          </select>
-  </div>
-
-  <!-- TABLE -->
-  <div class="table-wrap">
-    <table>
-      <thead>
-        <tr>
-          <th style="cursor:pointer;" onclick="setSort(curSort==='az'?'az_r':'az')">Ticker</th>
-          <th class="r" style="cursor:pointer;" onclick="setSort(curSort==='price_d'?'price_a':'price_d')" title="Sort by Price">Price</th>
-          <th class="r" style="cursor:pointer;" onclick="setSort(curSort==='chgabs_d'?'chgabs_a':'chgabs_d')" title="Sort by absolute change">Chg</th>
-          <th class="r" style="cursor:pointer;" onclick="setSort(curSort==='chg_d'?'chg_a':'chg_d')" title="Sort by % change">% Chg</th>
-          <th class="c" style="width:28px;" title="Add to watchlist">W+</th>
-          <th class="c" style="width:70px;font-size:10px;cursor:pointer;" onclick="setSort(curSort==='wl_d'?'wl_a':'wl_d')">In Watch</th>
-          <th class="c" style="width:28px;" title="Add to portfolio">P+</th>
-          <th class="c" style="width:70px;font-size:10px;cursor:pointer;" onclick="setSort(curSort==='in_d'?'in_a':'in_d')">In Port</th>
-          <th class="r" style="cursor:pointer;" onclick="setSort(curSort==='w52_d'?'w52_a':'w52_d')" title="Sort by 52-week range position">52W</th>
-          <th class="c">Trend</th>
-          <th class="c b-col has-tip" data-tip="B = Momentum signal. SMMA21 of close with ATR14×2.5 volatility band. State-based and sticky.">B</th>
-          <th class="c has-tip" style="font-size:10px;color:var(--green);border-bottom:2px solid var(--green-border);cursor:pointer;" data-tip="When the B signal last flipped (CET). Click to sort." onclick="setSort(curSort==='bflip_d'?'bflip_a':'bflip_d')" title="Sort by B Flip date">B Flip <span id="bflipArrow"></span></th>
-          <th class="c l-col has-tip" data-tip="L = Ribbon signal. SMMA15 vs SMMA25 on (H+L)/2. Gold = uptrend, Blue = downtrend.">L</th>
-          <th class="c has-tip" style="font-size:10px;color:var(--amber);border-bottom:2px solid var(--amber-border);cursor:pointer;" data-tip="When the L signal last flipped (CET). Click to sort." onclick="setSort(curSort==='lflip_d'?'lflip_a':'lflip_d')" title="Sort by L Flip date">L Flip <span id="lflipArrow"></span></th>
-          <th class="r">Volume</th>
-        </tr>
-      </thead>
-      <tbody id="tbody">
-        <tr class="state-row"><td colspan="16">Loading data from database…</td></tr>
-      </tbody>
-    </table>
-  </div>
-
-  </div><!-- /paneWatchlist -->
-
-  <!-- ALERTS TAB -->
-  <div class="tab-pane" id="paneAlerts">
-    <div class="alert-controls">
-      <span class="alert-label">Triple Bull flipped within:</span>
-      <button class="alert-window-btn active" data-hours="1"  onclick="setAlertWindow(1,this)">Last 1H</button>
-      <button class="alert-window-btn"         data-hours="2"  onclick="setAlertWindow(2,this)">Last 2H</button>
-      <button class="alert-window-btn"         data-hours="4"  onclick="setAlertWindow(4,this)">Last 4H</button>
-      <button class="alert-window-btn"         data-hours="8"  onclick="setAlertWindow(8,this)">Last 8H</button>
-      <button class="alert-window-btn"         data-hours="24" onclick="setAlertWindow(24,this)">Last 24H</button>
-      <span class="alert-count" id="alertCount"></span>
-    </div>
-    <div id="alertList"></div>
-  </div><!-- /paneAlerts -->
-
-  <!-- ==================== CRYPTO TAB ==================== -->
-  <div class="tab-pane" id="paneCrypto">
-
-  <!-- SUMMARY: compact inline chips matching Nasdaq60 -->
-  <div style="display:flex;gap:6px;flex-wrap:wrap;padding:3px 0;border-bottom:1px solid var(--border);align-items:center;position:-webkit-sticky;position:sticky;top:33px;z-index:9;background:var(--bg);">
-    <span style="font-family:var(--mono);font-size:10px;color:var(--muted);">▲ Trend <span class="green" id="csTrendBull" style="font-weight:700;">—</span></span>
-    <span style="font-family:var(--mono);font-size:10px;color:var(--muted);">▼ Trend <span class="red" id="csTrendBear" style="font-weight:700;">—</span></span>
-    <span style="font-family:var(--mono);font-size:10px;color:var(--muted);">B Bull <span class="green" id="csBBull" style="font-weight:700;">—</span></span>
-    <span style="font-family:var(--mono);font-size:10px;color:var(--muted);">B Bear <span class="red" id="csBBear" style="font-weight:700;">—</span></span>
-    <span style="font-family:var(--mono);font-size:10px;color:var(--muted);">L Gold <span style="color:var(--amber);font-weight:700;" id="csLGold">—</span></span>
-    <span style="font-family:var(--mono);font-size:10px;color:var(--muted);">L Blue <span style="color:#4fc3f7;font-weight:700;" id="csLBlue">—</span></span>
-  </div>
-
-  <!-- CONTROLS -->
-  <div class="controls" style="position:-webkit-sticky;position:sticky;top:52px;z-index:9;background:var(--bg);">
-    <button class="filter-btn active" onclick="setCryptoFilter('all',this)">All</button>
-    <button class="filter-btn" onclick="setCryptoFilter('bull',this)">&#9650; Trend Bull</button>
-    <button class="filter-btn" onclick="setCryptoFilter('bear',this)">&#9660; Trend Bear</button>
-    <button class="filter-btn" onclick="setCryptoFilter('bbull',this)" style="border-color:var(--green-border);color:var(--green);">&#9650; B:Bull</button>
-    <button class="filter-btn" onclick="setCryptoFilter('bbear',this)" style="border-color:var(--red-border);color:var(--red);">&#9660; B:Bear</button>
-    <button class="filter-btn" onclick="setCryptoFilter('lgold',this)" style="border-color:var(--amber-border);color:var(--amber);">&#9733; L:Gold</button>
-    <button class="filter-btn" onclick="setCryptoFilter('lblue',this)" style="border-color:var(--blue-border);color:var(--blue);">&#9679; L:Blue</button>
-    <button class="filter-btn has-tip" onclick="setCryptoFilter('triple',this)" style="border-color:var(--accent);color:var(--accent);font-weight:600;" data-tip="Triple Bull: Trend bullish + B bullish + L gold on selected timeframe">&#9889; Triple Bull</button>
-    <select class="sort-select" id="cryptoTfSelect" onchange="setCryptoTF(this.value)" style="margin-left:0;border-color:var(--accent);color:var(--accent);">
-      <option value="2H">Timeframe: 2H</option>
-      <option value="4H">Timeframe: 4H</option>
-      <option value="D" selected>Timeframe: Daily</option>
-      <option value="W">Timeframe: Weekly</option>
-      <option value="M">Timeframe: Monthly</option>
-    </select>
-    <select class="sort-select" onchange="setCryptoSort(this.value)">
-      <option value="">Sort: Default</option>
-      <option value="chg_d">% Change &#8595;</option>
-      <option value="chg_a">% Change &#8593;</option>
-      <option value="price_d">Price &#8595;</option>
-      <option value="price_a">Price &#8593;</option>
-      <option value="az">Ticker A-Z</option>
-      <option value="bflip_d">B Flip &#8595;</option>
-      <option value="lflip_d">L Flip &#8595;</option>
-    </select>
-  </div>
-
-  <!-- Table -->
-  <div class="table-wrap">
-    <table>
-      <thead>
-        <tr>
-          <th style="cursor:pointer;" onclick="setCryptoSort(cryptoCurSort==='az'?'az_r':'az')">Coin</th>
-          <th class="r" style="cursor:pointer;" onclick="setCryptoSort(cryptoCurSort==='price_d'?'price_a':'price_d')">Price</th>
-          <th class="r" style="cursor:pointer;" onclick="setCryptoSort(cryptoCurSort==='chg_d'?'chg_a':'chg_d')">% Chg</th>
-          <th class="r" style="cursor:pointer;" onclick="setCryptoSort(cryptoCurSort==='w52_d'?'w52_a':'w52_d')" title="Sort by 52-week range position">52W</th>
-          <th class="c">Trend</th>
-          <th class="c b-col has-tip" data-tip="B = Momentum signal. Highest-high/lowest-low + ATR14x2.5 bands.">B</th>
-          <th class="c has-tip" style="font-size:10px;color:var(--green);border-bottom:2px solid var(--green-border);cursor:pointer;" onclick="setCryptoSort(cryptoCurSort==='bflip_d'?'bflip_a':'bflip_d')" data-tip="When the B signal last flipped (CET). Click to sort.">B Flip</th>
-          <th class="c l-col has-tip" data-tip="L = Ribbon signal. SMMA15 vs SMMA25 on (H+L)/2.">L</th>
-          <th class="c has-tip" style="font-size:10px;color:var(--amber);border-bottom:2px solid var(--amber-border);cursor:pointer;" onclick="setCryptoSort(cryptoCurSort==='lflip_d'?'lflip_a':'lflip_d')" data-tip="When the L signal last flipped (CET). Click to sort.">L Flip</th>
-          <th class="r">Volume</th>
-        </tr>
-      </thead>
-      <tbody id="cryptoTbody">
-        <tr class="state-row"><td colspan="10">Loading crypto data...</td></tr>
-      </tbody>
-    </table>
-  </div>
-
-  </div><!-- /paneCrypto -->
-
-  <!-- OMX 10 TAB -->
-  <div class="tab-pane" id="paneOMX">
-
-  <!-- SUMMARY: compact single-line chips -->
-  <div style="display:flex;gap:6px;flex-wrap:wrap;padding:3px 0;border-bottom:1px solid var(--border);align-items:center;position:-webkit-sticky;position:sticky;top:33px;z-index:9;background:var(--bg);">
-    <span style="font-family:var(--mono);font-size:10px;color:var(--muted);">▲ Trend <span class="green" id="osTrendBull" style="font-weight:700;">—</span></span>
-    <span style="font-family:var(--mono);font-size:10px;color:var(--muted);">▼ Trend <span class="red" id="osTrendBear" style="font-weight:700;">—</span></span>
-    <span style="font-family:var(--mono);font-size:10px;color:var(--muted);">B Bull <span class="green" id="osBBull" style="font-weight:700;">—</span></span>
-    <span style="font-family:var(--mono);font-size:10px;color:var(--muted);">B Bear <span class="red" id="osBBear" style="font-weight:700;">—</span></span>
-    <span style="font-family:var(--mono);font-size:10px;color:var(--muted);">L Gold <span style="color:var(--amber);font-weight:700;" id="osLGold">—</span></span>
-    <span style="font-family:var(--mono);font-size:10px;color:var(--muted);">L Blue <span style="color:#4fc3f7;font-weight:700;" id="osLBlue">—</span></span>
-  </div>
-
-    <!-- Filters + TF + Sort -->
-  <!-- CONTROLS -->
-  <div class="controls" style="position:-webkit-sticky;position:sticky;top:52px;z-index:9;background:var(--bg);">
-      <button class="filter-btn active" onclick="setOMXFilter('all',this)">All</button>
-      <button class="filter-btn" onclick="setOMXFilter('bull',this)">&#9650; Trend Bull</button>
-      <button class="filter-btn" onclick="setOMXFilter('bear',this)">&#9660; Trend Bear</button>
-      <button class="filter-btn" onclick="setOMXFilter('bbull',this)" style="border-color:var(--green-border);color:var(--green);">&#9650; B:Bull</button>
-      <button class="filter-btn" onclick="setOMXFilter('bbear',this)" style="border-color:var(--red-border);color:var(--red);">&#9660; B:Bear</button>
-      <button class="filter-btn" onclick="setOMXFilter('lgold',this)" style="border-color:var(--amber-border);color:var(--amber);">&#9733; L:Gold</button>
-      <button class="filter-btn" onclick="setOMXFilter('lblue',this)" style="border-color:var(--blue-border);color:var(--blue);">&#9679; L:Blue</button>
-      <button class="filter-btn has-tip" onclick="setOMXFilter('triple',this)" style="border-color:var(--accent);color:var(--accent);font-weight:600;" data-tip="Triple Bull: Trend bullish + B bullish + L gold on selected timeframe">&#9889; Triple Bull</button>
-      <select class="sort-select" id="omxTfSelect" onchange="setOMXTF(this.value)" style="margin-left:0; border-color:var(--accent);color:var(--accent);">
-        <option value="2H">Timeframe: 2H</option>
-        <option value="4H">Timeframe: 4H</option>
-        <option value="D" selected>Timeframe: Daily</option>
-        <option value="W">Timeframe: Weekly</option>
-        <option value="M">Timeframe: Monthly</option>
-      </select>
-      <select class="sort-select" onchange="setOMXSort(this.value)">
-        <option value="">Sort: Default</option>
-        <option value="chg_d">% Change &#8595;</option>
-        <option value="chg_a">% Change &#8593;</option>
-        <option value="price_d">Price &#8595;</option>
-        <option value="price_a">Price &#8593;</option>
-        <option value="az">Ticker A-Z</option>
-        <option value="w52_d">52W &#8595;</option>
-        <option value="w52_a">52W &#8593;</option>
-        <option value="trend_d">Trend Bull</option>
-        <option value="trend_a">Trend Bear</option>
-        <option value="bflip_d">B Flip &#8595;</option>
-        <option value="lflip_d">L Flip &#8595;</option>
-      </select>
-    </div>
-
-    <!-- Table -->
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th style="cursor:pointer;" onclick="setOMXSort(omxCurSort==='az'?'az_r':'az')">Ticker</th>
-            <th class="r" style="cursor:pointer;" onclick="setOMXSort(omxCurSort==='price_d'?'price_a':'price_d')" title="Sort by Price">Price</th>
-            <th class="r" style="cursor:pointer;" onclick="setOMXSort(omxCurSort==='chg_d'?'chg_a':'chg_d')" title="Sort by % change">% Chg</th>
-            <th class="c" style="width:28px;" title="Add to watchlist">W+</th>
-            <th class="c" style="width:70px;font-size:10px;cursor:pointer;" onclick="setOMXSort(omxCurSort==='wl_d'?'wl_a':'wl_d')">In Watch</th>
-            <th class="c" style="width:28px;" title="Add to portfolio">P+</th>
-            <th class="c" style="width:70px;font-size:10px;cursor:pointer;" onclick="setOMXSort(omxCurSort==='in_d'?'in_a':'in_d')">In Port</th>
-            <th class="r" style="cursor:pointer;" onclick="setOMXSort(omxCurSort==='w52_d'?'w52_a':'w52_d')" title="Sort by 52-week range position">52W</th>
-            <th class="c">Trend</th>
-            <th class="c b-col has-tip" data-tip="B = Momentum signal. SMMA21 of close with ATR14x2.5 volatility band. State-based and sticky.">B</th>
-            <th class="c has-tip" style="font-size:10px;color:var(--green);border-bottom:2px solid var(--green-border);cursor:pointer;" onclick="setOMXSort(omxCurSort==='bflip_d'?'bflip_a':'bflip_d')" data-tip="When the B signal last flipped (CET). Click to sort.">B Flip</th>
-            <th class="c l-col has-tip" data-tip="L = Ribbon signal. SMMA15 vs SMMA25 on (H+L)/2. Gold = uptrend, Blue = downtrend.">L</th>
-            <th class="c has-tip" style="font-size:10px;color:var(--amber);border-bottom:2px solid var(--amber-border);cursor:pointer;" onclick="setOMXSort(omxCurSort==='lflip_d'?'lflip_a':'lflip_d')" data-tip="When the L signal last flipped (CET). Click to sort.">L Flip</th>
-            <th class="r">Volume</th>
-          </tr>
-        </thead>
-        <tbody id="omxTbody">
-          <tr class="state-row"><td colspan="14">Loading OMX data...</td></tr>
-        </tbody>
-      </table>
-    </div>
-
-  </div><!-- /paneOMX -->
-
-  <!-- WATCHLIST PANE -->
-  <div class="tab-pane" id="paneWatchlist2">
-    <div style="display:flex;align-items:center;gap:12px;padding:10px 0 8px;flex-wrap:wrap;">
-      <button onclick="createWatchlist()" style="background:var(--accent);color:#000;border:none;border-radius:4px;padding:6px 14px;cursor:pointer;font-size:12px;font-weight:600;">+ New Watchlist</button>
-      <select id="watchlistSelect" onchange="selectWatchlist(this.value)" style="background:var(--bg2);color:var(--fg);border:1px solid var(--border);border-radius:4px;padding:5px 10px;font-size:12px;">
-        <option value="">Select watchlist...</option>
-      </select>
-      <button id="renameWatchlistBtn" onclick="renameWatchlist()" style="display:none;background:none;border:1px solid var(--border);color:var(--muted);border-radius:4px;padding:5px 10px;cursor:pointer;font-size:12px;">Rename</button>
-      <button id="deleteWatchlistBtn" onclick="deleteWatchlist()" style="display:none;background:none;border:1px solid var(--red);color:var(--red);border-radius:4px;padding:5px 10px;cursor:pointer;font-size:12px;">Delete</button>
-      <span id="watchlistStatus" style="font-size:11px;color:var(--muted);font-family:var(--mono);">Loading...</span>
-    </div>
-    <!-- Watchlist filters + TF + Sort -->
-    <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:6px 0;">
-      <button class="filter-btn active" id="wfAll"    onclick="setWLFilter('all',this)">All</button>
-      <button class="filter-btn"        id="wfBull"   onclick="setWLFilter('bull',this)">▲ Trend Bull</button>
-      <button class="filter-btn"        id="wfBear"   onclick="setWLFilter('bear',this)">▼ Trend Bear</button>
-      <button class="filter-btn"        id="wfBBull"  onclick="setWLFilter('bbull',this)" style="border-color:var(--green-border);color:var(--green);">▲ B:Bull</button>
-      <button class="filter-btn"        id="wfBBear"  onclick="setWLFilter('bbear',this)" style="border-color:var(--red-border);color:var(--red);">▼ B:Bear</button>
-      <button class="filter-btn"        id="wfLGold"  onclick="setWLFilter('lgold',this)" style="border-color:var(--amber-border);color:var(--amber);">★ L:Gold</button>
-      <button class="filter-btn"        id="wfLBlue"  onclick="setWLFilter('lblue',this)" style="border-color:var(--blue-border);color:var(--blue);">● L:Blue</button>
-      <button class="filter-btn has-tip" id="wfTriple" onclick="setWLFilter('triple',this)" style="border-color:var(--accent);color:var(--accent);font-weight:600;" data-tip="Triple Bull: Trend bullish + B bullish + L gold on selected timeframe">&#9889; Triple Bull</button>
-      <div style="margin-left:auto;display:flex;align-items:center;gap:6px;">
-        <select id="wlSortSelect" onchange="setWLSort(this.value)" style="background:var(--bg2);color:var(--fg);border:1px solid var(--border);border-radius:4px;padding:4px 8px;font-size:11px;">
-          <option value="">Sort: Default</option>
-          <option value="az">Ticker A-Z</option>
-          <option value="chg_d">% Chg Down</option>
-          <option value="chg_a">% Chg Up</option>
-          <option value="bflip_d">B Flip Recent</option>
-          <option value="lflip_d">L Flip Recent</option>
-        </select>
-        <select class="sort-select" id="wlTFSelect" onchange="setWLTF(this.value)" style="border-color:var(--accent);color:var(--accent);">
-          <option value="2H">Timeframe: 2H</option>
-          <option value="4H">Timeframe: 4H</option>
-          <option value="D" selected>Timeframe: Daily</option>
-          <option value="W">Timeframe: Weekly</option>
-          <option value="M">Timeframe: Monthly</option>
-        </select>
-      </div>
-    </div>
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>Ticker</th>
-            <th class="r">Price</th>
-            <th class="r">% Chg</th>
-            <th class="r">52W</th>
-            <th class="c">Trend</th>
-            <th class="c">B</th>
-            <th class="c" style="font-size:10px;">B Flip</th>
-            <th class="c">L</th>
-            <th class="c" style="font-size:10px;">L Flip</th>
-            <th class="c" style="width:60px;">Remove</th>
-          </tr>
-        </thead>
-        <tbody id="watchlistTbody">
-          <tr class="state-row"><td colspan="10">Select or create a watchlist above.</td></tr>
-        </tbody>
-      </table>
-    </div>
-  </div><!-- /paneWatchlist2 -->
-
-  <!-- PORTFOLIO PANE -->
-  <div class="tab-pane" id="panePortfolio">
-    <div style="display:flex;align-items:center;gap:12px;padding:10px 0 8px;flex-wrap:wrap;">
-      <button onclick="createPortfolio()" style="background:var(--accent);color:#000;border:none;border-radius:4px;padding:6px 14px;cursor:pointer;font-size:12px;font-weight:600;">+ New Portfolio</button>
-      <select id="portfolioSelect" onchange="selectPortfolio(this.value)" style="background:var(--bg2);color:var(--fg);border:1px solid var(--border);border-radius:4px;padding:5px 10px;font-size:12px;">
-        <option value="">Select portfolio...</option>
-      </select>
-      <button id="renamePortfolioBtn" onclick="renamePortfolio()" style="display:none;background:none;border:1px solid var(--border);color:var(--muted);border-radius:4px;padding:5px 10px;cursor:pointer;font-size:12px;">Rename</button>
-      <button id="deletePortfolioBtn" onclick="deletePortfolio()" style="display:none;background:none;border:1px solid var(--red);color:var(--red);border-radius:4px;padding:5px 10px;cursor:pointer;font-size:12px;">Delete</button>
-      <span id="portfolioStatus" style="font-size:11px;color:var(--muted);font-family:var(--mono);">Loading...</span>
-    </div>
-    <!-- Portfolio filters + TF -->
-    <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:6px 0;">
-      <button class="filter-btn active" id="pfAll"    onclick="setPortFilter('all',this)">All</button>
-      <button class="filter-btn"        id="pfBull"   onclick="setPortFilter('bull',this)">▲ Trend Bull</button>
-      <button class="filter-btn"        id="pfBear"   onclick="setPortFilter('bear',this)">▼ Trend Bear</button>
-      <button class="filter-btn"        id="pfBBull"  onclick="setPortFilter('bbull',this)"  style="border-color:var(--green-border);color:var(--green);">▲ B:Bull</button>
-      <button class="filter-btn"        id="pfBBear"  onclick="setPortFilter('bbear',this)"  style="border-color:var(--red-border);color:var(--red);">▼ B:Bear</button>
-      <button class="filter-btn"        id="pfLGold"  onclick="setPortFilter('lgold',this)"  style="border-color:var(--amber-border);color:var(--amber);">★ L:Gold</button>
-      <button class="filter-btn"        id="pfLBlue"  onclick="setPortFilter('lblue',this)"  style="border-color:var(--blue-border);color:var(--blue);">● L:Blue</button>
-      <button class="filter-btn has-tip" id="pfTriple" onclick="setPortFilter('triple',this)" style="border-color:var(--accent);color:var(--accent);font-weight:600;" data-tip="Triple Bull: Trend bullish + B bullish + L gold on selected timeframe">&#9889; Triple Bull</button>
-      <div style="margin-left:auto;display:flex;align-items:center;gap:6px;">
-        <select id="portSortSelect" onchange="setPortSort(this.value)" style="background:var(--bg2);color:var(--fg);border:1px solid var(--border);border-radius:4px;padding:4px 8px;font-size:11px;">
-          <option value="">Sort: Default</option>
-          <option value="az">Ticker A-Z</option>
-          <option value="chg_d">% Chg Down</option>
-          <option value="chg_a">% Chg Up</option>
-          <option value="bflip_d">B Flip Recent</option>
-          <option value="lflip_d">L Flip Recent</option>
-        </select>
-        <select class="sort-select" id="portTFSelect" onchange="setPortTF(this.value)" style="border-color:var(--accent);color:var(--accent);">
-          <option value="2H">Timeframe: 2H</option>
-          <option value="4H">Timeframe: 4H</option>
-          <option value="D" selected>Timeframe: Daily</option>
-          <option value="W">Timeframe: Weekly</option>
-          <option value="M">Timeframe: Monthly</option>
-        </select>
-      </div>
-    </div>
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>Ticker</th>
-            <th class="r">Price</th>
-            <th class="r">% Chg</th>
-            <th class="r">52W</th>
-            <th class="c">Trend</th>
-            <th class="c">B</th>
-            <th class="c" style="font-size:10px;">B Flip</th>
-            <th class="c">L</th>
-            <th class="c" style="font-size:10px;">L Flip</th>
-            <th class="c" style="width:60px;">Remove</th>
-          </tr>
-        </thead>
-        <tbody id="portfolioTbody">
-          <tr class="state-row"><td colspan="10">Select or create a portfolio above.</td></tr>
-        </tbody>
-      </table>
-    </div>
-  </div><!-- /panePortfolio -->
-
-  <footer>
-    <span>GEESTMAN'S NQ60 WATCHLIST · POWERED BY SUPABASE + YAHOO FINANCE</span>
-    <span>DATA UPDATES EVERY 30 MIN · NOT FINANCIAL ADVICE</span>
-  </footer>
-</div>
-
-<script>
-// -- CONFIG --------------------------------------------------------------------
-const SUPABASE_URL  = 'https://ixcwtfrelsyjjiribpeo.supabase.co';
-const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml4Y3d0ZnJlbHN5amppcmlicGVvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0Mjk4MzMsImV4cCI6MjA5NTAwNTgzM30.KvvGWXbI91uH7PA-Nbj33BRqEUziXkt1el2a5ihf9Zg';
-const REFRESH_INTERVAL = 30; // seconds between Supabase reads
-
-// -- STATE ---------------------------------------------------------------------
-let allData    = [];
-let curFilter  = 'all';
-let curSort    = '';
-let curTF      = 'D';
-let countdownTimer = null;
-let secondsLeft    = 0;
-
-// -- TIMEFRAME HELPERS ---------------------------------------------------------
-// Defined as functions (not const) so they are hoisted and available everywhere
-function trimDaily(t) { return (t && t.length > 6) ? t.slice(0,6) : t; }
-function getBFlip(r)  {
-  if (curTF==='2H') return r.bFlipTime2h||r.bFlipTime4h||trimDaily(r.bFlipTime);
-  if (curTF==='4H') return r.bFlipTime4h||trimDaily(r.bFlipTime);
-  if (curTF==='W')  return r.bFlipTimeW||trimDaily(r.bFlipTime);
-  if (curTF==='M')  return r.bFlipTimeM||trimDaily(r.bFlipTime);
-  return trimDaily(r.bFlipTime);
-}
-function getLFlip(r)  {
-  if (curTF==='2H') return r.lFlipTime2h||r.lFlipTime4h||trimDaily(r.lFlipTime);
-  if (curTF==='4H') return r.lFlipTime4h||trimDaily(r.lFlipTime);
-  if (curTF==='W')  return r.lFlipTimeW||trimDaily(r.lFlipTime);
-  if (curTF==='M')  return r.lFlipTimeM||trimDaily(r.lFlipTime);
-  return trimDaily(r.lFlipTime);
-}
-function getChgPct(r) { return curTF==='2H'?(r.chgPct2h||r.chgPct4h||r.chgPct):curTF==='4H'?(r.chgPct4h||r.chgPct):curTF==='W'?(r.chgPctW||r.chgPct):curTF==='M'?(r.chgPctM||r.chgPct):r.chgPct; }
-function getTfChg(r)  { return curTF==='2H'?(r.chg2h||r.chg4h||r.chg):curTF==='4H'?(r.chg4h||r.chg):curTF==='W'?(r.chgW||r.chg):curTF==='M'?(r.chgM||r.chg):r.chg; }
-
-// -- INIT ----------------------------------------------------------------------
-function checkPw() {
-  const pw = document.getElementById('pwInput').value;
-  if (pw === 'GM26') {
-    document.getElementById('authWall').style.display = 'none';
-    loadFromSupabase();
-    Promise.all([loadPortfolios(), loadWatchlists()]).then(() => render());
-  } else {
-    document.getElementById('pwError').style.display = 'block';
-    document.getElementById('pwInput').value = '';
-    document.getElementById('pwInput').focus();
-  }
-}
-
-window.addEventListener('DOMContentLoaded', () => {
-  document.getElementById('pwInput').focus();
-});
-
-window.addEventListener('DOMContentLoaded_disabled', () => { loadFromSupabase(); Promise.all([loadPortfolios(), loadWatchlists()]).then(() => render()); });
-
-// -- SUPABASE READ -------------------------------------------------------------
-async function loadFromSupabase() {
-  setStatus('loading', 'Reading from database');
-  const btn  = document.getElementById('refreshBtn');
-  const icon = document.getElementById('refreshIcon');
-  btn.disabled = true;
-  icon.classList.add('spin');
-  clearTimers();
-
+async function sendTelegram(msg: string): Promise<void> {
+  if (!TG_TOKEN || !TG_CHAT_ID) return;
   try {
-    // Two simple queries -- no foreign key join needed
-    const headers = {
-      'apikey':        SUPABASE_ANON,
-      'Authorization': `Bearer ${SUPABASE_ANON}`,
-      'Accept':        'application/json',
-    };
+    await fetch(`https://api.telegram.org/bot${TG_TOKEN}/sendMessage`, {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({chat_id: TG_CHAT_ID, text: msg, parse_mode: "HTML"}),
+    });
+  } catch(e) { console.error("Telegram send failed:", e); }
+}
 
-    const [priceRes, flipRes] = await Promise.all([
-      fetch(`${SUPABASE_URL}/rest/v1/price_data?select=*`, { headers }),
-      fetch(`${SUPABASE_URL}/rest/v1/flip_history?select=*`, { headers }),
-    ]);
+// Bootstrap top-25 list (CoinGecko IDs -> Binance symbols)
+const BOOTSTRAP: {id:string, sym:string, name:string, binanceSym:string}[] = [
+  {id:"bitcoin",          sym:"BTC",  name:"Bitcoin",        binanceSym:"BTCUSDT"},
+  {id:"ethereum",         sym:"ETH",  name:"Ethereum",       binanceSym:"ETHUSDT"},
+  {id:"tether",           sym:"USDT", name:"Tether",         binanceSym:""},
+  {id:"binancecoin",      sym:"BNB",  name:"BNB",            binanceSym:"BNBUSDT"},
+  {id:"solana",           sym:"SOL",  name:"Solana",         binanceSym:"SOLUSDT"},
+  {id:"ripple",           sym:"XRP",  name:"XRP",            binanceSym:"XRPUSDT"},
+  {id:"usd-coin",         sym:"USDC", name:"USD Coin",       binanceSym:""},
+  {id:"dogecoin",         sym:"DOGE", name:"Dogecoin",       binanceSym:"DOGEUSDT"},
+  {id:"cardano",          sym:"ADA",  name:"Cardano",        binanceSym:"ADAUSDT"},
+  {id:"tron",             sym:"TRX",  name:"TRON",           binanceSym:"TRXUSDT"},
+  {id:"avalanche-2",      sym:"AVAX", name:"Avalanche",      binanceSym:"AVAXUSDT"},
+  {id:"chainlink",        sym:"LINK", name:"Chainlink",      binanceSym:"LINKUSDT"},
+  {id:"shiba-inu",        sym:"SHIB", name:"Shiba Inu",      binanceSym:"SHIBUSDT"},
+  {id:"stellar",          sym:"XLM",  name:"Stellar",        binanceSym:"XLMUSDT"},
+  {id:"polkadot",         sym:"DOT",  name:"Polkadot",       binanceSym:"DOTUSDT"},
+  {id:"bitcoin-cash",     sym:"BCH",  name:"Bitcoin Cash",   binanceSym:"BCHUSDT"},
+  {id:"litecoin",         sym:"LTC",  name:"Litecoin",       binanceSym:"LTCUSDT"},
+  {id:"uniswap",          sym:"UNI",  name:"Uniswap",        binanceSym:"UNIUSDT"},
+  {id:"hedera-hashgraph", sym:"HBAR", name:"Hedera",         binanceSym:"HBARUSDT"},
+  {id:"near",             sym:"NEAR", name:"NEAR Protocol",  binanceSym:"NEARUSDT"},
+  {id:"sui",              sym:"SUI",  name:"Sui",            binanceSym:"SUIUSDT"},
+  {id:"internet-computer",sym:"ICP",  name:"ICP",            binanceSym:"ICPUSDT"},
+  {id:"aptos",            sym:"APT",  name:"Aptos",          binanceSym:"APTUSDT"},
+  {id:"ethereum-classic", sym:"ETC",  name:"Ethereum Classic",binanceSym:"ETCUSDT"},
+  {id:"aave",             sym:"AAVE", name:"Aave",           binanceSym:"AAVEUSDT"},
+];
 
-    if (!priceRes.ok) throw new Error(`Supabase HTTP ${priceRes.status}`);
-    if (!flipRes.ok)  throw new Error(`Flip history HTTP ${flipRes.status}`);
+// -- SIGNAL ALGORITHMS --
+function atrArray(h:number[], l:number[], c:number[], period:number):number[] {
+  if (c.length < period+1) return [];
+  const trs:number[] = [0];
+  for (let i=1; i<c.length; i++)
+    trs.push(Math.max(h[i]-l[i], Math.abs(h[i]-c[i-1]), Math.abs(l[i]-c[i-1])));
+  const out:number[] = Array(period).fill(0);
+  let a = trs.slice(1,period+1).reduce((x,y)=>x+y,0)/period;
+  out.push(a);
+  for (let i=period+1; i<trs.length; i++) { a=(a*(period-1)+trs[i])/period; out.push(a); }
+  return out;
+}
 
-    const rows     = await priceRes.json();
-    const flipRows = await flipRes.json();
+function smmaArray(src:number[], period:number):number[] {
+  const out:number[] = Array(period-1).fill(null);
+  let s = src.slice(0,period).reduce((a,b)=>a+b,0)/period;
+  out.push(s);
+  for (let i=period; i<src.length; i++) { s=(s*(period-1)+src[i])/period; out.push(s); }
+  return out;
+}
 
-    if (!rows.length) {
-      setStatus('error', 'No data yet -- Edge Function may still be running. Try refreshing in a minute.');
-      return;
+function bSignal(h:number[], l:number[], c:number[]):string {
+  if (!c||c.length<36) return "neutral";
+  const atrs=atrArray(h,l,c,14);
+  let state:string|null=null;
+  for (let i=14;i<c.length;i++) {
+    const atr=atrs[i]; if (!atr) continue;
+    const hh=Math.max(...h.slice(i-13,i+1));
+    const ll=Math.min(...l.slice(i-13,i+1));
+    if (c[i]>hh-atr*2.5) state="bull";
+    else if (c[i]<ll+atr*2.5) state="bear";
+  }
+  return state??"neutral";
+}
+
+function bSignalArray(h:number[], l:number[], c:number[]):string[] {
+  if (!c||c.length<14) return [];
+  const atrs=atrArray(h,l,c,14);
+  const out:string[]=Array(c.length).fill("");
+  let state:string|null=null;
+  for (let i=14;i<c.length;i++) {
+    const atr=atrs[i]; if (!atr) continue;
+    const hh=Math.max(...h.slice(i-13,i+1));
+    const ll=Math.min(...l.slice(i-13,i+1));
+    if (c[i]>hh-atr*2.5) state="bull";
+    else if (c[i]<ll+atr*2.5) state="bear";
+    if (state) out[i]=state;
+  }
+  return out;
+}
+
+function lSignal(h:number[], l:number[], c:number[]):string {
+  if (!c||c.length<25) return "gray";
+  const hl2=c.map((_,i)=>(h[i]+l[i])/2);
+  const fast=smmaArray(hl2,15); const slow=smmaArray(hl2,25);
+  const f=fast[fast.length-1]; const s=slow[slow.length-1];
+  if (f==null||s==null) return "gray";
+  return f>=s?"gold":"blue";
+}
+
+function lSignalArray(h:number[], l:number[], c:number[]):string[] {
+  if (!c||c.length<25) return [];
+  const hl2=c.map((_,i)=>(h[i]+l[i])/2);
+  const fast=smmaArray(hl2,15); const slow=smmaArray(hl2,25);
+  const out:string[]=[];
+  for (let i=0;i<c.length;i++) {
+    const f=fast[i]; const s=slow[i];
+    out.push(f==null||s==null?"gray":f>=s?"gold":"blue");
+  }
+  return out;
+}
+
+function findLastFlip(arr:string[], timestamps:number[]):{signal:string|null,flipTs:number|null} {
+  if (!arr.length||!timestamps.length) return {signal:null,flipTs:null};
+  let last:string|null=(arr[0]&&arr[0]!=="neutral"&&arr[0]!=="gray")?arr[0]:null;
+  let flipTs:number|null=null;
+  for (let i=1;i<arr.length;i++) {
+    const sig=arr[i];
+    if (!sig||sig==="neutral"||sig==="gray"){last=sig;continue;}
+    if (last!==null&&last!==sig) flipTs=timestamps[i];
+    last=sig;
+  }
+  if (!flipTs&&last&&last!=="neutral"&&last!=="gray") {
+    const cur=last;
+    for (let i=arr.length-1;i>=1;i--) {
+      if (arr[i]!==cur){flipTs=timestamps[Math.min(i+1,timestamps.length-1)];break;}
     }
-
-    // Build flip lookup map
-    const flipMap = {};
-    flipRows.forEach(f => { flipMap[f.sym] = f; });
-
-    allData = rows.map(r => ({
-      sym:      r.sym,
-      name:     r.name,
-      price:    r.price,
-      chg:      r.chg,
-      chgPct:   r.chg_pct,
-      chg2h:    r.chg_2h,
-      chgPct2h: r.chg_pct_2h,
-      chg4h:    r.chg_4h,
-      chgPct4h: r.chg_pct_4h,
-      chgW:     r.chg_w,
-      chgPctW:  r.chg_pct_w,
-      chgM:     r.chg_m,
-      chgPctM:  r.chg_pct_m,
-      hi52:     r.hi52,
-      lo52:     r.lo52,
-      vol:      r.vol,
-      mktCapB:  r.mkt_cap_b,
-      bFlipTime:   flipMap[r.sym]?.b_flip_time    ?? null,
-      lFlipTime:   flipMap[r.sym]?.l_flip_time    ?? null,
-      bFlipTime2h: flipMap[r.sym]?.b_flip_time_2h ?? null,
-      lFlipTime2h: flipMap[r.sym]?.l_flip_time_2h ?? null,
-      bFlipTime4h: flipMap[r.sym]?.b_flip_time_4h ?? null,
-      lFlipTime4h: flipMap[r.sym]?.l_flip_time_4h ?? null,
-      bFlipTimeW:  flipMap[r.sym]?.b_flip_time_w  ?? null,
-      lFlipTimeW:  flipMap[r.sym]?.l_flip_time_w  ?? null,
-      bFlipTimeM:  flipMap[r.sym]?.b_flip_time_m  ?? null,
-      lFlipTimeM:  flipMap[r.sym]?.l_flip_time_m  ?? null,
-      tf: {
-        '2H': { b: r.b_2h||r.b_4h||r.b_d, l: r.l_2h||r.l_4h||r.l_d },
-        '4H': { b: r.b_4h||r.b_d,         l: r.l_4h||r.l_d          },
-        'D':  { b: r.b_d,                  l: r.l_d                   },
-        'W':  { b: r.b_w ||r.b_d,          l: r.l_w ||r.l_d          },
-        'M':  { b: r.b_m ||r.b_w||r.b_d,  l: r.l_m ||r.l_w||r.l_d  },
-      },
-      // Trend = independent momentum signal from today's price action + 52w position
-      // This is deliberately different from B (SMMA20) and L (SMMA15/29)
-      sentiment: (function() {
-        const chgPct = r.chg_pct || 0;
-        const pos52  = (r.hi52 && r.lo52 && r.hi52 > r.lo52)
-          ? (r.price - r.lo52) / (r.hi52 - r.lo52) : 0.5;
-        let score = 0;
-        if (chgPct >  1.5) score += 2;
-        else if (chgPct >  0.3) score += 1;
-        else if (chgPct < -1.5) score -= 2;
-        else if (chgPct < -0.3) score -= 1;
-        if (pos52 > 0.75) score += 1;
-        else if (pos52 < 0.3) score -= 1;
-        if (score >= 2) return 'bull';
-        if (score <= -1) return 'bear';
-        return 'neutral';
-      })(),
-      bSignal:   r.b_d,
-      lSignal:   r.l_d, // daily -- used for flip detection baseline only
-    }));
-
-    window._rawData = rows; // store raw rows for portfolio TF-aware filtering
-    render();
-    renderSummary();
-    if (curTab === 'alerts') renderAlerts();
-    // Show when data was last updated by Edge Function
-    const dataTime = new Date(rows[0]?.updated_at);
-    const dataCET  = dataTime.toLocaleString('en-GB', {
-      timeZone:'Europe/Stockholm', hour:'2-digit', minute:'2-digit', second:'2-digit', day:'2-digit', month:'2-digit'
-    });
-    // Also show when app last fetched from Supabase
-    const fetchTime = new Date();
-    const fetchCET  = fetchTime.toLocaleString('en-GB', {
-      timeZone:'Europe/Stockholm', hour:'2-digit', minute:'2-digit', second:'2-digit'
-    });
-    setStatus('live', `Live . Fetched ${fetchCET} CET . Data updated ${dataCET} . ${allData.length} stocks loaded`);
-    startCountdown();
-
-  } catch(e) {
-    setStatus('error', 'Failed to load: ' + e.message);
-    console.error(e);
-  } finally {
-    btn.disabled = false;
-    icon.classList.remove('spin');
+    if (!flipTs&&timestamps.length>0) flipTs=timestamps[0];
   }
+  return {signal:last,flipTs};
 }
 
-// -- RENDER TABLE --------------------------------------------------------------
-function render() {
-  let rows = [...allData];
+function formatDate(ts:number|null,includeTime=false):string|null {
+  if (!ts) return null;
+  const d=new Date(new Date(ts*1000).toLocaleString("en-US",{timeZone:"Europe/Stockholm"}));
+  const dd=String(d.getDate()).padStart(2,"0");
+  const mm=String(d.getMonth()+1).padStart(2,"0");
+  const yy=String(d.getFullYear()).slice(2);
+  if (!includeTime) return dd+mm+yy;
+  return dd+mm+yy+" "+String(d.getHours()).padStart(2,"0")+String(d.getMinutes()).padStart(2,"0");
+}
 
-  // Filter
-  if (curFilter === 'bull')    rows = rows.filter(r => r.sentiment === 'bull');
-  else if (curFilter === 'bear')    rows = rows.filter(r => r.sentiment === 'bear');
-  else if (curFilter === 'neutral') rows = rows.filter(r => r.sentiment === 'neutral');
-  else if (curFilter === 'bbull')   rows = rows.filter(r => ((r.tf||{})[curTF]||{}).b === 'bull');
-  else if (curFilter === 'bbear')   rows = rows.filter(r => ((r.tf||{})[curTF]||{}).b === 'bear');
-  else if (curFilter === 'lgold')   rows = rows.filter(r => ((r.tf||{})[curTF]||{}).l === 'gold');
-  else if (curFilter === 'lblue')   rows = rows.filter(r => ((r.tf||{})[curTF]||{}).l === 'blue');
-  else if (curFilter === 'triple') {
-    // Triple Bull: Trend=Bull AND B=Bullish AND L=Gold for the ACTIVE timeframe
-    rows = rows.filter(r => {
-      const activeTF = (r.tf || {})[curTF] || {b:'neutral', l:'gray'};
-      return r.sentiment === 'bull' &&
-             activeTF.b  === 'bull' &&
-             activeTF.l  === 'gold';
-    });
-    // Default sort when no column sort active: newest B flip first, L flip tiebreaker
-    if (!curSort) {
-      rows.sort((a, b) => {
-        const bDiff = parseDateStr(getBFlip(b)) - parseDateStr(getBFlip(a));
-        if (bDiff !== 0) return bDiff;
-        return parseDateStr(getLFlip(b)) - parseDateStr(getLFlip(a));
-      });
-    }
+// -- BINANCE API --
+async function fetchBinanceKlines(sym:string, interval:string, limit:number):Promise<{
+  opens:number[],highs:number[],lows:number[],closes:number[],timestamps:number[]
+}> {
+  const url = `https://api.binance.com/api/v3/klines?symbol=${sym}&interval=${interval}&limit=${limit}`;
+  const res = await fetch(url, {headers:{"User-Agent":"Mozilla/5.0"}});
+  if (!res.ok) throw new Error(`Binance HTTP ${res.status} for ${sym} ${interval}`);
+  const json = await res.json() as any[][];
+  // Binance returns: [openTime, open, high, low, close, volume, ...]
+  const opens:number[]=[],highs:number[]=[],lows:number[]=[],closes:number[]=[],timestamps:number[]=[];
+  for (const k of json) {
+    timestamps.push(Math.floor(Number(k[0])/1000));
+    opens.push(Number(k[1]));
+    highs.push(Number(k[2]));
+    lows.push(Number(k[3]));
+    closes.push(Number(k[4]));
   }
-
-  // Sort always applies -- filter first, then sort within filtered results
-  // (like Excel: filter limits rows, sort orders them within that limit)
-  if (curSort === 'chg_d')         rows.sort((a,b) => getChgPct(b)-getChgPct(a));
-  else if (curSort === 'chg_a')    rows.sort((a,b) => getChgPct(a)-getChgPct(b));
-  else if (curSort === 'chgabs_d') rows.sort((a,b) => getTfChg(b)-getTfChg(a));
-  else if (curSort === 'chgabs_a') rows.sort((a,b) => getTfChg(a)-getTfChg(b));
-  else if (curSort === 'price_d')  rows.sort((a,b) => (b.price||0)-(a.price||0));
-  else if (curSort === 'price_a')  rows.sort((a,b) => (a.price||0)-(b.price||0));
-  else if (curSort === 'az')       rows.sort((a,b) => a.sym.localeCompare(b.sym));
-  else if (curSort === 'az_r')     rows.sort((a,b) => b.sym.localeCompare(a.sym));
-  else if (curSort === 'mktcap_d') rows.sort((a,b) => {
-    if (!a.mktCapB && !b.mktCapB) return 0;
-    if (!a.mktCapB) return 1; if (!b.mktCapB) return -1;
-    return b.mktCapB - a.mktCapB;
-  });
-  else if (curSort === 'mktcap_a') rows.sort((a,b) => {
-    if (!a.mktCapB && !b.mktCapB) return 0;
-    if (!a.mktCapB) return 1; if (!b.mktCapB) return -1;
-    return a.mktCapB - b.mktCapB;
-  });
-  else if (curSort === 'w52_d')    rows.sort((a,b)=>{const pa=(a.hi52&&a.lo52&&a.hi52>a.lo52)?Math.max(0,Math.min(1,(a.price-a.lo52)/(a.hi52-a.lo52))):0.5;const pb=(b.hi52&&b.lo52&&b.hi52>b.lo52)?Math.max(0,Math.min(1,(b.price-b.lo52)/(b.hi52-b.lo52))):0.5;return pb-pa;});
-  else if (curSort === 'w52_a')    rows.sort((a,b)=>{const pa=(a.hi52&&a.lo52&&a.hi52>a.lo52)?Math.max(0,Math.min(1,(a.price-a.lo52)/(a.hi52-a.lo52))):0.5;const pb=(b.hi52&&b.lo52&&b.hi52>b.lo52)?Math.max(0,Math.min(1,(b.price-b.lo52)/(b.hi52-b.lo52))):0.5;return pa-pb;});
-  else if (curSort === 'bflip_d')  rows.sort((a,b) => parseDateStr(getBFlip(b)) - parseDateStr(getBFlip(a)));
-  else if (curSort === 'bflip_a')  rows.sort((a,b) => parseDateStr(getBFlip(a)) - parseDateStr(getBFlip(b)));
-  else if (curSort === 'lflip_d')  rows.sort((a,b) => parseDateStr(getLFlip(b)) - parseDateStr(getLFlip(a)));
-  else if (curSort === 'lflip_a')  rows.sort((a,b) => parseDateStr(getLFlip(a)) - parseDateStr(getLFlip(b)));
-  else if (curSort === 'in_d') rows.sort((a,b) => { const la=getPortfolioLabel(a.sym).replace(/<[^>]+>/g,''); const lb=getPortfolioLabel(b.sym).replace(/<[^>]+>/g,''); return lb.localeCompare(la); });
-  else if (curSort === 'in_a') rows.sort((a,b) => { const la=getPortfolioLabel(a.sym).replace(/<[^>]+>/g,''); const lb=getPortfolioLabel(b.sym).replace(/<[^>]+>/g,''); return la.localeCompare(lb); });
-  else if (curSort === 'wl_d') rows.sort((a,b) => { const la=getWatchlistLabel(a.sym).replace(/<[^>]+>/g,''); const lb=getWatchlistLabel(b.sym).replace(/<[^>]+>/g,''); return lb.localeCompare(la); });
-  else if (curSort === 'wl_a') rows.sort((a,b) => { const la=getWatchlistLabel(a.sym).replace(/<[^>]+>/g,''); const lb=getWatchlistLabel(b.sym).replace(/<[^>]+>/g,''); return la.localeCompare(lb); });
-  // Triple Bull: if no column sort active, the auto-sort inside the filter block applies
-
-  // Update sort arrow indicators
-  document.getElementById('bflipArrow').textContent =
-    curSort==='bflip_d' ? '' : curSort==='bflip_a' ? '' : '';
-  document.getElementById('lflipArrow').textContent =
-    curSort==='lflip_d' ? '' : curSort==='lflip_a' ? '' : '';
-
-  const tbody = document.getElementById('tbody');
-  if (!rows.length) {
-    tbody.innerHTML = `<tr class="state-row"><td colspan="12">No stocks match this filter.</td></tr>`;
-    return;
-  }
-
-  tbody.innerHTML = rows.map(r => {
-    const tf       = r.tf || {};
-    const activeTF = tf[curTF] || {b:'neutral', l:'gray'};
-    const bSig     = activeTF.b || 'neutral';
-    const lSig     = activeTF.l || 'gray';
-
-    const bCls   = bSig==='bull'?'b-bull':bSig==='bear'?'b-bear':'b-neut';
-    const bLabel = bSig==='bull'?'Bullish':bSig==='bear'?'Bearish':'Neutral';
-    const lCls   = lSig==='gold'?'l-gold':lSig==='blue'?'l-blue':'l-gray';
-    const lLabel = lSig==='gold'?'Gold':lSig==='blue'?'Blue':'Gray';
-
-    // Use module-scope timeframe helpers
-    const tfChg    = getTfChg(r);
-    const tfChgPct = getChgPct(r);
-    const pc = tfChgPct > 0.05 ? 'chg-pos' : tfChgPct < -0.05 ? 'chg-neg' : 'chg-neu';
-    const priceFmt = r.price >= 1000
-      ? '$'+r.price.toLocaleString('en-US',{maximumFractionDigits:0})
-      : '$'+Number(r.price).toFixed(2);
-    const chgSign = tfChg >= 0 ? '+' : '';
-    const pctSign = tfChgPct >= 0 ? '+' : '';
-
-    const pos52 = (r.hi52 && r.lo52 && r.hi52>r.lo52)
-      ? Math.max(0,Math.min(1,(r.price-r.lo52)/(r.hi52-r.lo52))) : 0.5;
-    const barColor = pos52>0.7?'var(--green)':pos52<0.3?'var(--red)':'var(--accent)';
-    const volFmt   = !r.vol?'--':r.vol>=1e9?(r.vol/1e9).toFixed(1)+'B'
-      :r.vol>=1e6?(r.vol/1e6).toFixed(1)+'M':(r.vol/1e3).toFixed(0)+'K';
-
-    const sent = r.sentiment;
-    const badgeCls   = sent==='bull'?'badge-bull':sent==='bear'?'badge-bear':'badge-neut';
-    const badgeLabel  = sent==='bull'?' BULL':sent==='bear'?' BEAR':' NEUT';
-
-    // Select flip date matching active timeframe (uses module-scope functions)
-    const flipCell = (t) => t
-      ? `<span class="flip-time" style="font-size:11px;">${t}</span>`
-      : `<span style="color:var(--dim);font-family:var(--mono);font-size:11px;">--</span>`;
-
-    return `<tr>
-      <td><div class="ticker-sym">${r.sym}</div><div class="ticker-name">${r.name}</div></td>
-      <td class="r"><span class="price-val">${priceFmt}</span></td>
-      <td class="r"><span class="${pc}">${chgSign}${Number(tfChg).toFixed(2)}</span></td>
-      <td class="r"><span class="${pc}">${pctSign}${Number(tfChgPct).toFixed(2)}%</span></td>
-      <td class="c" style="width:28px;">
-        <button onclick="openAddToWatchlist('${r.sym}')" style="background:none;border:1px solid var(--muted);color:var(--muted);border-radius:3px;width:20px;height:20px;cursor:pointer;font-size:13px;line-height:1;padding:0;" title="Add to watchlist">+</button>
-      </td>
-      <td class="c" style="width:70px;font-size:10px;color:var(--muted);">${getWatchlistLabel(r.sym)}</td>
-      <td class="c" style="width:28px;">
-        <button onclick="openAddToPortfolio('${r.sym}')" style="background:none;border:1px solid var(--muted);color:var(--muted);border-radius:3px;width:20px;height:20px;cursor:pointer;font-size:13px;line-height:1;padding:0;" title="Add to portfolio">+</button>
-      </td>
-      <td class="c" style="width:70px;font-size:10px;color:var(--muted);">${getPortfolioLabel(r.sym)}</td>
-      <td class="r">
-        <div class="w52-bar">
-          <span class="w52-pct">${Math.round(pos52*100)}%</span>
-          <div class="w52-track"><div class="w52-fill" style="width:${Math.round(pos52*100)}%;background:${barColor}"></div></div>
-        </div>
-      </td>
-      <td class="c"><span class="badge ${badgeCls}">${badgeLabel}</span></td>
-      <td class="c"><span class="${bCls}">${bLabel}</span></td>
-      <td class="c">${flipCell(getBFlip(r))}</td>
-      <td class="c"><span class="${lCls}">${lLabel}</span></td>
-      <td class="c">${flipCell(getLFlip(r))}</td>
-      <td class="r"><span class="vol-text">${volFmt}</span></td>
-    </tr>`;
-  }).join('');
+  return {opens,highs,lows,closes,timestamps};
 }
 
-// -- SUMMARY CARDS -------------------------------------------------------------
-function renderSummary() {
-  const bull  = allData.filter(r=>r.sentiment==='bull').length;
-  const bear  = allData.filter(r=>r.sentiment==='bear').length;
-  const bbull = allData.filter(r=>((r.tf||{})[curTF]||{}).b==='bull').length;
-  const bbear = allData.filter(r=>((r.tf||{})[curTF]||{}).b==='bear').length;
-  const lgold = allData.filter(r=>((r.tf||{})[curTF]||{}).l==='gold').length;
-  const lblue = allData.filter(r=>((r.tf||{})[curTF]||{}).l==='blue').length;
+async function fetchCoinData(coin:{id:string,sym:string,name:string,binanceSym:string}) {
+  const s = coin.binanceSym;
 
-  document.getElementById('sBull').textContent   = bull;
-  document.getElementById('sBear').textContent   = bear;
-  document.getElementById('sBBull').textContent  = bbull;
-  document.getElementById('sBBear').textContent  = bbear;
-  document.getElementById('sLGold').textContent  = lgold;
-  document.getElementById('sLBlue').textContent  = lblue;
-}
+  // Daily bars: 1000 days
+  const daily  = await fetchBinanceKlines(s, "1d",   1000);
+  // 4H bars: ~250 bars = ~6 weeks
+  const h4     = await fetchBinanceKlines(s, "4h",   500);
+  // 2H bars
+  const h2     = await fetchBinanceKlines(s, "2h",   500);
+  // Weekly
+  const weekly = await fetchBinanceKlines(s, "1w",   104);
+  // Monthly
+  const monthly= await fetchBinanceKlines(s, "1M",   36);
 
-// -- CONTROLS ------------------------------------------------------------------
-// Parse DDMMYY -> sortable integer YYYYMMDD (higher = more recent)
-function parseDateStr(s) {
-  // Handles both DDMMYY (6 chars) and DDMMYY HHMM (11 chars)
-  if (!s || s.length < 6) return 0;
-  const date = (parseInt(s.slice(4,6)) + 2000) * 10000
-             + parseInt(s.slice(2,4)) * 100
-             + parseInt(s.slice(0,2));
-  // Add time component for intraday (2H/4H) flip dates
-  const time = s.length >= 11 && s[6] === ' '
-    ? parseInt(s.slice(7,9)) * 100 + parseInt(s.slice(9,11))
-    : 0;
-  return date * 10000 + time; // YYYYMMDDHHMI sortable integer
-}
+  const dc=daily.closes, dh=daily.highs, dl=daily.lows, dTs=daily.timestamps;
+  const price = dc[dc.length-1] || 0;
+  const prev  = dc[dc.length-2] || price;
+  const chg   = price-prev;
+  const chgPct= prev>0?(price-prev)/prev*100:0;
 
-function setFilter(f, el) {
-  curFilter = f;
-  document.querySelectorAll('.filter-btn').forEach(b => {
-    b.classList.remove('active','active-bull','active-bear');
-    b.style.background = '';
-    b.style.color = b.dataset.origColor || '';
-  });
-  // Store original color on first use
-  document.querySelectorAll('.filter-btn').forEach(b => {
-    if (!b.dataset.origColor && b.style.color) b.dataset.origColor = b.style.color;
-  });
-  if (f==='bull' || f==='bear') {
-    f==='bull' ? el.classList.add('active-bull') : el.classList.add('active-bear');
-  } else if (f==='bbull') {
-    el.style.background = 'var(--green-bg)';
-    el.style.color = 'var(--green)';
-    el.classList.add('active-bull');
-  } else if (f==='bbear') {
-    el.style.background = 'var(--red-bg)';
-    el.style.color = 'var(--red)';
-    el.classList.add('active-bear');
-  } else if (f==='triple') {
-    el.classList.add('active');
-    el.style.color = '#000'; // force black text on teal background
-    el.style.background = 'var(--accent)';
-  } else {
-    el.classList.add('active');
-  }
-  render();
-}
-function setSort(s) {
-  // Toggle direction if clicking the same column again
-  if (s === 'bflip_d' && curSort === 'bflip_d') s = 'bflip_a';
-  else if (s === 'bflip_a' && curSort === 'bflip_a') s = 'bflip_d';
-  else if (s === 'lflip_d' && curSort === 'lflip_d') s = 'lflip_a';
-  else if (s === 'lflip_a' && curSort === 'lflip_a') s = 'lflip_d';
-  curSort = s;
-  render();
-}
-function setTF(tf)   { curTF = tf; render(); }
+  // 52W hi/lo from daily
+  const last365 = dc.slice(-365);
+  const hi52 = last365.length?Math.max(...dh.slice(-365)):0;
+  const lo52 = last365.length?Math.min(...dl.slice(-365)):0;
 
-// -- STATUS --------------------------------------------------------------------
-function setStatus(type, msg) {
-  document.getElementById('statusDot').className = 'status-dot'+(type==='live'?' live':type==='error'?' error':'');
-  document.getElementById('statusText').textContent = msg;
-}
+  // Volume (24h approx from last daily bar)
+  const vol = 0; // Binance volume is in base asset, skip for now
 
-// -- COUNTDOWN -----------------------------------------------------------------
-function startCountdown() {
-  secondsLeft = REFRESH_INTERVAL;
-  document.getElementById('refreshRing').style.display = 'block';
-  updateRing();
-  countdownTimer = setInterval(() => {
-    secondsLeft--;
-    updateRing();
-    if (secondsLeft <= 0) { clearTimers(); loadFromSupabase(); }
-  }, 1000);
-}
-function updateRing() {
-  document.getElementById('ringProg').style.strokeDashoffset =
-    69.1 - (69.1*(1-secondsLeft/REFRESH_INTERVAL));
-  const cd = document.getElementById('countdown');
-  cd.textContent = secondsLeft+'s';
-  cd.style.cssText = 'font-family:var(--mono);font-size:10px;color:var(--muted);';
-}
-function clearTimers() {
-  if (countdownTimer) clearInterval(countdownTimer);
-  document.getElementById('refreshRing').style.display = 'none';
-  document.getElementById('countdown').textContent = '';
-}
-// -- TABS ----------------------------------------------------------------------
-let curTab         = 'watchlist';
-let alertWindowHrs = 1;
+  // Timeframe changes
+  const chg4h   = h4.closes.length>1   ? h4.closes[h4.closes.length-1]-h4.closes[h4.closes.length-2] : 0;
+  const chgPct4h= h4.closes.length>1&&h4.closes[h4.closes.length-2]>0 ? chg4h/h4.closes[h4.closes.length-2]*100 : 0;
+  const chg2h   = h2.closes.length>1   ? h2.closes[h2.closes.length-1]-h2.closes[h2.closes.length-2] : 0;
+  const chgPct2h= h2.closes.length>1&&h2.closes[h2.closes.length-2]>0 ? chg2h/h2.closes[h2.closes.length-2]*100 : 0;
+  const chgW    = weekly.closes.length>1  ? weekly.closes[weekly.closes.length-1]-weekly.closes[weekly.closes.length-2] : 0;
+  const chgPctW = weekly.closes.length>1&&weekly.closes[weekly.closes.length-2]>0 ? chgW/weekly.closes[weekly.closes.length-2]*100 : 0;
+  const chgM    = monthly.closes.length>1 ? monthly.closes[monthly.closes.length-1]-monthly.closes[monthly.closes.length-2] : 0;
+  const chgPctM = monthly.closes.length>1&&monthly.closes[monthly.closes.length-2]>0 ? chgM/monthly.closes[monthly.closes.length-2]*100 : 0;
 
-function switchTab(tab) {
-  curTab = tab;
-  document.getElementById('paneWatchlist').classList.toggle('active',  tab === 'watchlist');
-  document.getElementById('paneAlerts').classList.toggle('active',     tab === 'alerts');
-  document.getElementById('paneCrypto').classList.toggle('active',     tab === 'crypto');
-  document.getElementById('paneOMX').classList.toggle('active',        tab === 'omx');
-  document.getElementById('panePortfolio').classList.toggle('active',  tab === 'portfolio');
-  document.getElementById('paneWatchlist2').classList.toggle('active', tab === 'watchlist2');
-  document.getElementById('tabWatchlist').classList.toggle('active',   tab === 'watchlist');
-  document.getElementById('tabAlerts').classList.toggle('active',      tab === 'alerts');
-  document.getElementById('tabCrypto').classList.toggle('active',      tab === 'crypto');
-  document.getElementById('tabOMX').classList.toggle('active',         tab === 'omx');
-  document.getElementById('tabPortfolio').classList.toggle('active',   tab === 'portfolio');
-  document.getElementById('tabWatchlist2').classList.toggle('active',  tab === 'watchlist2');
-  if (tab === 'alerts')    renderAlerts();
-  if (tab === 'crypto'    && cryptoAllData.length === 0) loadCryptoData();
-  if (tab === 'omx'       && omxAllData.length === 0)    loadOMXData();
-  if (tab === 'portfolio')  loadPortfolioTab();
-  if (tab === 'watchlist2') loadWatchlistTab();
-}
-
-function setAlertWindow(hrs, btn) {
-  alertWindowHrs = hrs;
-  document.querySelectorAll('.alert-window-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  renderAlerts();
-}
-
-// Parse DDMMYY or DDMMYY HHMM into a Date object (CET timezone)
-// Returns null if unparseable
-function parseFlipDate(s) {
-  if (!s || s.length < 6) return null;
-  const day = parseInt(s.slice(0,2));
-  const mon = parseInt(s.slice(2,4)) - 1; // 0-based month
-  const yr  = parseInt(s.slice(4,6)) + 2000;
-  let hr = 0, mi = 0;
-  if (s.length >= 11 && s[6] === ' ') {
-    hr = parseInt(s.slice(7,9));
-    mi = parseInt(s.slice(9,11));
-  }
-  // Construct date in CET (Europe/Stockholm) - approximate using UTC offset
-  // CET = UTC+1 (winter), CEST = UTC+2 (summer)
-  // We use a locale string to get the right UTC epoch
-  const cetStr = `${yr}-${String(mon+1).padStart(2,'0')}-${String(day).padStart(2,'0')}T${String(hr).padStart(2,'0')}:${String(mi).padStart(2,'0')}:00`;
-  // Parse as if it's in Stockholm time
-  const d = new Date(new Date(cetStr).toLocaleString('en-US', {timeZone: 'UTC'}));
-  // Get the offset between Stockholm and UTC at this moment
-  const utcDate = new Date(cetStr + 'Z'); // treat as UTC first
-  const cetDate = new Date(utcDate.toLocaleString('en-US', {timeZone: 'Europe/Stockholm'}));
-  const offsetMs = utcDate - cetDate + utcDate; // won't work cleanly, use simpler approach
-  // Simpler: just treat the stored date as approximate and use UTC equivalents
-  // CET winter = UTC+1, summer = UTC+2. We'll assume UTC+1 as conservative.
-  return new Date(Date.UTC(yr, mon, day, hr === 0 ? 12 : hr - 1, mi)); // -1h for CET->UTC approx
-}
-
-// Better approach: parse the stored date string and compare using hours-ago calculation
-function flipAgoHours(s) {
-  if (!s || s.length < 6) return Infinity;
-  const day = parseInt(s.slice(0,2));
-  const mon = parseInt(s.slice(2,4)) - 1;
-  const yr  = parseInt(s.slice(4,6)) + 2000;
-  let hr = 12, mi = 0; // default to noon for date-only strings (daily/weekly/monthly)
-  if (s.length >= 11 && s[6] === ' ') {
-    hr = parseInt(s.slice(7,9));
-    mi = parseInt(s.slice(9,11));
-  }
-  // Determine actual Stockholm UTC offset dynamically (handles CET=+1 and CEST=+2)
-  const probe = new Date();
-  const cetH  = parseInt(probe.toLocaleString('en-US',{timeZone:'Europe/Stockholm',hour:'numeric',hour12:false}).replace('24','0'));
-  const cetOffset = (cetH - probe.getUTCHours() + 24) % 24;
-  const utcEpoch = Date.UTC(yr, mon, day, hr - cetOffset, mi);
-  return (Date.now() - utcEpoch) / 3600000;
-}
-
-// A stock is "Triple Bull" if Trend=bull AND B=bull AND L=gold on Daily timeframe
-// "Recently flipped" = the most recent of bFlipTime or lFlipTime is within the window
-// We check the DAILY timeframe for Triple Bull status (canonical)
-function renderAlerts() {
-  const nowHrs   = alertWindowHrs;
-  const alertDiv = document.getElementById('alertList');
-  const countEl  = document.getElementById('alertCount');
-
-  if (!allData.length) {
-    alertDiv.innerHTML = '<div class="alert-empty"><div class="alert-empty-icon">&#9889;</div>No data loaded yet.</div>';
-    return;
-  }
-
-  // Find all stocks that are CURRENTLY Triple Bull on Daily
-  const tripleBull = allData.filter(r => {
-    const d = (r.tf || {})['D'] || {};
-    return r.sentiment === 'bull' && d.b === 'bull' && d.l === 'gold';
-  });
-
-  // For each, find when the LAST of the three conditions was met
-  // i.e., the most recent flip that completed the triple
-  // We use the Daily B flip time as the primary signal
-  // (the one most likely to be the final trigger)
-  const recent = tripleBull.filter(r => {
-    const bAgo = flipAgoHours(r.bFlipTime);
-    const lAgo = flipAgoHours(r.lFlipTime);
-    // Triple completed when the LATER of B or L flip happened
-    // If either flip is within the window, it may have just completed the triple
-    const latestFlipAgo = Math.min(bAgo, lAgo); // min = most recent
-    return latestFlipAgo <= nowHrs;
-  });
-
-  // Sort by most recent flip first
-  recent.sort((a, b) => {
-    const aAgo = Math.min(flipAgoHours(a.bFlipTime), flipAgoHours(a.lFlipTime));
-    const bAgo = Math.min(flipAgoHours(b.bFlipTime), flipAgoHours(b.lFlipTime));
-    return aAgo - bAgo; // ascending = most recent first
-  });
-
-  countEl.textContent = recent.length ? `${recent.length} alert${recent.length!==1?'s':''}` : '';
-  const starEl = document.getElementById('alertStar');
-  if (starEl) starEl.style.color = recent.length > 0 ? 'var(--amber)' : 'var(--green)';
-
-  if (!recent.length) {
-    const label = nowHrs === 1 ? 'last hour' : `last ${nowHrs} hours`;
-    alertDiv.innerHTML = `
-      <div class="alert-empty">
-        <div class="alert-empty-icon">&#9889;</div>
-        No stocks flipped Triple Bullish in the ${label}.<br>
-        <span style="font-size:11px;margin-top:8px;display:block;">
-          Try a wider time window, or check back after the next data refresh.
-        </span>
-      </div>`;
-    return;
-  }
-
-  alertDiv.innerHTML = recent.map(r => {
-    const bAgo  = flipAgoHours(r.bFlipTime);
-    const lAgo  = flipAgoHours(r.lFlipTime);
-    const latestAgo = Math.min(bAgo, lAgo);
-    const latestFlip = bAgo < lAgo ? r.bFlipTime : r.lFlipTime;
-    const latestLabel = bAgo < lAgo ? 'B Flip' : 'L Flip';
-
-    // Format "X hours ago"
-    const agoText = latestAgo < 1
-      ? `${Math.round(latestAgo*60)}m ago`
-      : `${latestAgo.toFixed(1)}h ago`;
-
-    const pc = r.chgPct > 0.05 ? 'chg-pos' : r.chgPct < -0.05 ? 'chg-neg' : 'chg-neu';
-    const sign = r.chgPct >= 0 ? '+' : '';
-    const priceFmt = r.price >= 1000
-      ? '$'+r.price.toLocaleString('en-US',{maximumFractionDigits:0})
-      : '$'+Number(r.price).toFixed(2);
-
-    return `
-      <div class="alert-card">
-        <div>
-          <div class="alert-card-ticker">${r.sym}</div>
-          <div class="alert-card-name">${r.name}</div>
-        </div>
-        <div class="alert-card-price">${priceFmt}</div>
-        <div class="alert-card-chg ${pc}">${sign}${Number(r.chgPct).toFixed(2)}%</div>
-        <div class="alert-badges">
-          <span class="b-bull">Bullish</span>
-          <span class="l-gold">Gold</span>
-        </div>
-        <div class="alert-flip-info">
-          <div class="alert-flip-label">${latestLabel}</div>
-          <div class="alert-flip-time">${agoText}</div>
-          <div style="font-family:var(--mono);font-size:10px;color:var(--dim);">${latestFlip || '--'}</div>
-        </div>
-      </div>`;
-  }).join('');
-}
-
-
-
-// ============================================================
-// CRYPTO TAB -- Completely isolated from stocks tab
-// All functions prefixed with crypto_ or setCrypto
-// Reads ONLY from crypto_price_data and crypto_flip_history
-// ============================================================
-
-let cryptoAllData  = [];
-let cryptoCurFilter = 'all';
-let cryptoCurSort   = '';
-let cryptoCurTF     = 'D';
-
-// Timeframe helpers (same logic as stocks, isolated scope)
-function cryptoGetChgPct(r) {
-  return cryptoCurTF==='2H'?(r.chgPct2h||r.chgPct4h||r.chgPct)
-       : cryptoCurTF==='4H'?(r.chgPct4h||r.chgPct)
-       : cryptoCurTF==='W' ?(r.chgPctW||r.chgPct)
-       : cryptoCurTF==='M' ?(r.chgPctM||r.chgPct)
-       : r.chgPct;
-}
-function cryptoGetChg(r) {
-  return cryptoCurTF==='2H'?(r.chg2h||r.chg4h||r.chg)
-       : cryptoCurTF==='4H'?(r.chg4h||r.chg)
-       : cryptoCurTF==='W' ?(r.chgW||r.chg)
-       : cryptoCurTF==='M' ?(r.chgM||r.chg)
-       : r.chg;
-}
-function cryptoGetBFlip(r) {
-  return cryptoCurTF==='2H'?(r.bFlipTime2h||r.bFlipTime4h||r.bFlipTime)
-       : cryptoCurTF==='4H'?(r.bFlipTime4h||r.bFlipTime)
-       : cryptoCurTF==='W' ?(r.bFlipTimeW||r.bFlipTime)
-       : cryptoCurTF==='M' ?(r.bFlipTimeM||r.bFlipTimeW||r.bFlipTime)
-       : r.bFlipTime;
-}
-function cryptoGetLFlip(r) {
-  return cryptoCurTF==='2H'?(r.lFlipTime2h||r.lFlipTime4h||r.lFlipTime)
-       : cryptoCurTF==='4H'?(r.lFlipTime4h||r.lFlipTime)
-       : cryptoCurTF==='W' ?(r.lFlipTimeW||r.lFlipTime)
-       : cryptoCurTF==='M' ?(r.lFlipTimeM||r.lFlipTimeW||r.lFlipTime)
-       : r.lFlipTime;
-}
-function cryptoParseDateStr(s) {
-  if (!s || s.length < 6) return 0;
-  const d = s.slice(0,6);
-  return (parseInt(d.slice(4,6))+2000)*10000 + parseInt(d.slice(2,4))*100 + parseInt(d.slice(0,2));
-}
-
-function cryptoCalcSentiment(r) {
-  const chgPct = r.chgPct || 0;
-  const pos52  = (r.hi52 && r.lo52 && r.hi52 > r.lo52)
-    ? (r.price - r.lo52) / (r.hi52 - r.lo52) : 0.5;
-  let score = 0;
-  if (chgPct > 1.5) score += 2; else if (chgPct > 0.3) score += 1;
-  else if (chgPct < -1.5) score -= 2; else if (chgPct < -0.3) score -= 1;
-  if (pos52 > 0.75) score += 1; else if (pos52 < 0.3) score -= 1;
-  if (score >= 2) return 'bull';
-  if (score <= -1) return 'bear';
-  return 'neutral';
-}
-
-function cryptoRender() {
-  const tbody = document.getElementById('cryptoTbody');
-  if (!tbody) return;
-  if (!cryptoAllData.length) {
-    tbody.innerHTML = '<tr class="state-row"><td colspan="10">No crypto data yet. Wait for crypto-processor to run.</td></tr>';
-    return;
-  }
-
-  let rows = [...cryptoAllData];
-
-  // Apply filter
-  if (cryptoCurFilter === 'bull')    rows = rows.filter(r => r.sentiment === 'bull');
-  else if (cryptoCurFilter === 'bear')   rows = rows.filter(r => r.sentiment === 'bear');
-  else if (cryptoCurFilter === 'bbull')  rows = rows.filter(r => ((r.tf||{})[cryptoCurTF]||{}).b === 'bull');
-  else if (cryptoCurFilter === 'bbear')  rows = rows.filter(r => ((r.tf||{})[cryptoCurTF]||{}).b === 'bear');
-  else if (cryptoCurFilter === 'lgold')  rows = rows.filter(r => ((r.tf||{})[cryptoCurTF]||{}).l === 'gold');
-  else if (cryptoCurFilter === 'lblue')  rows = rows.filter(r => ((r.tf||{})[cryptoCurTF]||{}).l === 'blue');
-  else if (cryptoCurFilter === 'triple') rows = rows.filter(r => {
-    const tf = ((r.tf||{})[cryptoCurTF]||{});
-    return r.sentiment==='bull' && tf.b==='bull' && tf.l==='gold';
-  });
-
-  // Apply sort
-  if (cryptoCurSort === 'chg_d')      rows.sort((a,b) => cryptoGetChgPct(b)-cryptoGetChgPct(a));
-  else if (cryptoCurSort === 'chg_a') rows.sort((a,b) => cryptoGetChgPct(a)-cryptoGetChgPct(b));
-  else if (cryptoCurSort === 'price_d') rows.sort((a,b) => (b.price||0)-(a.price||0));
-  else if (cryptoCurSort === 'price_a') rows.sort((a,b) => (a.price||0)-(b.price||0));
-  else if (cryptoCurSort === 'az')    rows.sort((a,b) => a.sym.localeCompare(b.sym));
-  else if (cryptoCurSort === 'mktcap_d') rows.sort((a,b) => (b.mktCapB||0)-(a.mktCapB||0));
-  else if (cryptoCurSort === 'bflip_d') rows.sort((a,b) => cryptoParseDateStr(cryptoGetBFlip(b))-cryptoParseDateStr(cryptoGetBFlip(a)));
-  else if (cryptoCurSort === 'lflip_d') rows.sort((a,b) => cryptoParseDateStr(cryptoGetLFlip(b))-cryptoParseDateStr(cryptoGetLFlip(a)));
-  else if (cryptoCurFilter === 'triple') {
-    rows.sort((a,b) => {
-      const d = cryptoParseDateStr(cryptoGetBFlip(b))-cryptoParseDateStr(cryptoGetBFlip(a));
-      return d !== 0 ? d : cryptoParseDateStr(cryptoGetLFlip(b))-cryptoParseDateStr(cryptoGetLFlip(a));
-    });
-  }
-
-  const flipCell = t => t
-    ? `<span class="flip-time">${t}</span>`
-    : `<span style="color:var(--dim)">--</span>`;
-
-  tbody.innerHTML = rows.map(r => {
-    const activeTF = (r.tf||{})[cryptoCurTF]||{b:'neutral',l:'gray'};
-    const bSig   = activeTF.b || 'neutral';
-    const lSig   = activeTF.l || 'gray';
-    const bCls   = bSig==='bull'?'b-bull':bSig==='bear'?'b-bear':'b-neut';
-    const bLabel = bSig==='bull'?'Bullish':bSig==='bear'?'Bearish':'Neutral';
-    const lCls   = lSig==='gold'?'l-gold':lSig==='blue'?'l-blue':'l-gray';
-    const lLabel = lSig==='gold'?'Gold':lSig==='blue'?'Blue':'Gray';
-    const chgPct = cryptoGetChgPct(r);
-    const chg    = cryptoGetChg(r);
-    const pc     = chgPct > 0.05 ? 'chg-pos' : chgPct < -0.05 ? 'chg-neg' : 'chg-neu';
-    const priceFmt = r.price >= 1000 ? '$'+r.price.toLocaleString('en-US',{maximumFractionDigits:0})
-                   : r.price >= 1    ? '$'+Number(r.price).toFixed(2)
-                   : '$'+Number(r.price).toFixed(6);
-    const chgSign = chg >= 0 ? '+' : '';
-    const sentCls = r.sentiment==='bull'?'chg-pos':r.sentiment==='bear'?'chg-neg':'chg-neu';
-    const sentLbl = r.sentiment==='bull'?'BULL':r.sentiment==='bear'?'BEAR':'NEUT';
-    const pos52   = (r.hi52 && r.lo52 && r.hi52>r.lo52)
-                  ? Math.max(0,Math.min(1,(r.price-r.lo52)/(r.hi52-r.lo52))) : 0.5;
-    const barColor = pos52>0.7?'var(--green)':pos52<0.3?'var(--red)':'var(--accent)';
-    const fmtVol = v => {
-      if (!v) return '--';
-      if (v>=1e9) return (v/1e9).toFixed(1)+'B';
-      if (v>=1e6) return (v/1e6).toFixed(1)+'M';
-      if (v>=1e3) return (v/1e3).toFixed(1)+'K';
-      return v.toFixed(2);
-    };
-    return `<tr>
-      <td><div class="ticker-sym">${r.sym}</div><div class="ticker-name">${r.name}</div></td>
-      <td class="r"><span class="price-val">${priceFmt}</span></td>
-      <td class="r"><span class="${pc}">${chgSign}${Number(chgPct).toFixed(2)}%</span></td>
-      <td class="r">
-        <div class="w52-bar">
-          <span class="w52-pct">${Math.round(pos52*100)}%</span>
-          <div class="w52-track"><div class="w52-fill" style="width:${Math.round(pos52*100)}%;background:${barColor}"></div></div>
-        </div>
-      </td>
-      <td class="c"><span class="trend-pill ${sentCls}">${sentLbl}</span></td>
-      <td class="c"><span class="${bCls}">${bLabel}</span></td>
-      <td class="c">${flipCell(cryptoGetBFlip(r))}</td>
-      <td class="c"><span class="${lCls}">${lLabel}</span></td>
-      <td class="c">${flipCell(cryptoGetLFlip(r))}</td>
-      <td class="r" style="font-size:11px;color:var(--muted);">${fmtVol(r.vol)}</td>
-    </tr>`;
-  }).join('');
-
-  cryptoRenderSummary();
-}
-
-function cryptoRenderSummary() {
-  const rows = cryptoAllData;
-  if (!rows.length) return;
-  const bbull  = rows.filter(r => ((r.tf||{})[cryptoCurTF]||{}).b==='bull').length;
-  const bbear  = rows.filter(r => ((r.tf||{})[cryptoCurTF]||{}).b==='bear').length;
-  const lgold  = rows.filter(r => ((r.tf||{})[cryptoCurTF]||{}).l==='gold').length;
-  const lblue  = rows.filter(r => ((r.tf||{})[cryptoCurTF]||{}).l==='blue').length;
-  const triple = rows.filter(r => {
-    const tf = ((r.tf||{})[cryptoCurTF]||{});
-    return r.sentiment==='bull' && tf.b==='bull' && tf.l==='gold';
-  }).length;
-  const el = id => document.getElementById(id);
-  const bull = rows.filter(r => r.sentiment==='bull').length;
-  const bear = rows.filter(r => r.sentiment==='bear').length;
-  if (el('csTrendBull')) el('csTrendBull').textContent = bull;
-  if (el('csTrendBear')) el('csTrendBear').textContent = bear;
-  if (el('csBBull')) el('csBBull').textContent = bbull;
-  if (el('csBBear')) el('csBBear').textContent = bbear;
-  if (el('csLGold')) el('csLGold').textContent = lgold;
-  if (el('csLBlue')) el('csLBlue').textContent = lblue;
-}
-
-function setCryptoFilter(f, btn) {
-  cryptoCurFilter = f;
-  document.querySelectorAll('#paneCrypto .filter-btn').forEach(b => b.classList.remove('active'));
-  if (btn) btn.classList.add('active');
-  cryptoRender();
-}
-function setCryptoSort(s) { cryptoCurSort = s; cryptoRender(); }
-function setCryptoTF(tf)  { cryptoCurTF = tf; cryptoRenderSummary(); cryptoRender(); }
-
-async function loadCryptoData() {
-  const statusEl = document.getElementById('cryptoStatus');
-  if (statusEl) statusEl.textContent = 'Loading...';
-  try {
-    const headers = {
-      'apikey': SUPABASE_ANON,
-      'Authorization': 'Bearer ' + SUPABASE_ANON,
-    };
-    const [priceRes, flipRes] = await Promise.all([
-      fetch(SUPABASE_URL + '/rest/v1/crypto_price_data?select=*', {headers}),
-      fetch(SUPABASE_URL + '/rest/v1/crypto_flip_history?select=*', {headers}),
-    ]);
-    if (!priceRes.ok) throw new Error('crypto_price_data HTTP ' + priceRes.status);
-    if (!flipRes.ok)  throw new Error('crypto_flip_history HTTP ' + flipRes.status);
-
-    const priceData = await priceRes.json();
-    const flipData  = await flipRes.json();
-
-    const flipMap = {};
-    for (const r of flipData) flipMap[r.sym] = r;
-
-    cryptoAllData = priceData.map(r => ({
-      sym: r.sym, name: r.name, price: r.price,
-      chg: r.chg, chgPct: r.chg_pct,
-      chg2h: r.chg_2h, chgPct2h: r.chg_pct_2h,
-      chg4h: r.chg_4h, chgPct4h: r.chg_pct_4h,
-      chgW:  r.chg_w,  chgPctW:  r.chg_pct_w,
-      chgM:  r.chg_m,  chgPctM:  r.chg_pct_m,
-      hi52: r.hi52, lo52: r.lo52, vol: r.vol, mktCapB: r.mkt_cap_b,
-      bFlipTime:   flipMap[r.sym]?.b_flip_time    ?? null,
-      lFlipTime:   flipMap[r.sym]?.l_flip_time    ?? null,
-      bFlipTime2h: flipMap[r.sym]?.b_flip_time_2h ?? null,
-      lFlipTime2h: flipMap[r.sym]?.l_flip_time_2h ?? null,
-      bFlipTime4h: flipMap[r.sym]?.b_flip_time_4h ?? null,
-      lFlipTime4h: flipMap[r.sym]?.l_flip_time_4h ?? null,
-      bFlipTimeW:  flipMap[r.sym]?.b_flip_time_w  ?? null,
-      lFlipTimeW:  flipMap[r.sym]?.l_flip_time_w  ?? null,
-      bFlipTimeM:  flipMap[r.sym]?.b_flip_time_m  ?? null,
-      lFlipTimeM:  flipMap[r.sym]?.l_flip_time_m  ?? null,
-      tf: {
-        '2H': {b: r.b_2h||r.b_4h||r.b_d, l: r.l_2h||r.l_4h||r.l_d},
-        '4H': {b: r.b_4h||r.b_d,          l: r.l_4h||r.l_d},
-        'D':  {b: r.b_d,                  l: r.l_d},
-        'W':  {b: r.b_w||r.b_d,           l: r.l_w||r.l_d},
-        'M':  {b: r.b_m||r.b_w||r.b_d,   l: r.l_m||r.l_w||r.l_d},
-      },
-      sentiment: cryptoCalcSentiment(r),
-    }));
-
-    if (statusEl && cryptoAllData.length > 0) {
-      const latest = priceData.reduce((a,b) => new Date(a.updated_at) > new Date(b.updated_at) ? a : b);
-      const updTime = new Date(latest.updated_at).toLocaleString('en-GB',{timeZone:'Europe/Stockholm',hour:'2-digit',minute:'2-digit',second:'2-digit',day:'2-digit',month:'2-digit'});
-      statusEl.textContent = `Data updated: ${updTime} CET`;
-    } else if (statusEl) {
-      statusEl.textContent = 'No crypto data yet -- deploy crypto-processor';
-    }
-
-    cryptoRender();
-  } catch(e) {
-    console.error('Crypto load error:', e);
-    const tbody = document.getElementById('cryptoTbody');
-    if (tbody) tbody.innerHTML = `<tr class="state-row"><td colspan="11">Error loading crypto: ${e.message}</td></tr>`;
-    if (statusEl) statusEl.textContent = 'Error loading crypto data';
-  }
-}
-
-// Reload crypto data every 5 minutes when crypto tab is active
-setInterval(() => {
-  if (document.getElementById('paneCrypto')?.classList.contains('active')) {
-    loadCryptoData();
-  }
-}, 5 * 60 * 1000);
-
-// ============================================================
-// OMX 10 TAB -- Completely isolated from stocks and crypto
-// Reads ONLY from omx_price_data and omx_flip_history
-// All functions prefixed with omx or setOMX
-// ============================================================
-
-let omxAllData    = [];
-let omxCurFilter  = 'all';
-let omxCurSort    = '';
-let omxCurTF      = 'D';
-
-// Timeframe helpers -- same logic as stocks, isolated scope
-function omxGetChgPct(r) {
-  return omxCurTF==='2H'?(r.chgPct2h||r.chgPct4h||r.chgPct)
-       : omxCurTF==='4H'?(r.chgPct4h||r.chgPct)
-       : omxCurTF==='W' ?(r.chgPctW||r.chgPct)
-       : omxCurTF==='M' ?(r.chgPctM||r.chgPct)
-       : r.chgPct;
-}
-function omxGetChg(r) {
-  return omxCurTF==='2H'?(r.chg2h||r.chg4h||r.chg)
-       : omxCurTF==='4H'?(r.chg4h||r.chg)
-       : omxCurTF==='W' ?(r.chgW||r.chg)
-       : omxCurTF==='M' ?(r.chgM||r.chg)
-       : r.chg;
-}
-function omxGetBFlip(r) {
-  return omxCurTF==='2H'?(r.bFlipTime2h||r.bFlipTime4h||r.bFlipTime)
-       : omxCurTF==='4H'?(r.bFlipTime4h||r.bFlipTime)
-       : omxCurTF==='W' ?(r.bFlipTimeW||r.bFlipTime)
-       : omxCurTF==='M' ?(r.bFlipTimeM||r.bFlipTimeW||r.bFlipTime)
-       : r.bFlipTime;
-}
-function omxGetLFlip(r) {
-  return omxCurTF==='2H'?(r.lFlipTime2h||r.lFlipTime4h||r.lFlipTime)
-       : omxCurTF==='4H'?(r.lFlipTime4h||r.lFlipTime)
-       : omxCurTF==='W' ?(r.lFlipTimeW||r.lFlipTime)
-       : omxCurTF==='M' ?(r.lFlipTimeM||r.lFlipTimeW||r.lFlipTime)
-       : r.lFlipTime;
-}
-function omxParseDateStr(s) {
-  if (!s || s.length < 6) return 0;
-  const d = s.slice(0,6);
-  return (parseInt(d.slice(4,6))+2000)*10000 + parseInt(d.slice(2,4))*100 + parseInt(d.slice(0,2));
-}
-
-function omxRender() {
-  const tbody = document.getElementById('omxTbody');
-  if (!tbody) return;
-  if (!omxAllData.length) {
-    tbody.innerHTML = '<tr class="state-row"><td colspan="10">No OMX data yet. Deploy omx-processor edge function.</td></tr>';
-    return;
-  }
-  let rows = [...omxAllData];
-
-  // Filter
-  if (omxCurFilter === 'bull')    rows = rows.filter(r => r.sentiment === 'bull');
-  else if (omxCurFilter === 'bear')   rows = rows.filter(r => r.sentiment === 'bear');
-  else if (omxCurFilter === 'bbull')  rows = rows.filter(r => ((r.tf||{})[omxCurTF]||{}).b === 'bull');
-  else if (omxCurFilter === 'bbear')  rows = rows.filter(r => ((r.tf||{})[omxCurTF]||{}).b === 'bear');
-  else if (omxCurFilter === 'lgold')  rows = rows.filter(r => ((r.tf||{})[omxCurTF]||{}).l === 'gold');
-  else if (omxCurFilter === 'lblue')  rows = rows.filter(r => ((r.tf||{})[omxCurTF]||{}).l === 'blue');
-  else if (omxCurFilter === 'triple') rows = rows.filter(r => {
-    const tf = ((r.tf||{})[omxCurTF]||{});
-    return r.sentiment==='bull' && tf.b==='bull' && tf.l==='gold';
-  });
-
-  // Sort
-  if      (omxCurSort === 'chg_d')   rows.sort((a,b) => omxGetChgPct(b)-omxGetChgPct(a));
-  else if (omxCurSort === 'chg_a')   rows.sort((a,b) => omxGetChgPct(a)-omxGetChgPct(b));
-  else if (omxCurSort === 'price_d') rows.sort((a,b) => (b.price||0)-(a.price||0));
-  else if (omxCurSort === 'price_a') rows.sort((a,b) => (a.price||0)-(b.price||0));
-  else if (omxCurSort === 'az')      rows.sort((a,b) => a.sym.localeCompare(b.sym));
-  else if (omxCurSort === 'w52_d')   rows.sort((a,b) => {
-    const pa=(a.hi52&&a.lo52&&a.hi52>a.lo52)?Math.max(0,Math.min(1,(a.price-a.lo52)/(a.hi52-a.lo52))):0.5;
-    const pb=(b.hi52&&b.lo52&&b.hi52>b.lo52)?Math.max(0,Math.min(1,(b.price-b.lo52)/(b.hi52-b.lo52))):0.5;
-    return pb-pa;
-  });
-  else if (omxCurSort === 'w52_a')   rows.sort((a,b) => {
-    const pa=(a.hi52&&a.lo52&&a.hi52>a.lo52)?Math.max(0,Math.min(1,(a.price-a.lo52)/(a.hi52-a.lo52))):0.5;
-    const pb=(b.hi52&&b.lo52&&b.hi52>b.lo52)?Math.max(0,Math.min(1,(b.price-b.lo52)/(b.hi52-b.lo52))):0.5;
-    return pa-pb;
-  });
-  else if (omxCurSort === 'trend_d') rows.sort((a,b) => {const o={'bull':2,'neutral':1,'bear':0};return (o[b.sentiment]||0)-(o[a.sentiment]||0);});
-  else if (omxCurSort === 'trend_a') rows.sort((a,b) => {const o={'bull':2,'neutral':1,'bear':0};return (o[a.sentiment]||0)-(o[b.sentiment]||0);});
-  else if (omxCurSort === 'bflip_d') rows.sort((a,b) => omxParseDateStr(omxGetBFlip(b))-omxParseDateStr(omxGetBFlip(a)));
-  else if (omxCurSort === 'bflip_a') rows.sort((a,b) => omxParseDateStr(omxGetBFlip(a))-omxParseDateStr(omxGetBFlip(b)));
-  else if (omxCurSort === 'lflip_d') rows.sort((a,b) => omxParseDateStr(omxGetLFlip(b))-omxParseDateStr(omxGetLFlip(a)));
-  else if (omxCurSort === 'lflip_a') rows.sort((a,b) => omxParseDateStr(omxGetLFlip(a))-omxParseDateStr(omxGetLFlip(b)));
-  else if (omxCurSort === 'wl_d') rows.sort((a,b) => { const la=getWatchlistLabel(a.sym).replace(/<[^>]+>/g,''); const lb=getWatchlistLabel(b.sym).replace(/<[^>]+>/g,''); return lb.localeCompare(la); });
-  else if (omxCurSort === 'wl_a') rows.sort((a,b) => { const la=getWatchlistLabel(a.sym).replace(/<[^>]+>/g,''); const lb=getWatchlistLabel(b.sym).replace(/<[^>]+>/g,''); return la.localeCompare(lb); });
-  else if (omxCurSort === 'in_d') rows.sort((a,b) => { const la=getPortfolioLabel(a.sym).replace(/<[^>]+>/g,''); const lb=getPortfolioLabel(b.sym).replace(/<[^>]+>/g,''); return lb.localeCompare(la); });
-  else if (omxCurSort === 'in_a') rows.sort((a,b) => { const la=getPortfolioLabel(a.sym).replace(/<[^>]+>/g,''); const lb=getPortfolioLabel(b.sym).replace(/<[^>]+>/g,''); return la.localeCompare(lb); });
-
-  const flipCell = t => t
-    ? `<span class="flip-time">${t}</span>`
-    : `<span style="color:var(--dim)">--</span>`;
-
-  const fmtVol = v => {
-    if (!v) return '--';
-    if (v >= 1e9) return (v/1e9).toFixed(1)+'B';
-    if (v >= 1e6) return (v/1e6).toFixed(1)+'M';
-    if (v >= 1e3) return (v/1e3).toFixed(1)+'K';
-    return v.toFixed(0);
+  return {
+    price, chg, chgPct, chg2h, chgPct2h, chg4h: chg4h, chgPct4h,
+    chgW, chgPctW, chgM, chgPctM, hi52, lo52, vol,
+    closesD:dc, highsD:dh, lowsD:dl, timestampsD:dTs,
+    closes4h:h4.closes, highs4h:h4.highs, lows4h:h4.lows, timestamps4h:h4.timestamps,
+    closes2h:h2.closes, highs2h:h2.highs, lows2h:h2.lows, timestamps2h:h2.timestamps,
+    closesW:weekly.closes, highsW:weekly.highs, lowsW:weekly.lows, timestampsW:weekly.timestamps,
+    closesM:monthly.closes, highsM:monthly.highs, lowsM:monthly.lows, timestampsM:monthly.timestamps,
   };
-
-  tbody.innerHTML = rows.map(r => {
-    const tf       = r.tf || {};
-    const activeTF = tf[omxCurTF] || {b:'neutral', l:'gray'};
-    const bSig     = activeTF.b || 'neutral';
-    const lSig     = activeTF.l || 'gray';
-    const bCls     = bSig==='bull'?'b-bull':bSig==='bear'?'b-bear':'b-neut';
-    const bLabel   = bSig==='bull'?'Bullish':bSig==='bear'?'Bearish':'Neutral';
-    const lCls     = lSig==='gold'?'l-gold':lSig==='blue'?'l-blue':'l-gray';
-    const lLabel   = lSig==='gold'?'Gold':lSig==='blue'?'Blue':'Gray';
-    const chgPct   = omxGetChgPct(r);
-    const chg      = omxGetChg(r);
-    const pc       = chgPct > 0.05 ? 'chg-pos' : chgPct < -0.05 ? 'chg-neg' : 'chg-neu';
-    const priceFmt = r.price >= 1000
-                   ? r.price.toLocaleString('sv-SE',{maximumFractionDigits:0})+' kr'
-                   : Number(r.price).toFixed(2)+' kr';
-    const chgSign  = chg >= 0 ? '+' : '';
-    const sentCls  = r.sentiment==='bull'?'chg-pos':r.sentiment==='bear'?'chg-neg':'chg-neu';
-    const sentLbl  = r.sentiment==='bull'?'BULL':r.sentiment==='bear'?'BEAR':'NEUT';
-    const pos52    = (r.hi52 && r.lo52 && r.hi52 > r.lo52)
-                   ? Math.max(0,Math.min(1,(r.price-r.lo52)/(r.hi52-r.lo52))) : null;
-    const barColor = pos52!==null?(pos52>0.7?'var(--green)':pos52<0.3?'var(--red)':'var(--accent)'):'var(--dim)';
-    return `<tr>
-      <td><div class="ticker-sym">${r.sym.replace('.ST','')}</div><div class="ticker-name">${r.name}</div></td>
-      <td class="r"><span class="price-val">${priceFmt}</span></td>
-      <td class="r"><span class="${pc}">${chgSign}${Number(chgPct).toFixed(2)}%</span></td>
-      <td class="c" style="width:28px;">
-        <button onclick="openAddToWatchlist('${r.sym}')" style="background:none;border:1px solid var(--muted);color:var(--muted);border-radius:3px;width:20px;height:20px;cursor:pointer;font-size:13px;line-height:1;padding:0;" title="Add to watchlist">+</button>
-      </td>
-      <td class="c" style="width:70px;font-size:10px;color:var(--muted);">${getWatchlistLabel(r.sym)}</td>
-      <td class="c" style="width:28px;">
-        <button onclick="openAddToPortfolio('${r.sym}')" style="background:none;border:1px solid var(--muted);color:var(--muted);border-radius:3px;width:20px;height:20px;cursor:pointer;font-size:13px;line-height:1;padding:0;" title="Add to portfolio">+</button>
-      </td>
-      <td class="c" style="width:70px;font-size:10px;color:var(--muted);">${getPortfolioLabel(r.sym)}</td>
-      <td class="r">
-        <div class="w52-bar">
-          <span class="w52-pct">${pos52!==null?Math.round(pos52*100)+'%':'--'}</span>
-          <div class="w52-track"><div class="w52-fill" style="width:${pos52!==null?Math.round(pos52*100):0}%;background:${barColor};"></div></div>
-        </div>
-      </td>
-      <td class="c"><span class="trend-pill ${sentCls}">${sentLbl}</span></td>
-      <td class="c"><span class="${bCls}">${bLabel}</span></td>
-      <td class="c">${flipCell(omxGetBFlip(r))}</td>
-      <td class="c"><span class="${lCls}">${lLabel}</span></td>
-      <td class="c">${flipCell(omxGetLFlip(r))}</td>
-      <td class="r"><span class="vol-text">${fmtVol(r.vol)}</span></td>
-    </tr>`;
-  }).join('');
-
-  omxRenderSummary();
 }
 
-function omxRenderSummary() {
-  const rows = omxAllData;
-  if (!rows.length) return;
-  const bull   = rows.filter(r => r.sentiment==='bull').length;
-  const bear   = rows.filter(r => r.sentiment==='bear').length;
-  const bbull  = rows.filter(r => ((r.tf||{})[omxCurTF]||{}).b==='bull').length;
-  const bbear  = rows.filter(r => ((r.tf||{})[omxCurTF]||{}).b==='bear').length;
-  const lgold  = rows.filter(r => ((r.tf||{})[omxCurTF]||{}).l==='gold').length;
-  const lblue  = rows.filter(r => ((r.tf||{})[omxCurTF]||{}).l==='blue').length;
-  const el = id => document.getElementById(id);
-  if (el('osTrendBull')) el('osTrendBull').textContent = bull;
-  if (el('osTrendBear')) el('osTrendBear').textContent = bear;
-  if (el('osBBull'))     el('osBBull').textContent     = bbull;
-  if (el('osBBear'))     el('osBBear').textContent     = bbear;
-  if (el('osLGold'))     el('osLGold').textContent     = lgold;
-  if (el('osLBlue'))     el('osLBlue').textContent     = lblue;
-}
-
-function setOMXFilter(f, btn) {
-  omxCurFilter = f;
-  document.querySelectorAll('#paneOMX .filter-btn').forEach(b => b.classList.remove('active'));
-  if (btn) btn.classList.add('active');
-  omxRender();
-}
-function setOMXSort(s)  { omxCurSort = s; omxRender(); }
-function setOMXTF(tf)   { omxCurTF = tf; omxRenderSummary(); omxRender(); }
-
-async function loadOMXData() {
-  const statusEl = document.getElementById('omxStatus');
-  if (statusEl) statusEl.textContent = 'Loading...';
+// -- COINGECKO TOP-25 --
+async function getTop25():Promise<typeof BOOTSTRAP> {
+  // Tier 1: CoinGecko live
   try {
-    const headers = {
-      'apikey':        SUPABASE_ANON,
-      'Authorization': 'Bearer ' + SUPABASE_ANON,
-    };
-    const [priceRes, flipRes] = await Promise.all([
-      fetch(SUPABASE_URL + '/rest/v1/omx_price_data?select=*',    {headers}),
-      fetch(SUPABASE_URL + '/rest/v1/omx_flip_history?select=*',  {headers}),
-    ]);
-    if (!priceRes.ok) throw new Error('omx_price_data HTTP ' + priceRes.status);
-    if (!flipRes.ok)  throw new Error('omx_flip_history HTTP ' + flipRes.status);
+    const url="https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=30&page=1&sparkline=false";
+    const res=await fetch(url,{headers:{"User-Agent":"Mozilla/5.0","Accept":"application/json"}});
+    if (res.ok) {
+      const json=await res.json();
+      if (Array.isArray(json)&&json.length>=20) {
+        const stablecoins=["USDT","USDC","BUSD","DAI","TUSD","FDUSD","USDE","USDS"];
+        const coins=json.map((c:any)=>{
+          const sym=(c.symbol as string).toUpperCase();
+          const binanceSym=stablecoins.includes(sym)?"":`${sym}USDT`;
+          return {id:c.id as string,sym,name:c.name as string,binanceSym};
+        }).filter((c:any)=>c.binanceSym).slice(0,25);
+        // Validate symbols exist on Binance
+        let validCoins = coins;
+        try {
+          const exRes = await fetch("https://api.binance.com/api/v3/exchangeInfo");
+          if (exRes.ok) {
+            const exJson = await exRes.json();
+            const binanceSyms = new Set((exJson.symbols as any[]).map((s:any) => s.symbol));
+            validCoins = coins.filter((c:any) => binanceSyms.has(c.binanceSym));
+            console.log(`Binance validated: ${validCoins.length} coins`);
+          }
+        } catch(e:any) { console.warn(`Binance validation failed: ${e.message}`); }
+        console.log(`CoinGecko: ${validCoins.length} tradeable coins fetched`);
+        await supabase.from("metadata").upsert(
+          [{key:"top25_crypto",value:JSON.stringify(validCoins),updated_at:new Date().toISOString()}],
+          {onConflict:"key"}
+        );
+        return validCoins;
+      }
+    }
+  } catch(e:any) { console.warn(`CoinGecko failed: ${e.message}`); }
 
-    const priceData = await priceRes.json();
-    const flipData  = await flipRes.json();
+  // Tier 2: Supabase metadata cache
+  try {
+    const res=await supabase.from("metadata").select("value").eq("key","top25_crypto").maybeSingle();
+    if (res.data?.value) {
+      const saved=JSON.parse(res.data.value);
+      if (Array.isArray(saved)&&saved.length>=10) {
+        console.log(`Using ${saved.length} cached crypto from metadata`);
+        return saved;
+      }
+    }
+  } catch(e:any) { console.warn(`Metadata read failed: ${e.message}`); }
 
-    const flipMap = {};
-    for (const r of flipData) flipMap[r.sym] = r;
+  // Tier 3: Bootstrap
+  console.log("Using bootstrap list");
+  return BOOTSTRAP.filter(c=>c.binanceSym).slice(0,25);
+}
 
-    omxAllData = priceData.map(r => ({
-      sym: r.sym, name: r.name, price: r.price,
-      chg: r.chg, chgPct: r.chg_pct,
-      chg2h: r.chg_2h, chgPct2h: r.chg_pct_2h,
-      chg4h: r.chg_4h, chgPct4h: r.chg_pct_4h,
-      chgW:  r.chg_w,  chgPctW:  r.chg_pct_w,
-      chgM:  r.chg_m,  chgPctM:  r.chg_pct_m,
-      hi52: r.hi52, lo52: r.lo52, vol: r.vol,
-      bFlipTime:   flipMap[r.sym]?.b_flip_time    ?? null,
-      lFlipTime:   flipMap[r.sym]?.l_flip_time    ?? null,
-      bFlipTime2h: flipMap[r.sym]?.b_flip_time_2h ?? null,
-      lFlipTime2h: flipMap[r.sym]?.l_flip_time_2h ?? null,
-      bFlipTime4h: flipMap[r.sym]?.b_flip_time_4h ?? null,
-      lFlipTime4h: flipMap[r.sym]?.l_flip_time_4h ?? null,
-      bFlipTimeW:  flipMap[r.sym]?.b_flip_time_w  ?? null,
-      lFlipTimeW:  flipMap[r.sym]?.l_flip_time_w  ?? null,
-      bFlipTimeM:  flipMap[r.sym]?.b_flip_time_m  ?? null,
-      lFlipTimeM:  flipMap[r.sym]?.l_flip_time_m  ?? null,
-      tf: {
-        '2H': {b: r.b_2h||r.b_4h||r.b_d, l: r.l_2h||r.l_4h||r.l_d},
-        '4H': {b: r.b_4h||r.b_d,          l: r.l_4h||r.l_d},
-        'D':  {b: r.b_d,                  l: r.l_d},
-        'W':  {b: r.b_w||r.b_d,           l: r.l_w||r.l_d},
-        'M':  {b: r.b_m||r.b_w||r.b_d,   l: r.l_m||r.l_w||r.l_d},
-      },
-      sentiment: (()=>{
-        const c=r.chg_pct||0, p=(r.hi52&&r.lo52&&r.hi52>r.lo52)?(r.price-r.lo52)/(r.hi52-r.lo52):0.5;
-        let s=0;
-        if(c>1.5)s+=2;else if(c>0.3)s+=1;else if(c<-1.5)s-=2;else if(c<-0.3)s-=1;
-        if(p>0.75)s+=1;else if(p<0.3)s-=1;
-        return s>=2?'bull':s<=-1?'bear':'neutral';
-      })(),
-    }));
+// -- MAIN --
+Deno.serve(async () => {
+  try {
+    const now = Math.floor(Date.now()/1000);
 
-    // status shown in summary chips only
+    // Read batch state
+    const metaRes = await supabase.from("metadata")
+      .select("key,value")
+      .in("key",["crypto_batch_offset","crypto_batch_start_time","crypto_last_full_run"]);
+    const meta:Record<string,string>={};
+    if (metaRes.data) for (const r of metaRes.data as any[]) meta[r.key]=r.value;
 
-    omxRender();
-  } catch(e) {
-    console.error('OMX load error:', e);
-    const tbody = document.getElementById('omxTbody');
-    if (tbody) tbody.innerHTML = `<tr class="state-row"><td colspan="10">Error loading OMX data: ${e.message}</td></tr>`;
-    if (statusEl) statusEl.textContent = 'Error loading OMX data';
+    const batchOffset  = parseInt(meta["crypto_batch_offset"]||"0")||0;
+    const batchStart   = parseInt(meta["crypto_batch_start_time"]||"0")||0;
+    const cycleAgeMin  = (now-batchStart)/60;
+
+    const tickers = await getTop25();
+    const offset  = cycleAgeMin>=FULL_INTERVAL?0:batchOffset;
+    const batch   = tickers.slice(offset, offset+BATCH_SIZE);
+    const nextOffset = offset+BATCH_SIZE>=tickers.length?0:offset+BATCH_SIZE;
+
+    // Read stored flips for batch
+    const syms = batch.map(c=>c.sym);
+    const flipRes = await supabase.from("crypto_flip_history").select("*").in("sym",syms);
+    const flipMap:Record<string,any>={};
+    if (flipRes.data) for (const r of flipRes.data as any[]) flipMap[r.sym]=r;
+
+    const priceUpserts:any[]=[];
+    const flipUpserts:any[]=[];
+
+    for (const coin of batch) {
+      if (!coin.binanceSym) continue;
+      try {
+        const d = await fetchCoinData(coin);
+        const flips = flipMap[coin.sym]||{};
+
+        // Signals
+        const bD  = bSignal(d.highsD,  d.lowsD,  d.closesD);
+        const b4h = bSignal(d.highs4h, d.lows4h, d.closes4h);
+        const b2h = bSignal(d.highs2h, d.lows2h, d.closes2h);
+        const bW  = bSignal(d.highsW,  d.lowsW,  d.closesW);
+        const bM  = bSignal(d.highsM,  d.lowsM,  d.closesM);
+        const lD  = lSignal(d.highsD,  d.lowsD,  d.closesD);
+        const l4h = lSignal(d.highs4h, d.lows4h, d.closes4h);
+        const l2h = lSignal(d.highs2h, d.lows2h, d.closes2h);
+        const lW  = lSignal(d.highsW,  d.lowsW,  d.closesW);
+        const lM  = lSignal(d.highsM,  d.lowsM,  d.closesM);
+
+        // Flip dates
+        const bDailyTs=(ts:number|null)=>ts?ts-86400:null;
+        const trimD=(s:string|null)=>s?s.slice(0,6):null;
+        const rD  =findLastFlip(bSignalArray(d.highsD, d.lowsD, d.closesD),  d.timestampsD);
+        const r4h =findLastFlip(bSignalArray(d.highs4h,d.lows4h,d.closes4h), d.timestamps4h);
+        const r2h =findLastFlip(bSignalArray(d.highs2h,d.lows2h,d.closes2h), d.timestamps2h);
+        const rW  =findLastFlip(bSignalArray(d.highsW, d.lowsW, d.closesW),  d.timestampsW);
+        const rM  =findLastFlip(bSignalArray(d.highsM, d.lowsM, d.closesM),  d.timestampsM);
+        const sD  =findLastFlip(lSignalArray(d.highsD, d.lowsD, d.closesD),  d.timestampsD);
+        const s4h =findLastFlip(lSignalArray(d.highs4h,d.lows4h,d.closes4h), d.timestamps4h);
+        const s2h =findLastFlip(lSignalArray(d.highs2h,d.lows2h,d.closes2h), d.timestamps2h);
+        const sW  =findLastFlip(lSignalArray(d.highsW, d.lowsW, d.closesW),  d.timestampsW);
+        const sM  =findLastFlip(lSignalArray(d.highsM, d.lowsM, d.closesM),  d.timestampsM);
+
+        const bFlipD  = rD.flipTs  ? formatDate(bDailyTs(rD.flipTs),false) : trimD(flips.b_flip_time??null);
+        const lFlipD  = sD.flipTs  ? formatDate(sD.flipTs,false)            : trimD(flips.l_flip_time??null);
+        const bFlip4h = r4h.flipTs ? formatDate(r4h.flipTs,true)            : (flips.b_flip_time_4h??bFlipD);
+        const lFlip4h = s4h.flipTs ? formatDate(s4h.flipTs,true)            : (flips.l_flip_time_4h??lFlipD);
+        const bFlip2h = r2h.flipTs ? formatDate(r2h.flipTs,true)            : (flips.b_flip_time_2h??bFlip4h);
+        const lFlip2h = s2h.flipTs ? formatDate(s2h.flipTs,true)            : (flips.l_flip_time_2h??lFlip4h);
+        const bFlipW  = rW.flipTs  ? formatDate(bDailyTs(rW.flipTs),false)  : trimD(flips.b_flip_time_w??null);
+        const lFlipW  = sW.flipTs  ? formatDate(sW.flipTs,false)            : trimD(flips.l_flip_time_w??null);
+        const bFlipM  = rM.flipTs  ? formatDate(bDailyTs(rM.flipTs),false)  : trimD(flips.b_flip_time_m??null);
+        const lFlipM  = sM.flipTs  ? formatDate(sM.flipTs,false)            : trimD(flips.l_flip_time_m??null);
+
+        console.log(`${coin.sym}: $${d.price.toFixed(4)} B=${bD} L=${lD}`);
+
+        priceUpserts.push({
+          sym:coin.sym, name:coin.name, price:d.price,
+          chg:d.chg, chg_pct:d.chgPct,
+          chg_2h:d.chg2h, chg_pct_2h:d.chgPct2h,
+          chg_4h:d.chg4h, chg_pct_4h:d.chgPct4h,
+          chg_w:d.chgW,   chg_pct_w:d.chgPctW,
+          chg_m:d.chgM,   chg_pct_m:d.chgPctM,
+          hi52:d.hi52, lo52:d.lo52, vol:d.vol,
+          b_2h:b2h, b_4h:b4h, b_d:bD, b_w:bW, b_m:bM,
+          l_2h:l2h, l_4h:l4h, l_d:lD, l_w:lW, l_m:lM,
+          updated_at:new Date().toISOString(),
+        });
+
+        flipUpserts.push({
+          sym:coin.sym, b_signal:bD, l_signal:lD,
+          b_flip_time:bFlipD,   l_flip_time:lFlipD,
+          b_flip_time_2h:bFlip2h, l_flip_time_2h:lFlip2h,
+          b_flip_time_4h:bFlip4h, l_flip_time_4h:lFlip4h,
+          b_flip_time_w:bFlipW,  l_flip_time_w:lFlipW,
+          b_flip_time_m:bFlipM,  l_flip_time_m:lFlipM,
+          updated_at:new Date().toISOString(),
+        });
+
+        await new Promise(r=>setTimeout(r,200));
+      } catch(e:any) {
+        console.error(`Error ${coin.sym}: ${e.message}`);
+      }
+    }
+
+    if (priceUpserts.length) await supabase.from("crypto_price_data").upsert(priceUpserts,{onConflict:"sym"});
+    if (flipUpserts.length)  await supabase.from("crypto_flip_history").upsert(flipUpserts,{onConflict:"sym"});
+
+    // Update metadata
+    const newBatchStart = offset===0?now:batchStart;
+    await supabase.from("metadata").upsert([
+      {key:"crypto_batch_offset",     value:String(nextOffset),  updated_at:new Date().toISOString()},
+      {key:"crypto_batch_start_time", value:String(newBatchStart),updated_at:new Date().toISOString()},
+      {key:"crypto_last_full_run",    value:String(now),          updated_at:new Date().toISOString()},
+    ],{onConflict:"key"});
+
+    return new Response(JSON.stringify({ok:true,batch:`${offset}-${offset+batch.length-1}`,processed:priceUpserts.length}),
+      {headers:{"Content-Type":"application/json"}});
+  } catch(e:any) {
+    console.error("Fatal error:", e.message);
+    return new Response(JSON.stringify({ok:false,error:e.message}),{status:500,headers:{"Content-Type":"application/json"}});
   }
-}
-
-// Reload OMX every 5 minutes when tab is active
-setInterval(() => {
-  if (document.getElementById('paneOMX')?.classList.contains('active')) {
-    loadOMXData();
-  }
-}, 5 * 60 * 1000);
-
-
-// =============================================================================
-// PORTFOLIO FEATURE
-// =============================================================================
-const SUPA_URL = 'https://ixcwtfrelsyjjiribpeo.supabase.co';
-const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml4Y3d0ZnJlbHN5amppcmlicGVvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0Mjk4MzMsImV4cCI6MjA5NTAwNTgzM30.KvvGWXbI91uH7PA-Nbj33BRqEUziXkt1el2a5ihf9Zg';
-
-let portfolios      = [];   // [{id, name}]
-let portFilter      = 'all'; // portfolio filter state
-let portSort        = '';    // portfolio sort state
-let allHoldings     = [];   // [{id, portfolio_id, sym}]
-let activePortfolio = null; // currently selected portfolio id
-let pendingAddSym   = null; // sym waiting to be added to portfolio
-
-async function supaFetch(path, opts={}) {
-  const res = await fetch(SUPA_URL + '/rest/v1/' + path, {
-    headers: {
-      'apikey': SUPA_KEY,
-      'Authorization': 'Bearer ' + SUPA_KEY,
-      'Content-Type': 'application/json',
-      'Prefer': opts.prefer || 'return=representation',
-    },
-    ...opts
-  });
-  if (!res.ok) { console.error('supaFetch error', res.status, await res.text()); return null; }
-  const ct = res.headers.get('content-type') || '';
-  return ct.includes('json') ? res.json() : null;
-}
-
-// Load portfolios and holdings from Supabase
-async function loadPortfolios() {
-  const [p, h] = await Promise.all([
-    supaFetch('portfolios?select=id,name,created_at&order=created_at.asc'),
-    supaFetch('holdings?select=id,portfolio_id,sym'),
-  ]);
-  portfolios  = p || [];
-  allHoldings = h || [];
-}
-
-// Returns label for the "In" column for a given sym
-function getPortfolioLabel(sym) {
-  const matches = allHoldings.filter(h => h.sym === sym);
-  if (matches.length === 0) return '';
-  if (matches.length === 1) {
-    const p = portfolios.find(p => p.id === matches[0].portfolio_id);
-    return p ? `<span style="color:var(--accent);font-size:10px;">${p.name}</span>` : '';
-  }
-  return '<span style="color:var(--accent);font-size:10px;">Multiple</span>';
-}
-
-// Open add-to-portfolio modal
-function openAddToPortfolio(sym) {
-  if (portfolios.length === 0) {
-    alert('Create a portfolio first in the Portfolio tab.');
-    return;
-  }
-  pendingAddSym = sym;
-  document.getElementById('modalSym').textContent = sym;
-  const sel = document.getElementById('modalPortfolioSelect');
-  sel.innerHTML = '<option value="">Select portfolio...</option>' +
-    portfolios.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
-  document.getElementById('portfolioModal').style.display = 'flex';
-}
-
-function closeModal() {
-  document.getElementById('portfolioModal').style.display = 'none';
-  pendingAddSym = null;
-}
-
-async function confirmAddToPortfolio() {
-  const portfolioId = document.getElementById('modalPortfolioSelect').value;
-  if (!portfolioId || !pendingAddSym) return;
-  const res = await supaFetch('holdings', {
-    method: 'POST',
-    prefer: 'return=representation',
-    body: JSON.stringify({ portfolio_id: portfolioId, sym: pendingAddSym }),
-  });
-  if (res) {
-    allHoldings.push(...res);
-    closeModal();
-    render(); // refresh "In" column
-    if (activePortfolio === portfolioId) renderPortfolioTable();
-  }
-}
-
-// Create portfolio modal
-function createPortfolio() {
-  // Set default name: "Portfolio N"
-  const n = portfolios.length + 1;
-  document.getElementById('portfolioNameInput').value = 'Portfolio ' + n;
-  document.getElementById('createPortfolioModal').style.display = 'flex';
-  setTimeout(() => document.getElementById('portfolioNameInput').select(), 50);
-}
-
-function closeCreateModal() {
-  document.getElementById('createPortfolioModal').style.display = 'none';
-}
-
-async function confirmCreatePortfolio() {
-  const name = document.getElementById('portfolioNameInput').value.trim();
-  if (!name) return;
-  const res = await supaFetch('portfolios', {
-    method: 'POST',
-    body: JSON.stringify({ name }),
-  });
-  if (res && res.length > 0) {
-    portfolios.push(res[0]);
-    closeCreateModal();
-    refreshPortfolioSelect();
-    selectPortfolio(res[0].id);
-    document.getElementById('portfolioStatus').textContent = `Created "${name}"`;
-  } else {
-    alert('Could not create portfolio. Name may already exist.');
-  }
-}
-
-// Delete portfolio
-async function deletePortfolio() {
-  if (!activePortfolio) return;
-  const p = portfolios.find(p => p.id === activePortfolio);
-  if (!confirm(`Delete "${p?.name}"? This will remove all its holdings.`)) return;
-  await supaFetch(`portfolios?id=eq.${activePortfolio}`, { method: 'DELETE', prefer: '' });
-  portfolios  = portfolios.filter(p => p.id !== activePortfolio);
-  allHoldings = allHoldings.filter(h => h.portfolio_id !== activePortfolio);
-  activePortfolio = null;
-  refreshPortfolioSelect();
-  renderPortfolioTable();
-  render(); // refresh "In" column
-}
-
-async function renamePortfolio() {
-  if (!activePortfolio) return;
-  const p = portfolios.find(p => p.id === activePortfolio);
-  const newName = prompt('Rename portfolio:', p?.name || '');
-  if (!newName || newName.trim() === '' || newName.trim() === p?.name) return;
-  const res = await supaFetch(`portfolios?id=eq.${activePortfolio}`, {
-    method: 'PATCH',
-    body: JSON.stringify({ name: newName.trim() }),
-  });
-  if (res !== null) {
-    const idx = portfolios.findIndex(p => p.id === activePortfolio);
-    if (idx >= 0) portfolios[idx].name = newName.trim();
-    refreshPortfolioSelect();
-    render(); // refresh "In" column
-    document.getElementById('portfolioStatus').textContent = `Renamed to "${newName.trim()}"`;
-  } else {
-    alert('Could not rename. Name may already exist.');
-  }
-}
-
-// Remove a single holding
-async function removeHolding(holdingId, portfolioId, sym) {
-  await supaFetch(`holdings?id=eq.${holdingId}`, { method: 'DELETE', prefer: '' });
-  allHoldings = allHoldings.filter(h => h.id !== holdingId);
-  renderPortfolioTable();
-  render(); // refresh "In" column
-}
-
-function refreshPortfolioSelect() {
-  const sel = document.getElementById('portfolioSelect');
-  sel.innerHTML = '<option value="">Select portfolio...</option>' +
-    portfolios.map(p => `<option value="${p.id}" ${p.id===activePortfolio?'selected':''}>${p.name}</option>`).join('');
-  document.getElementById('deletePortfolioBtn').style.display = activePortfolio ? 'inline-block' : 'none';
-  document.getElementById('renamePortfolioBtn').style.display = activePortfolio ? 'inline-block' : 'none';
-}
-
-function selectPortfolio(id) {
-  activePortfolio = id || null;
-  refreshPortfolioSelect();
-  renderPortfolioTable();
-}
-
-function renderPortfolioTable() {
-  const tbody = document.getElementById('portfolioTbody');
-  if (!activePortfolio) {
-    tbody.innerHTML = '<tr class="state-row"><td colspan="10">Select or create a portfolio above.</td></tr>';
-    document.getElementById('portfolioStatus').textContent = '';
-    return;
-  }
-  const holdings = allHoldings.filter(h => h.portfolio_id === activePortfolio);
-  if (holdings.length === 0) {
-    tbody.innerHTML = '<tr class="state-row"><td colspan="10">No stocks in this portfolio yet. Use the + button in the Nasdaq60 tab.</td></tr>';
-    document.getElementById('portfolioStatus').textContent = '0 stocks';
-    return;
-  }
-
-  // Build rows from allData -- attach holding id for remove button
-  let rows = holdings.map(h => {
-    const r = allData.find(d => d.sym === h.sym);
-    return r ? Object.assign({}, r, {_hid: h.id, _pid: h.portfolio_id}) : null;
-  }).filter(Boolean);
-
-  // Filter -- exact same logic as Nasdaq60
-  if (portFilter === 'bull')        rows = rows.filter(r => r.sentiment === 'bull');
-  else if (portFilter === 'bear')   rows = rows.filter(r => r.sentiment === 'bear');
-  else if (portFilter === 'bbull')  rows = rows.filter(r => ((r.tf||{})[curTF]||{}).b === 'bull');
-  else if (portFilter === 'bbear')  rows = rows.filter(r => ((r.tf||{})[curTF]||{}).b === 'bear');
-  else if (portFilter === 'lgold')  rows = rows.filter(r => ((r.tf||{})[curTF]||{}).l === 'gold');
-  else if (portFilter === 'lblue')  rows = rows.filter(r => ((r.tf||{})[curTF]||{}).l === 'blue');
-  else if (portFilter === 'triple') rows = rows.filter(r => {
-    const tf = (r.tf||{})[curTF]||{};
-    return r.sentiment==='bull' && tf.b==='bull' && tf.l==='gold';
-  });
-
-  // Sort -- exact same logic as Nasdaq60
-  if (portSort === 'chg_d')        rows.sort((a,b) => getChgPct(b)-getChgPct(a));
-  else if (portSort === 'chg_a')   rows.sort((a,b) => getChgPct(a)-getChgPct(b));
-  else if (portSort === 'price_d') rows.sort((a,b) => (b.price||0)-(a.price||0));
-  else if (portSort === 'price_a') rows.sort((a,b) => (a.price||0)-(b.price||0));
-  else if (portSort === 'az')      rows.sort((a,b) => a.sym.localeCompare(b.sym));
-  else if (portSort === 'bflip_d') rows.sort((a,b) => parseDateStr(getBFlip(b))-parseDateStr(getBFlip(a)));
-  else if (portSort === 'lflip_d') rows.sort((a,b) => parseDateStr(getLFlip(b))-parseDateStr(getLFlip(a)));
-
-  if (rows.length === 0) {
-    tbody.innerHTML = '<tr class="state-row"><td colspan="10">No stocks match the current filter.</td></tr>';
-    document.getElementById('portfolioStatus').textContent = `0 / ${holdings.length} stocks`;
-    return;
-  }
-
-  tbody.innerHTML = rows.map(r => {
-    const activeTF = (r.tf||{})[curTF]||{b:'neutral',l:'gray'};
-    const bSig   = activeTF.b || 'neutral';
-    const lSig   = activeTF.l || 'gray';
-    const bCls   = bSig==='bull'?'b-bull':bSig==='bear'?'b-bear':'b-neut';
-    const bLabel = bSig==='bull'?'Bullish':bSig==='bear'?'Bearish':'Neutral';
-    const lCls   = lSig==='gold'?'l-gold':lSig==='blue'?'l-blue':'l-gray';
-    const lLabel = lSig==='gold'?'Gold':lSig==='blue'?'Blue':'Gray';
-    const tfChgPct = getChgPct(r);
-    const tfChg    = getTfChg(r);
-    const pc = tfChgPct > 0.05 ? 'chg-pos' : tfChgPct < -0.05 ? 'chg-neg' : 'chg-neu';
-    const priceFmt = r.price >= 1000
-      ? '$'+r.price.toLocaleString('en-US',{maximumFractionDigits:0})
-      : '$'+Number(r.price).toFixed(2);
-    const chgSign = tfChg >= 0 ? '+' : '';
-    const pos52 = (r.hi52 && r.lo52 && r.hi52>r.lo52)
-      ? Math.max(0,Math.min(1,(r.price-r.lo52)/(r.hi52-r.lo52))) : 0.5;
-    const barColor = pos52>0.7?'var(--green)':pos52<0.3?'var(--red)':'var(--accent)';
-    const sentCls = r.sentiment==='bull'?'chg-pos':r.sentiment==='bear'?'chg-neg':'chg-neu';
-    const sentLbl = r.sentiment==='bull'?'BULL':r.sentiment==='bear'?'BEAR':'NEUT';
-    const flipCell = t => t
-      ? `<span class="flip-time">${t}</span>`
-      : `<span style="color:var(--dim);font-family:var(--mono);font-size:11px;">--</span>`;
-    return `<tr>
-      <td><div class="ticker-sym">${r.sym}</div><div class="ticker-name">${r.name}</div></td>
-      <td class="r"><span class="price-val">${priceFmt}</span></td>
-      <td class="r"><span class="${pc}">${chgSign}${Number(tfChgPct).toFixed(2)}%</span></td>
-      <td class="r">
-        <div class="w52-bar">
-          <span class="w52-pct">${Math.round(pos52*100)}%</span>
-          <div class="w52-track"><div class="w52-fill" style="width:${Math.round(pos52*100)}%;background:${barColor}"></div></div>
-        </div>
-      </td>
-      <td class="c"><span class="trend-pill ${sentCls}">${sentLbl}</span></td>
-      <td class="c"><span class="${bCls}">${bLabel}</span></td>
-      <td class="c">${flipCell(getBFlip(r))}</td>
-      <td class="c"><span class="${lCls}">${lLabel}</span></td>
-      <td class="c">${flipCell(getLFlip(r))}</td>
-      <td class="c"><button onclick="removeHolding('${r._hid}','${r._pid}','${r.sym}')" style="background:none;border:1px solid var(--red);color:var(--red);border-radius:3px;padding:2px 7px;cursor:pointer;font-size:11px;">✕</button></td>
-    </tr>`;
-  }).join('');
-  document.getElementById('portfolioStatus').textContent = `${rows.length} / ${holdings.length} stock${holdings.length!==1?'s':''}`;
-}
-
-async function loadPortfolioTab() {
-  document.getElementById('portfolioStatus').textContent = 'Loading...';
-  await loadPortfolios();
-  refreshPortfolioSelect();
-  if (portfolios.length > 0 && !activePortfolio) {
-    activePortfolio = portfolios[0].id;
-    refreshPortfolioSelect();
-  }
-  renderPortfolioTable();
-  render(); // refresh "In" column in Nasdaq60
-}
-
-function setPortFilter(f, el) {
-  portFilter = f;
-  document.querySelectorAll('#panePortfolio .filter-btn').forEach(b => {
-    b.classList.remove('active','active-bull','active-bear');
-  });
-  if (el) {
-    if (f==='bull'||f==='bbull'||f==='lgold'||f==='triple') el.classList.add('active-bull');
-    else if (f==='bear'||f==='bbear')                        el.classList.add('active-bear');
-    else                                                      el.classList.add('active');
-  }
-  renderPortfolioTable();
-}
-
-function setPortTF(tf) {
-  curTF = tf;
-  renderPortfolioTable();
-}
-
-function setPortSort(s) {
-  portSort = s;
-  renderPortfolioTable();
-}
-
-
-// =============================================================================
-// WATCHLIST FEATURE -- mirrors Portfolio feature exactly
-// =============================================================================
-let watchlists      = [];   // [{id, name}]
-let allWLItems      = [];   // [{id, watchlist_id, sym}]
-let activeWatchlist = null;
-let pendingWLSym    = null;
-let wlFilter        = 'all';
-let wlSort          = '';
-
-async function loadWatchlists() {
-  const [w, i] = await Promise.all([
-    supaFetch('watchlists?select=id,name,created_at&order=created_at.asc'),
-    supaFetch('watchlist_items?select=id,watchlist_id,sym'),
-  ]);
-  watchlists  = w || [];
-  allWLItems  = i || [];
-}
-
-function getWatchlistLabel(sym) {
-  const matches = allWLItems.filter(i => i.sym === sym);
-  if (matches.length === 0) return '';
-  if (matches.length === 1) {
-    const w = watchlists.find(w => w.id === matches[0].watchlist_id);
-    return w ? `<span style="color:var(--accent);font-size:10px;">${w.name}</span>` : '';
-  }
-  return '<span style="color:var(--accent);font-size:10px;">Multiple</span>';
-}
-
-function openAddToWatchlist(sym) {
-  if (watchlists.length === 0) {
-    alert('Create a watchlist first in the Watchlist tab.');
-    return;
-  }
-  pendingWLSym = sym;
-  document.getElementById('wlModalSym').textContent = sym;
-  const sel = document.getElementById('wlModalSelect');
-  sel.innerHTML = '<option value="">Select watchlist...</option>' +
-    watchlists.map(w => `<option value="${w.id}">${w.name}</option>`).join('');
-  document.getElementById('watchlistModal').style.display = 'flex';
-}
-
-function closeWLModal() {
-  document.getElementById('watchlistModal').style.display = 'none';
-  pendingWLSym = null;
-}
-
-async function confirmAddToWatchlist() {
-  const wlId = document.getElementById('wlModalSelect').value;
-  if (!wlId || !pendingWLSym) return;
-  const res = await supaFetch('watchlist_items', {
-    method: 'POST',
-    prefer: 'return=representation',
-    body: JSON.stringify({ watchlist_id: wlId, sym: pendingWLSym }),
-  });
-  if (res) {
-    allWLItems.push(...res);
-    closeWLModal();
-    render();
-    if (activeWatchlist === wlId) renderWatchlistTable();
-  }
-}
-
-function createWatchlist() {
-  const n = watchlists.length + 1;
-  document.getElementById('watchlistNameInput').value = 'Watchlist ' + n;
-  document.getElementById('createWatchlistModal').style.display = 'flex';
-  setTimeout(() => document.getElementById('watchlistNameInput').select(), 50);
-}
-
-function closeCreateWLModal() {
-  document.getElementById('createWatchlistModal').style.display = 'none';
-}
-
-async function confirmCreateWatchlist() {
-  const name = document.getElementById('watchlistNameInput').value.trim();
-  if (!name) return;
-  const res = await supaFetch('watchlists', {
-    method: 'POST',
-    body: JSON.stringify({ name }),
-  });
-  if (res && res.length > 0) {
-    watchlists.push(res[0]);
-    closeCreateWLModal();
-    refreshWatchlistSelect();
-    selectWatchlist(res[0].id);
-    document.getElementById('watchlistStatus').textContent = `Created "${name}"`;
-  } else {
-    alert('Could not create watchlist. Name may already exist.');
-  }
-}
-
-async function deleteWatchlist() {
-  if (!activeWatchlist) return;
-  const w = watchlists.find(w => w.id === activeWatchlist);
-  if (!confirm(`Delete "${w?.name}"? This will remove all its items.`)) return;
-  await supaFetch(`watchlists?id=eq.${activeWatchlist}`, { method: 'DELETE', prefer: '' });
-  watchlists  = watchlists.filter(w => w.id !== activeWatchlist);
-  allWLItems  = allWLItems.filter(i => i.watchlist_id !== activeWatchlist);
-  activeWatchlist = null;
-  refreshWatchlistSelect();
-  renderWatchlistTable();
-  render();
-}
-
-async function renameWatchlist() {
-  if (!activeWatchlist) return;
-  const w = watchlists.find(w => w.id === activeWatchlist);
-  const newName = prompt('Rename watchlist:', w?.name || '');
-  if (!newName || newName.trim() === '' || newName.trim() === w?.name) return;
-  const res = await supaFetch(`watchlists?id=eq.${activeWatchlist}`, {
-    method: 'PATCH',
-    body: JSON.stringify({ name: newName.trim() }),
-  });
-  if (res !== null) {
-    const idx = watchlists.findIndex(w => w.id === activeWatchlist);
-    if (idx >= 0) watchlists[idx].name = newName.trim();
-    refreshWatchlistSelect();
-    render();
-    document.getElementById('watchlistStatus').textContent = `Renamed to "${newName.trim()}"`;
-  } else {
-    alert('Could not rename. Name may already exist.');
-  }
-}
-
-async function removeWLItem(itemId, wlId, sym) {
-  await supaFetch(`watchlist_items?id=eq.${itemId}`, { method: 'DELETE', prefer: '' });
-  allWLItems = allWLItems.filter(i => i.id !== itemId);
-  renderWatchlistTable();
-  render();
-}
-
-function refreshWatchlistSelect() {
-  const sel = document.getElementById('watchlistSelect');
-  sel.innerHTML = '<option value="">Select watchlist...</option>' +
-    watchlists.map(w => `<option value="${w.id}" ${w.id===activeWatchlist?'selected':''}>${w.name}</option>`).join('');
-  const show = activeWatchlist ? 'inline-block' : 'none';
-  document.getElementById('deleteWatchlistBtn').style.display = show;
-  document.getElementById('renameWatchlistBtn').style.display = show;
-}
-
-function selectWatchlist(id) {
-  activeWatchlist = id || null;
-  refreshWatchlistSelect();
-  renderWatchlistTable();
-}
-
-function setWLFilter(f, el) {
-  wlFilter = f;
-  document.querySelectorAll('#paneWatchlist2 .filter-btn').forEach(b => {
-    b.classList.remove('active','active-bull','active-bear');
-  });
-  if (el) {
-    if (f==='bull'||f==='bbull'||f==='lgold'||f==='triple') el.classList.add('active-bull');
-    else if (f==='bear'||f==='bbear')                        el.classList.add('active-bear');
-    else                                                      el.classList.add('active');
-  }
-  renderWatchlistTable();
-}
-
-function setWLSort(s) { wlSort = s; renderWatchlistTable(); }
-
-function setWLTF(tf) { curTF = tf; renderWatchlistTable(); }
-
-function renderWatchlistTable() {
-  const tbody = document.getElementById('watchlistTbody');
-  if (!activeWatchlist) {
-    tbody.innerHTML = '<tr class="state-row"><td colspan="10">Select or create a watchlist above.</td></tr>';
-    document.getElementById('watchlistStatus').textContent = '';
-    return;
-  }
-  const items = allWLItems.filter(i => i.watchlist_id === activeWatchlist);
-  if (items.length === 0) {
-    tbody.innerHTML = '<tr class="state-row"><td colspan="10">No stocks in this watchlist yet. Use the W+ button in the Nasdaq60 or OMX50 tab.</td></tr>';
-    document.getElementById('watchlistStatus').textContent = '0 stocks';
-    return;
-  }
-
-  let rows = items.map(item => {
-    const r = allData.find(d => d.sym === item.sym);
-    return r ? Object.assign({}, r, {_iid: item.id, _wid: item.watchlist_id}) : null;
-  }).filter(Boolean);
-
-  // Filter -- same as Nasdaq60/Portfolio
-  if (wlFilter === 'bull')        rows = rows.filter(r => r.sentiment === 'bull');
-  else if (wlFilter === 'bear')   rows = rows.filter(r => r.sentiment === 'bear');
-  else if (wlFilter === 'bbull')  rows = rows.filter(r => ((r.tf||{})[curTF]||{}).b === 'bull');
-  else if (wlFilter === 'bbear')  rows = rows.filter(r => ((r.tf||{})[curTF]||{}).b === 'bear');
-  else if (wlFilter === 'lgold')  rows = rows.filter(r => ((r.tf||{})[curTF]||{}).l === 'gold');
-  else if (wlFilter === 'lblue')  rows = rows.filter(r => ((r.tf||{})[curTF]||{}).l === 'blue');
-  else if (wlFilter === 'triple') rows = rows.filter(r => {
-    const tf = (r.tf||{})[curTF]||{};
-    return r.sentiment==='bull' && tf.b==='bull' && tf.l==='gold';
-  });
-
-  // Sort
-  if (wlSort === 'chg_d')        rows.sort((a,b) => getChgPct(b)-getChgPct(a));
-  else if (wlSort === 'chg_a')   rows.sort((a,b) => getChgPct(a)-getChgPct(b));
-  else if (wlSort === 'price_d') rows.sort((a,b) => (b.price||0)-(a.price||0));
-  else if (wlSort === 'price_a') rows.sort((a,b) => (a.price||0)-(b.price||0));
-  else if (wlSort === 'az')      rows.sort((a,b) => a.sym.localeCompare(b.sym));
-  else if (wlSort === 'bflip_d') rows.sort((a,b) => parseDateStr(getBFlip(b))-parseDateStr(getBFlip(a)));
-  else if (wlSort === 'lflip_d') rows.sort((a,b) => parseDateStr(getLFlip(b))-parseDateStr(getLFlip(a)));
-
-  if (rows.length === 0) {
-    tbody.innerHTML = '<tr class="state-row"><td colspan="10">No stocks match the current filter.</td></tr>';
-    document.getElementById('watchlistStatus').textContent = `0 / ${items.length} stocks`;
-    return;
-  }
-
-  tbody.innerHTML = rows.map(r => {
-    const activeTF = (r.tf||{})[curTF]||{b:'neutral',l:'gray'};
-    const bSig   = activeTF.b || 'neutral';
-    const lSig   = activeTF.l || 'gray';
-    const bCls   = bSig==='bull'?'b-bull':bSig==='bear'?'b-bear':'b-neut';
-    const bLabel = bSig==='bull'?'Bullish':bSig==='bear'?'Bearish':'Neutral';
-    const lCls   = lSig==='gold'?'l-gold':lSig==='blue'?'l-blue':'l-gray';
-    const lLabel = lSig==='gold'?'Gold':lSig==='blue'?'Blue':'Gray';
-    const tfChgPct = getChgPct(r);
-    const tfChg    = getTfChg(r);
-    const pc = tfChgPct > 0.05 ? 'chg-pos' : tfChgPct < -0.05 ? 'chg-neg' : 'chg-neu';
-    const priceFmt = r.price >= 1000
-      ? '$'+r.price.toLocaleString('en-US',{maximumFractionDigits:0})
-      : '$'+Number(r.price).toFixed(2);
-    const chgSign = tfChg >= 0 ? '+' : '';
-    const pos52 = (r.hi52 && r.lo52 && r.hi52>r.lo52)
-      ? Math.max(0,Math.min(1,(r.price-r.lo52)/(r.hi52-r.lo52))) : 0.5;
-    const barColor = pos52>0.7?'var(--green)':pos52<0.3?'var(--red)':'var(--accent)';
-    const sentCls = r.sentiment==='bull'?'chg-pos':r.sentiment==='bear'?'chg-neg':'chg-neu';
-    const sentLbl = r.sentiment==='bull'?'BULL':r.sentiment==='bear'?'BEAR':'NEUT';
-    const flipCell = t => t
-      ? `<span class="flip-time">${t}</span>`
-      : `<span style="color:var(--dim);font-family:var(--mono);font-size:11px;">--</span>`;
-    return `<tr>
-      <td><div class="ticker-sym">${r.sym}</div><div class="ticker-name">${r.name}</div></td>
-      <td class="r"><span class="price-val">${priceFmt}</span></td>
-      <td class="r"><span class="${pc}">${chgSign}${Number(tfChgPct).toFixed(2)}%</span></td>
-      <td class="r">
-        <div class="w52-bar">
-          <span class="w52-pct">${Math.round(pos52*100)}%</span>
-          <div class="w52-track"><div class="w52-fill" style="width:${Math.round(pos52*100)}%;background:${barColor}"></div></div>
-        </div>
-      </td>
-      <td class="c"><span class="trend-pill ${sentCls}">${sentLbl}</span></td>
-      <td class="c"><span class="${bCls}">${bLabel}</span></td>
-      <td class="c">${flipCell(getBFlip(r))}</td>
-      <td class="c"><span class="${lCls}">${lLabel}</span></td>
-      <td class="c">${flipCell(getLFlip(r))}</td>
-      <td class="c"><button onclick="removeWLItem('${r._iid}','${r._wid}','${r.sym}')" style="background:none;border:1px solid var(--red);color:var(--red);border-radius:3px;padding:2px 7px;cursor:pointer;font-size:11px;">✕</button></td>
-    </tr>`;
-  }).join('');
-  document.getElementById('watchlistStatus').textContent = `${rows.length} / ${items.length} stock${items.length!==1?'s':''}`;
-}
-
-async function loadWatchlistTab() {
-  document.getElementById('watchlistStatus').textContent = 'Loading...';
-  await loadWatchlists();
-  refreshWatchlistSelect();
-  if (watchlists.length > 0 && !activeWatchlist) {
-    activeWatchlist = watchlists[0].id;
-    refreshWatchlistSelect();
-  }
-  renderWatchlistTable();
-  render();
-}
-
-</script>
-  <!-- ADD TO WATCHLIST MODAL -->
-  <div id="watchlistModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:1000;align-items:center;justify-content:center;">
-    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:24px;min-width:280px;max-width:360px;">
-      <div style="font-size:14px;font-weight:600;margin-bottom:16px;">Add <span id="wlModalSym" style="color:var(--accent);"></span> to watchlist</div>
-      <select id="wlModalSelect" style="width:100%;background:var(--bg3);color:var(--fg);border:1px solid var(--border);border-radius:4px;padding:8px;font-size:13px;margin-bottom:12px;">
-        <option value="">Select watchlist...</option>
-      </select>
-      <div style="display:flex;gap:8px;justify-content:flex-end;">
-        <button onclick="closeWLModal()" style="background:none;border:1px solid var(--border);color:var(--fg);border-radius:4px;padding:6px 16px;cursor:pointer;font-size:12px;">Cancel</button>
-        <button onclick="confirmAddToWatchlist()" style="background:var(--accent);color:#000;border:none;border-radius:4px;padding:6px 16px;cursor:pointer;font-size:12px;font-weight:600;">Add</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- CREATE WATCHLIST MODAL -->
-  <div id="createWatchlistModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:1000;align-items:center;justify-content:center;">
-    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:24px;min-width:280px;max-width:360px;">
-      <div style="font-size:14px;font-weight:600;margin-bottom:16px;">Create New Watchlist</div>
-      <input id="watchlistNameInput" type="text" value="Watchlist 1" style="width:100%;background:var(--bg3);color:var(--fg);border:1px solid var(--border);border-radius:4px;padding:8px;font-size:13px;margin-bottom:12px;box-sizing:border-box;" />
-      <div style="display:flex;gap:8px;justify-content:flex-end;">
-        <button onclick="closeCreateWLModal()" style="background:none;border:1px solid var(--border);color:var(--fg);border-radius:4px;padding:6px 16px;cursor:pointer;font-size:12px;">Cancel</button>
-        <button onclick="confirmCreateWatchlist()" style="background:var(--accent);color:#000;border:none;border-radius:4px;padding:6px 16px;cursor:pointer;font-size:12px;font-weight:600;">Create</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- ADD TO PORTFOLIO MODAL -->
-  <div id="portfolioModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:1000;align-items:center;justify-content:center;">
-    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:24px;min-width:280px;max-width:360px;">
-      <div style="font-size:14px;font-weight:600;margin-bottom:16px;">Add <span id="modalSym" style="color:var(--accent);"></span> to portfolio</div>
-      <select id="modalPortfolioSelect" style="width:100%;background:var(--bg3);color:var(--fg);border:1px solid var(--border);border-radius:4px;padding:8px;font-size:13px;margin-bottom:12px;">
-        <option value="">Select portfolio...</option>
-      </select>
-      <div style="display:flex;gap:8px;justify-content:flex-end;">
-        <button onclick="closeModal()" style="background:none;border:1px solid var(--border);color:var(--fg);border-radius:4px;padding:6px 16px;cursor:pointer;font-size:12px;">Cancel</button>
-        <button onclick="confirmAddToPortfolio()" style="background:var(--accent);color:#000;border:none;border-radius:4px;padding:6px 16px;cursor:pointer;font-size:12px;font-weight:600;">Add</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- CREATE PORTFOLIO MODAL -->
-  <div id="createPortfolioModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:1000;align-items:center;justify-content:center;">
-    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:24px;min-width:280px;max-width:360px;">
-      <div style="font-size:14px;font-weight:600;margin-bottom:16px;">Create New Portfolio</div>
-      <input id="portfolioNameInput" type="text" value="Portfolio 1" style="width:100%;background:var(--bg3);color:var(--fg);border:1px solid var(--border);border-radius:4px;padding:8px;font-size:13px;margin-bottom:12px;box-sizing:border-box;" />
-      <div style="display:flex;gap:8px;justify-content:flex-end;">
-        <button onclick="closeCreateModal()" style="background:none;border:1px solid var(--border);color:var(--fg);border-radius:4px;padding:6px 16px;cursor:pointer;font-size:12px;">Cancel</button>
-        <button onclick="confirmCreatePortfolio()" style="background:var(--accent);color:#000;border:none;border-radius:4px;padding:6px 16px;cursor:pointer;font-size:12px;font-weight:600;">Create</button>
-      </div>
-    </div>
-  </div>
-
-</body>
-</html>
+});
