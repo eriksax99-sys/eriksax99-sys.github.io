@@ -151,6 +151,14 @@
 </style>
 </head>
 <body>
+<div id="authWall" style="display:flex;position:fixed;inset:0;background:var(--bg);z-index:9999;align-items:center;justify-content:center;flex-direction:column;gap:16px;">
+  <div style="font-family:var(--mono);font-size:22px;color:var(--accent);font-weight:700;">▸ Geestman's Trading Dashboard</div>
+  <div style="font-family:var(--mono);font-size:12px;color:var(--muted);margin-bottom:8px;">Enter password to continue</div>
+  <input id="pwInput" type="password" placeholder="Password" onkeydown="if(event.key==='Enter')checkPw()" style="background:var(--bg2);color:var(--fg);border:1px solid var(--border);border-radius:4px;padding:10px 16px;font-size:14px;font-family:var(--mono);width:240px;outline:none;" autofocus />
+  <button onclick="checkPw()" style="background:var(--accent);color:#000;border:none;border-radius:4px;padding:8px 24px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--mono);">Enter</button>
+  <div id="pwError" style="color:var(--red);font-size:12px;font-family:var(--mono);display:none;">Incorrect password</div>
+</div>
+
 <div class="container">
 
   <header>
@@ -194,7 +202,7 @@
   <div class="tab-pane active" id="paneWatchlist">
 
   <!-- SUMMARY: compact single-line chips -->
-  <div style="display:flex;gap:6px;flex-wrap:wrap;padding:3px 0;border-bottom:1px solid var(--border);align-items:center;">
+  <div style="display:flex;gap:6px;flex-wrap:wrap;padding:3px 0;border-bottom:1px solid var(--border);align-items:center;position:-webkit-sticky;position:sticky;top:33px;z-index:9;background:var(--bg);">
     <span style="font-family:var(--mono);font-size:10px;color:var(--muted);">▲ Trend <span class="green" id="sBull" style="font-weight:700;">—</span></span>
     <span style="font-family:var(--mono);font-size:10px;color:var(--muted);">▼ Trend <span class="red" id="sBear" style="font-weight:700;">—</span></span>
     <span style="font-family:var(--mono);font-size:10px;color:var(--muted);">B Bull <span class="green" id="sBBull" style="font-weight:700;">—</span></span>
@@ -204,7 +212,7 @@
   </div>
 
   <!-- CONTROLS -->
-  <div class="controls">
+  <div class="controls" style="position:-webkit-sticky;position:sticky;top:52px;z-index:9;background:var(--bg);">
     <button class="filter-btn active" onclick="setFilter('all',this)">All</button>
     <button class="filter-btn" onclick="setFilter('bull',this)">▲ Trend Bull</button>
     <button class="filter-btn" onclick="setFilter('bear',this)">▼ Trend Bear</button>
@@ -347,18 +355,19 @@
   <!-- OMX 10 TAB -->
   <div class="tab-pane" id="paneOMX">
 
-    <!-- Summary: compact inline chips matching Nasdaq60 -->
-    <div style="display:flex;gap:6px;flex-wrap:wrap;padding:3px 0;border-bottom:1px solid var(--border);align-items:center;">
-      <span style="font-family:var(--mono);font-size:10px;color:var(--muted);">B Bull <span class="green" id="osBBull" style="font-weight:700;">--</span></span>
-      <span style="font-family:var(--mono);font-size:10px;color:var(--muted);">B Bear <span class="red" id="osBBear" style="font-weight:700;">--</span></span>
-      <span style="font-family:var(--mono);font-size:10px;color:var(--muted);">L Gold <span style="color:var(--amber);font-weight:700;" id="osLGold">--</span></span>
-      <span style="font-family:var(--mono);font-size:10px;color:var(--muted);">L Blue <span style="color:#4fc3f7;font-weight:700;" id="osLBlue">--</span></span>
-      <span style="font-family:var(--mono);font-size:10px;color:var(--muted);">Triple <span class="green" id="osTriple" style="font-weight:700;">--</span></span>
-      <span style="font-family:var(--mono);font-size:10px;color:var(--muted);">Stocks <span style="color:var(--muted);font-weight:700;" id="osCount">--</span></span>
-    </div>
+  <!-- SUMMARY: compact single-line chips -->
+  <div style="display:flex;gap:6px;flex-wrap:wrap;padding:3px 0;border-bottom:1px solid var(--border);align-items:center;position:-webkit-sticky;position:sticky;top:33px;z-index:9;background:var(--bg);">
+    <span style="font-family:var(--mono);font-size:10px;color:var(--muted);">▲ Trend <span class="green" id="osTrendBull" style="font-weight:700;">—</span></span>
+    <span style="font-family:var(--mono);font-size:10px;color:var(--muted);">▼ Trend <span class="red" id="osTrendBear" style="font-weight:700;">—</span></span>
+    <span style="font-family:var(--mono);font-size:10px;color:var(--muted);">B Bull <span class="green" id="osBBull" style="font-weight:700;">—</span></span>
+    <span style="font-family:var(--mono);font-size:10px;color:var(--muted);">B Bear <span class="red" id="osBBear" style="font-weight:700;">—</span></span>
+    <span style="font-family:var(--mono);font-size:10px;color:var(--muted);">L Gold <span style="color:var(--amber);font-weight:700;" id="osLGold">—</span></span>
+    <span style="font-family:var(--mono);font-size:10px;color:var(--muted);">L Blue <span style="color:#4fc3f7;font-weight:700;" id="osLBlue">—</span></span>
+  </div>
 
     <!-- Filters + TF + Sort -->
-    <div class="controls" style="margin-top:2px;">
+  <!-- CONTROLS -->
+  <div class="controls" style="position:-webkit-sticky;position:sticky;top:52px;z-index:9;background:var(--bg);">
       <button class="filter-btn active" onclick="setOMXFilter('all',this)">All</button>
       <button class="filter-btn" onclick="setOMXFilter('bull',this)">&#9650; Trend Bull</button>
       <button class="filter-btn" onclick="setOMXFilter('bear',this)">&#9660; Trend Bear</button>
@@ -367,7 +376,7 @@
       <button class="filter-btn" onclick="setOMXFilter('lgold',this)" style="border-color:var(--amber-border);color:var(--amber);">&#9733; L:Gold</button>
       <button class="filter-btn" onclick="setOMXFilter('lblue',this)" style="border-color:var(--blue-border);color:var(--blue);">&#9679; L:Blue</button>
       <button class="filter-btn has-tip" onclick="setOMXFilter('triple',this)" style="border-color:var(--accent);color:var(--accent);font-weight:600;" data-tip="Triple Bull: Trend bullish + B bullish + L gold on selected timeframe">&#9889; Triple Bull</button>
-      <select class="sort-select" id="omxTfSelect" onchange="setOMXTF(this.value)" style="border-color:var(--accent);color:var(--accent);">
+      <select class="sort-select" id="omxTfSelect" onchange="setOMXTF(this.value)" style="margin-left:0; border-color:var(--accent);color:var(--accent);">
         <option value="2H">Timeframe: 2H</option>
         <option value="4H">Timeframe: 4H</option>
         <option value="D" selected>Timeframe: Daily</option>
@@ -388,27 +397,26 @@
         <option value="bflip_d">B Flip &#8595;</option>
         <option value="lflip_d">L Flip &#8595;</option>
       </select>
-      <span id="omxStatus" style="font-size:11px;color:var(--muted);font-family:var(--mono);">Loading...</span>
     </div>
 
     <!-- Table -->
-    <div class="table-wrap" style="margin-top:8px;">
+    <div class="table-wrap">
       <table>
         <thead>
           <tr>
-            <th style="text-align:left;" onclick="setOMXSort(omxCurSort==='az'?'':'az')" title="Sort by Ticker">Ticker</th>
+            <th style="cursor:pointer;" onclick="setOMXSort(omxCurSort==='az'?'az_r':'az')">Ticker</th>
             <th class="r" style="cursor:pointer;" onclick="setOMXSort(omxCurSort==='price_d'?'price_a':'price_d')" title="Sort by Price">Price</th>
-            <th class="r" style="cursor:pointer;" onclick="setOMXSort(omxCurSort==='chg_d'?'chg_a':'chg_d')" title="Sort by % change">Chg %</th>
+            <th class="r" style="cursor:pointer;" onclick="setOMXSort(omxCurSort==='chg_d'?'chg_a':'chg_d')" title="Sort by % change">% Chg</th>
             <th class="c" style="width:28px;" title="Add to watchlist">W+</th>
-            <th class="c" style="width:70px;font-size:10px;">In Watch</th>
+            <th class="c" style="width:70px;font-size:10px;cursor:pointer;" onclick="setOMXSort(omxCurSort==='wl_d'?'wl_a':'wl_d')">In Watch</th>
             <th class="c" style="width:28px;" title="Add to portfolio">P+</th>
-            <th class="c" style="width:70px;font-size:10px;">In Port</th>
-            <th class="r" style="cursor:pointer;" onclick="setOMXSort(omxCurSort==='w52_d'?'w52_a':'w52_d')" title="Sort by 52-week position">52W</th>
-            <th class="c" style="cursor:pointer;" onclick="setOMXSort(omxCurSort==='trend_d'?'trend_a':'trend_d')">Trend</th>
-            <th class="c b-col has-tip" data-tip="B signal: bull/bear based on highest-high / lowest-low + ATR14x2.5 bands">B</th>
-            <th class="c has-tip" style="cursor:pointer;" onclick="setOMXSort(omxCurSort==='bflip_d'?'bflip_a':'bflip_d')" data-tip="Date of last B signal flip (DDMMYY HHMM)">B Flip</th>
-            <th class="c l-col has-tip" data-tip="L signal: SMMA15 vs SMMA25 on HL2. Gold = uptrend, Blue = downtrend.">L</th>
-            <th class="c has-tip" style="cursor:pointer;" onclick="setOMXSort(omxCurSort==='lflip_d'?'lflip_a':'lflip_d')" data-tip="Date of last L signal flip (DDMMYY HHMM)">L Flip</th>
+            <th class="c" style="width:70px;font-size:10px;cursor:pointer;" onclick="setOMXSort(omxCurSort==='in_d'?'in_a':'in_d')">In Port</th>
+            <th class="r" style="cursor:pointer;" onclick="setOMXSort(omxCurSort==='w52_d'?'w52_a':'w52_d')" title="Sort by 52-week range position">52W</th>
+            <th class="c">Trend</th>
+            <th class="c b-col has-tip" data-tip="B = Momentum signal. SMMA21 of close with ATR14x2.5 volatility band. State-based and sticky.">B</th>
+            <th class="c has-tip" style="font-size:10px;color:var(--green);border-bottom:2px solid var(--green-border);cursor:pointer;" onclick="setOMXSort(omxCurSort==='bflip_d'?'bflip_a':'bflip_d')" data-tip="When the B signal last flipped (CET). Click to sort.">B Flip</th>
+            <th class="c l-col has-tip" data-tip="L = Ribbon signal. SMMA15 vs SMMA25 on (H+L)/2. Gold = uptrend, Blue = downtrend.">L</th>
+            <th class="c has-tip" style="font-size:10px;color:var(--amber);border-bottom:2px solid var(--amber-border);cursor:pointer;" onclick="setOMXSort(omxCurSort==='lflip_d'?'lflip_a':'lflip_d')" data-tip="When the L signal last flipped (CET). Click to sort.">L Flip</th>
             <th class="r">Volume</th>
           </tr>
         </thead>
@@ -416,14 +424,6 @@
           <tr class="state-row"><td colspan="14">Loading OMX data...</td></tr>
         </tbody>
       </table>
-    </div>
-
-    <!-- Data source note -->
-    <div class="legend" style="margin-top:16px;">
-      <strong style="color:var(--muted);font-size:10px;">DATA SOURCE</strong>
-      <span class="legend-item">Yahoo Finance (Stockholm Exchange · .ST tickers)</span>
-      <span class="legend-item">Updates every 5 min (batch processing)</span>
-      <span class="legend-item">Prices in SEK</span>
     </div>
 
   </div><!-- /paneOMX -->
@@ -593,7 +593,24 @@ function getChgPct(r) { return curTF==='2H'?(r.chgPct2h||r.chgPct4h||r.chgPct):c
 function getTfChg(r)  { return curTF==='2H'?(r.chg2h||r.chg4h||r.chg):curTF==='4H'?(r.chg4h||r.chg):curTF==='W'?(r.chgW||r.chg):curTF==='M'?(r.chgM||r.chg):r.chg; }
 
 // -- INIT ----------------------------------------------------------------------
-window.addEventListener('DOMContentLoaded', () => { loadFromSupabase(); Promise.all([loadPortfolios(), loadWatchlists()]).then(() => render()); });
+function checkPw() {
+  const pw = document.getElementById('pwInput').value;
+  if (pw === 'GM26') {
+    document.getElementById('authWall').style.display = 'none';
+    loadFromSupabase();
+    Promise.all([loadPortfolios(), loadWatchlists()]).then(() => render());
+  } else {
+    document.getElementById('pwError').style.display = 'block';
+    document.getElementById('pwInput').value = '';
+    document.getElementById('pwInput').focus();
+  }
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('pwInput').focus();
+});
+
+window.addEventListener('DOMContentLoaded_disabled', () => { loadFromSupabase(); Promise.all([loadPortfolios(), loadWatchlists()]).then(() => render()); });
 
 // -- SUPABASE READ -------------------------------------------------------------
 async function loadFromSupabase() {
@@ -1466,6 +1483,10 @@ function omxRender() {
   else if (omxCurSort === 'bflip_a') rows.sort((a,b) => omxParseDateStr(omxGetBFlip(a))-omxParseDateStr(omxGetBFlip(b)));
   else if (omxCurSort === 'lflip_d') rows.sort((a,b) => omxParseDateStr(omxGetLFlip(b))-omxParseDateStr(omxGetLFlip(a)));
   else if (omxCurSort === 'lflip_a') rows.sort((a,b) => omxParseDateStr(omxGetLFlip(a))-omxParseDateStr(omxGetLFlip(b)));
+  else if (omxCurSort === 'wl_d') rows.sort((a,b) => { const la=getWatchlistLabel(a.sym).replace(/<[^>]+>/g,''); const lb=getWatchlistLabel(b.sym).replace(/<[^>]+>/g,''); return lb.localeCompare(la); });
+  else if (omxCurSort === 'wl_a') rows.sort((a,b) => { const la=getWatchlistLabel(a.sym).replace(/<[^>]+>/g,''); const lb=getWatchlistLabel(b.sym).replace(/<[^>]+>/g,''); return la.localeCompare(lb); });
+  else if (omxCurSort === 'in_d') rows.sort((a,b) => { const la=getPortfolioLabel(a.sym).replace(/<[^>]+>/g,''); const lb=getPortfolioLabel(b.sym).replace(/<[^>]+>/g,''); return lb.localeCompare(la); });
+  else if (omxCurSort === 'in_a') rows.sort((a,b) => { const la=getPortfolioLabel(a.sym).replace(/<[^>]+>/g,''); const lb=getPortfolioLabel(b.sym).replace(/<[^>]+>/g,''); return la.localeCompare(lb); });
 
   const flipCell = t => t
     ? `<span class="flip-time">${t}</span>`
@@ -1532,23 +1553,20 @@ function omxRender() {
 
 function omxRenderSummary() {
   const rows = omxAllData;
-  // IDs now point to inline spans not sum-val divs -- same textContent assignment works
   if (!rows.length) return;
+  const bull   = rows.filter(r => r.sentiment==='bull').length;
+  const bear   = rows.filter(r => r.sentiment==='bear').length;
   const bbull  = rows.filter(r => ((r.tf||{})[omxCurTF]||{}).b==='bull').length;
   const bbear  = rows.filter(r => ((r.tf||{})[omxCurTF]||{}).b==='bear').length;
   const lgold  = rows.filter(r => ((r.tf||{})[omxCurTF]||{}).l==='gold').length;
   const lblue  = rows.filter(r => ((r.tf||{})[omxCurTF]||{}).l==='blue').length;
-  const triple = rows.filter(r => {
-    const tf = ((r.tf||{})[omxCurTF]||{});
-    return r.sentiment==='bull' && tf.b==='bull' && tf.l==='gold';
-  }).length;
   const el = id => document.getElementById(id);
-  if (el('osBBull'))  el('osBBull').textContent  = bbull;
-  if (el('osBBear'))  el('osBBear').textContent  = bbear;
-  if (el('osLGold'))  el('osLGold').textContent  = lgold;
-  if (el('osLBlue'))  el('osLBlue').textContent  = lblue;
-  if (el('osTriple')) el('osTriple').textContent = triple;
-  if (el('osCount'))  el('osCount').textContent  = rows.length;
+  if (el('osTrendBull')) el('osTrendBull').textContent = bull;
+  if (el('osTrendBear')) el('osTrendBear').textContent = bear;
+  if (el('osBBull'))     el('osBBull').textContent     = bbull;
+  if (el('osBBear'))     el('osBBear').textContent     = bbear;
+  if (el('osLGold'))     el('osLGold').textContent     = lgold;
+  if (el('osLBlue'))     el('osLBlue').textContent     = lblue;
 }
 
 function setOMXFilter(f, btn) {
@@ -1615,11 +1633,7 @@ async function loadOMXData() {
       })(),
     }));
 
-    if (statusEl && omxAllData.length > 0) {
-      statusEl.textContent = `${omxAllData.length} stocks loaded`;
-    } else if (statusEl) {
-      statusEl.textContent = 'No OMX data yet -- deploy omx-processor';
-    }
+    // status shown in summary chips only
 
     omxRender();
   } catch(e) {
