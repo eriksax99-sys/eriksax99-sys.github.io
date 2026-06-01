@@ -507,8 +507,14 @@
         <select id="portSortSelect" onchange="setPortSort(this.value)" style="background:var(--bg2);color:var(--fg);border:1px solid var(--border);border-radius:4px;padding:4px 8px;font-size:11px;">
           <option value="">Sort: Default</option>
           <option value="az">Ticker A-Z</option>
-          <option value="chg_d">% Chg Down</option>
-          <option value="chg_a">% Chg Up</option>
+          <option value="chg_d">% Chg &#8595;</option>
+          <option value="chg_a">% Chg &#8593;</option>
+          <option value="price_d">Price &#8595;</option>
+          <option value="price_a">Price &#8593;</option>
+          <option value="w52_d">52W &#8595;</option>
+          <option value="w52_a">52W &#8593;</option>
+          <option value="trend_d">Trend Bull</option>
+          <option value="trend_a">Trend Bear</option>
           <option value="bflip_d">B Flip Recent</option>
           <option value="lflip_d">L Flip Recent</option>
         </select>
@@ -525,15 +531,15 @@
       <table>
         <thead>
           <tr>
-            <th>Ticker</th>
-            <th class="r">Price</th>
-            <th class="r">% Chg</th>
-            <th class="r">52W</th>
-            <th class="c">Trend</th>
-            <th class="c">B</th>
-            <th class="c" style="font-size:10px;">B Flip</th>
-            <th class="c">L</th>
-            <th class="c" style="font-size:10px;">L Flip</th>
+            <th style="cursor:pointer;" onclick="setPortSort(portSort==='az'?'az_r':'az')">Ticker</th>
+            <th class="r" style="cursor:pointer;" onclick="setPortSort(portSort==='price_d'?'price_a':'price_d')">Price</th>
+            <th class="r" style="cursor:pointer;" onclick="setPortSort(portSort==='chg_d'?'chg_a':'chg_d')">% Chg</th>
+            <th class="r" style="cursor:pointer;" onclick="setPortSort(portSort==='w52_d'?'w52_a':'w52_d')">52W</th>
+            <th class="c" style="cursor:pointer;" onclick="setPortSort(portSort==='trend_d'?'trend_a':'trend_d')">Trend</th>
+            <th class="c b-col">B</th>
+            <th class="c" style="font-size:10px;color:var(--green);border-bottom:2px solid var(--green-border);cursor:pointer;" onclick="setPortSort(portSort==='bflip_d'?'bflip_a':'bflip_d')">B Flip</th>
+            <th class="c l-col">L</th>
+            <th class="c" style="font-size:10px;color:var(--amber);border-bottom:2px solid var(--amber-border);cursor:pointer;" onclick="setPortSort(portSort==='lflip_d'?'lflip_a':'lflip_d')">L Flip</th>
             <th class="c" style="width:60px;">Remove</th>
           </tr>
         </thead>
@@ -1726,13 +1732,20 @@ function renderPortfolioTable() {
   });
 
   // Sort -- exact same logic as Nasdaq60
-  if (portSort === 'chg_d')        rows.sort((a,b) => getChgPct(b)-getChgPct(a));
+  if (portSort === 'az_r')         rows.sort((a,b) => b.sym.localeCompare(a.sym));
+  else if (portSort === 'chg_d')        rows.sort((a,b) => getChgPct(b)-getChgPct(a));
   else if (portSort === 'chg_a')   rows.sort((a,b) => getChgPct(a)-getChgPct(b));
   else if (portSort === 'price_d') rows.sort((a,b) => (b.price||0)-(a.price||0));
   else if (portSort === 'price_a') rows.sort((a,b) => (a.price||0)-(b.price||0));
   else if (portSort === 'az')      rows.sort((a,b) => a.sym.localeCompare(b.sym));
+  else if (portSort === 'w52_d')   rows.sort((a,b) => { const pa=(a.hi52&&a.lo52&&a.hi52>a.lo52)?(a.price-a.lo52)/(a.hi52-a.lo52):0.5; const pb=(b.hi52&&b.lo52&&b.hi52>b.lo52)?(b.price-b.lo52)/(b.hi52-b.lo52):0.5; return pb-pa; });
+  else if (portSort === 'w52_a')   rows.sort((a,b) => { const pa=(a.hi52&&a.lo52&&a.hi52>a.lo52)?(a.price-a.lo52)/(a.hi52-a.lo52):0.5; const pb=(b.hi52&&b.lo52&&b.hi52>b.lo52)?(b.price-b.lo52)/(b.hi52-b.lo52):0.5; return pa-pb; });
+  else if (portSort === 'trend_d') rows.sort((a,b) => { const o=['bull','neutral','bear']; return o.indexOf(a.sentiment)-o.indexOf(b.sentiment); });
+  else if (portSort === 'trend_a') rows.sort((a,b) => { const o=['bull','neutral','bear']; return o.indexOf(b.sentiment)-o.indexOf(a.sentiment); });
   else if (portSort === 'bflip_d') rows.sort((a,b) => parseDateStr(getBFlip(b))-parseDateStr(getBFlip(a)));
   else if (portSort === 'lflip_d') rows.sort((a,b) => parseDateStr(getLFlip(b))-parseDateStr(getLFlip(a)));
+  else if (portSort === 'bflip_a') rows.sort((a,b) => parseDateStr(getBFlip(a))-parseDateStr(getBFlip(b)));
+  else if (portSort === 'lflip_a') rows.sort((a,b) => parseDateStr(getLFlip(a))-parseDateStr(getLFlip(b)));
 
   if (rows.length === 0) {
     tbody.innerHTML = '<tr class="state-row"><td colspan="10">No stocks match the current filter.</td></tr>';
