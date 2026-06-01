@@ -326,6 +326,7 @@
           <th style="cursor:pointer;" onclick="setCryptoSort(cryptoCurSort==='az'?'az_r':'az')">Coin</th>
           <th class="r" style="cursor:pointer;" onclick="setCryptoSort(cryptoCurSort==='price_d'?'price_a':'price_d')">Price</th>
           <th class="r" style="cursor:pointer;" onclick="setCryptoSort(cryptoCurSort==='chg_d'?'chg_a':'chg_d')">% Chg</th>
+          <th class="r" style="cursor:pointer;" onclick="setCryptoSort(cryptoCurSort==='mktcap_d'?'mktcap_a':'mktcap_d')" title="Sort by market cap">Mkt Cap</th>
           <th class="r" style="cursor:pointer;" onclick="setCryptoSort(cryptoCurSort==='w52_d'?'w52_a':'w52_d')" title="Sort by 52-week range position">52W</th>
           <th class="c">Trend</th>
           <th class="c b-col has-tip" data-tip="B = Momentum signal. Highest-high/lowest-low + ATR14x2.5 bands.">B</th>
@@ -1071,7 +1072,7 @@ function cryptoRender() {
   const tbody = document.getElementById('cryptoTbody');
   if (!tbody) return;
   if (!cryptoAllData.length) {
-    tbody.innerHTML = '<tr class="state-row"><td colspan="10">No crypto data yet. Wait for crypto-processor to run.</td></tr>';
+    tbody.innerHTML = '<tr class="state-row"><td colspan="11">No crypto data yet. Wait for crypto-processor to run.</td></tr>';
     return;
   }
 
@@ -1140,6 +1141,7 @@ function cryptoRender() {
       <td><div class="ticker-sym">${r.sym}</div><div class="ticker-name">${r.name}</div></td>
       <td class="r"><span class="price-val">${priceFmt}</span></td>
       <td class="r"><span class="${pc}">${chgSign}${Number(chgPct).toFixed(2)}%</span></td>
+      <td class="r" style="font-size:11px;color:var(--muted);">${r.mktCapB ? '$'+r.mktCapB.toFixed(1)+'B' : '--'}</td>
       <td class="r">
         <div class="w52-bar">
           <span class="w52-pct">${Math.round(pos52*100)}%</span>
@@ -2147,4 +2149,36 @@ async function loadAlertsFromDB() {
       <input id="watchlistNameInput" type="text" value="Watchlist 1" style="width:100%;background:var(--bg3);color:var(--fg);border:1px solid var(--border);border-radius:4px;padding:8px;font-size:13px;margin-bottom:12px;box-sizing:border-box;" />
       <div style="display:flex;gap:8px;justify-content:flex-end;">
         <button onclick="closeCreateWLModal()" style="background:none;border:1px solid var(--border);color:var(--fg);border-radius:4px;padding:6px 16px;cursor:pointer;font-size:12px;">Cancel</button>
-        <button onclick="confirmCreateWatchlist()" style="background:var(--accent);color:#000;border:
+        <button onclick="confirmCreateWatchlist()" style="background:var(--accent);color:#000;border:none;border-radius:4px;padding:6px 16px;cursor:pointer;font-size:12px;font-weight:600;">Create</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADD TO PORTFOLIO MODAL -->
+  <div id="portfolioModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:1000;align-items:center;justify-content:center;">
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:24px;min-width:280px;max-width:360px;">
+      <div style="font-size:14px;font-weight:600;margin-bottom:16px;">Add <span id="modalSym" style="color:var(--accent);"></span> to portfolio</div>
+      <select id="modalPortfolioSelect" style="width:100%;background:var(--bg3);color:var(--fg);border:1px solid var(--border);border-radius:4px;padding:8px;font-size:13px;margin-bottom:12px;">
+        <option value="">Select portfolio...</option>
+      </select>
+      <div style="display:flex;gap:8px;justify-content:flex-end;">
+        <button onclick="closeModal()" style="background:none;border:1px solid var(--border);color:var(--fg);border-radius:4px;padding:6px 16px;cursor:pointer;font-size:12px;">Cancel</button>
+        <button onclick="confirmAddToPortfolio()" style="background:var(--accent);color:#000;border:none;border-radius:4px;padding:6px 16px;cursor:pointer;font-size:12px;font-weight:600;">Add</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- CREATE PORTFOLIO MODAL -->
+  <div id="createPortfolioModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:1000;align-items:center;justify-content:center;">
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:24px;min-width:280px;max-width:360px;">
+      <div style="font-size:14px;font-weight:600;margin-bottom:16px;">Create New Portfolio</div>
+      <input id="portfolioNameInput" type="text" value="Portfolio 1" style="width:100%;background:var(--bg3);color:var(--fg);border:1px solid var(--border);border-radius:4px;padding:8px;font-size:13px;margin-bottom:12px;box-sizing:border-box;" />
+      <div style="display:flex;gap:8px;justify-content:flex-end;">
+        <button onclick="closeCreateModal()" style="background:none;border:1px solid var(--border);color:var(--fg);border-radius:4px;padding:6px 16px;cursor:pointer;font-size:12px;">Cancel</button>
+        <button onclick="confirmCreatePortfolio()" style="background:var(--accent);color:#000;border:none;border-radius:4px;padding:6px 16px;cursor:pointer;font-size:12px;font-weight:600;">Create</button>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>
