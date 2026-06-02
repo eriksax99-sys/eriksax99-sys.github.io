@@ -236,7 +236,8 @@
       <option value="price_d">Price ↓</option>
       <option value="price_a">Price ↑</option>
       <option value="az">Ticker A–Z</option>
-          </select>
+    </select>
+    <span class="sort-select" style="cursor:default;color:var(--accent);border-color:var(--accent);margin-left:0;" id="nqStockCount">— stocks</span>
   </div>
 
   <!-- TABLE -->
@@ -312,6 +313,7 @@
       <option value="bflip_d">B Flip Recent</option>
       <option value="lflip_d">L Flip Recent</option>
     </select>
+    <span class="sort-select" style="cursor:default;color:var(--accent);border-color:var(--accent);margin-left:0;" id="sp5StockCount">— stocks</span>
   </div>
 
   <!-- TABLE -->
@@ -389,6 +391,7 @@
       <option value="bflip_d">B Flip &#8595;</option>
       <option value="lflip_d">L Flip &#8595;</option>
     </select>
+    <span class="sort-select" style="cursor:default;color:var(--accent);border-color:var(--accent);margin-left:0;" id="cryptoStockCount">— stocks</span>
   </div>
 
   <!-- Table -->
@@ -462,6 +465,7 @@
         <option value="bflip_d">B Flip &#8595;</option>
         <option value="lflip_d">L Flip &#8595;</option>
       </select>
+      <span class="sort-select" style="cursor:default;color:var(--accent);border-color:var(--accent);margin-left:0;" id="omxStockCount">— stocks</span>
     </div>
 
     <!-- Table -->
@@ -530,6 +534,7 @@
           <option value="W">Timeframe: Weekly</option>
           <option value="M">Timeframe: Monthly</option>
         </select>
+        <span class="sort-select" style="cursor:default;color:var(--accent);border-color:var(--accent);margin-left:0;" id="wlStockCount">— stocks</span>
       </div>
     </div>
     <div class="table-wrap">
@@ -598,6 +603,7 @@
           <option value="W">Timeframe: Weekly</option>
           <option value="M">Timeframe: Monthly</option>
         </select>
+        <span class="sort-select" style="cursor:default;color:var(--accent);border-color:var(--accent);margin-left:0;" id="portStockCount">— stocks</span>
       </div>
     </div>
     <div class="table-wrap">
@@ -956,6 +962,8 @@ function renderSummary() {
   document.getElementById('sBBear').textContent  = bbear;
   document.getElementById('sLGold').textContent  = lgold;
   document.getElementById('sLBlue').textContent  = lblue;
+  const nqEl = document.getElementById('nqStockCount');
+  if (nqEl) nqEl.textContent = allData.length + ' stocks';
 }
 
 // -- CONTROLS ------------------------------------------------------------------
@@ -1259,6 +1267,8 @@ function cryptoRenderSummary() {
   if (el('csBBear')) el('csBBear').textContent = bbear;
   if (el('csLGold')) el('csLGold').textContent = lgold;
   if (el('csLBlue')) el('csLBlue').textContent = lblue;
+  const csEl = document.getElementById('cryptoStockCount');
+  if (csEl) csEl.textContent = cryptoAllData.length + ' stocks';
 }
 
 function setCryptoFilter(f, btn) {
@@ -1516,6 +1526,8 @@ function omxRenderSummary() {
   if (el('osBBear'))     el('osBBear').textContent     = bbear;
   if (el('osLGold'))     el('osLGold').textContent     = lgold;
   if (el('osLBlue'))     el('osLBlue').textContent     = lblue;
+  const omxEl = document.getElementById('omxStockCount');
+  if (omxEl) omxEl.textContent = omxAllData.length + ' stocks';
 }
 
 function setOMXFilter(f, btn) {
@@ -1868,6 +1880,8 @@ function renderPortfolioTable() {
     </tr>`;
   }).join('');
   document.getElementById('portfolioStatus').textContent = `${rows.length} / ${holdings.length} stock${holdings.length!==1?'s':''}`;
+  const portEl = document.getElementById('portStockCount');
+  if (portEl) portEl.textContent = holdings.length + ' stocks';
 }
 
 async function loadPortfolioTab() {
@@ -2158,6 +2172,8 @@ function renderWatchlistTable() {
     </tr>`;
   }).join('');
   document.getElementById('watchlistStatus').textContent = `${rows.length} / ${items.length} stock${items.length!==1?'s':''}`;
+  const wlEl = document.getElementById('wlStockCount');
+  if (wlEl) wlEl.textContent = items.length + ' stocks';
 }
 
 async function loadWatchlistTab() {
@@ -2283,6 +2299,8 @@ function sp5RenderSummary() {
   if (el('sp5BBear'))     el('sp5BBear').textContent     = bbear;
   if (el('sp5LGold'))     el('sp5LGold').textContent     = lgold;
   if (el('sp5LBlue'))     el('sp5LBlue').textContent     = lblue;
+  const sp5El = document.getElementById('sp5StockCount');
+  if (sp5El) sp5El.textContent = rows.length + ' stocks';
 }
 
 function sp5Render() {
