@@ -307,6 +307,8 @@
       <option value="az">Ticker A-Z</option>
       <option value="w52_d">52W &#8595;</option>
       <option value="w52_a">52W &#8593;</option>
+      <option value="mktcap_d">Mkt Cap &#8595;</option>
+      <option value="mktcap_a">Mkt Cap &#8593;</option>
       <option value="bflip_d">B Flip Recent</option>
       <option value="lflip_d">L Flip Recent</option>
     </select>
@@ -320,6 +322,7 @@
           <th style="cursor:pointer;" onclick="setSP5Sort(sp5CurSort==='az'?'az_r':'az')">Ticker</th>
           <th class="r" style="cursor:pointer;" onclick="setSP5Sort(sp5CurSort==='price_d'?'price_a':'price_d')">Price</th>
           <th class="r" style="cursor:pointer;" onclick="setSP5Sort(sp5CurSort==='chg_d'?'chg_a':'chg_d')">% Chg</th>
+          <th class="r" style="cursor:pointer;" onclick="setSP5Sort(sp5CurSort==='mktcap_d'?'mktcap_a':'mktcap_d')" title="Sort by market cap">Mkt Cap</th>
           <th class="r" style="cursor:pointer;" onclick="setSP5Sort(sp5CurSort==='w52_d'?'w52_a':'w52_d')">52W</th>
           <th class="c">Trend</th>
           <th class="c b-col has-tip" data-tip="B = Momentum signal. SMMA21 of close with ATR14x2.5 volatility band.">B</th>
@@ -330,7 +333,7 @@
         </tr>
       </thead>
       <tbody id="sp5Tbody">
-        <tr class="state-row"><td colspan="10">Loading S&amp;P 500 data...</td></tr>
+        <tr class="state-row"><td colspan="11">Loading S&amp;P 500 data...</td></tr>
       </tbody>
     </table>
   </div>
@@ -2223,7 +2226,7 @@ let sp5CurTF     = 'D';
 async function loadSP5Data() {
   try {
     const [priceRows, flipRows] = await Promise.all([
-      supaFetch('sp500_price_data?select=sym,name,price,chg,chg_pct,chg_2h,chg_pct_2h,chg_4h,chg_pct_4h,chg_w,chg_pct_w,chg_m,chg_pct_m,hi52,lo52,vol,b_2h,b_4h,b_d,b_w,b_m,l_2h,l_4h,l_d,l_w,l_m,updated_at'),
+      supaFetch('sp500_price_data?select=sym,name,price,chg,chg_pct,chg_2h,chg_pct_2h,chg_4h,chg_pct_4h,chg_w,chg_pct_w,chg_m,chg_pct_m,hi52,lo52,vol,mkt_cap_b,b_2h,b_4h,b_d,b_w,b_m,l_2h,l_4h,l_d,l_w,l_m,updated_at'),
       supaFetch('sp500_flip_history?select=sym,b_flip_time,l_flip_time,b_flip_time_2h,l_flip_time_2h,b_flip_time_4h,l_flip_time_4h,b_flip_time_w,l_flip_time_w,b_flip_time_m,l_flip_time_m'),
     ]);
     if (!priceRows?.length) { document.getElementById('sp5Tbody').innerHTML = '<tr class="state-row"><td colspan="10">No S&P 500 data yet. Wait for sp500-processor to run.</td></tr>'; return; }
@@ -2242,6 +2245,7 @@ async function loadSP5Data() {
       return {
         sym:r.sym, name:r.name||r.sym, price:r.price||0,
         chgPct:r.chg_pct||0, hi52:r.hi52||0, lo52:r.lo52||0, vol:r.vol||0,
+        mktCapB: r.mkt_cap_b || 0,
         sentiment,
         tf:{
           '2H':{b:r.b_2h, l:r.l_2h, bFlip:f.b_flip_time_2h, lFlip:f.l_flip_time_2h},
@@ -2250,6 +2254,7 @@ async function loadSP5Data() {
           'W': {b:r.b_w,  l:r.l_w,  bFlip:f.b_flip_time_w,  lFlip:f.l_flip_time_w},
           'M': {b:r.b_m,  l:r.l_m,  bFlip:f.b_flip_time_m,  lFlip:f.l_flip_time_m},
         },
+        mktCapB: r.mkt_cap_b || 0,
         chgByTF:{'2H':r.chg_pct_2h||0,'4H':r.chg_pct_4h||0,'D':r.chg_pct||0,'W':r.chg_pct_w||0,'M':r.chg_pct_m||0},
       };
     });
@@ -2294,7 +2299,9 @@ function sp5Render() {
   else if (sp5CurFilter === 'lblue')  rows = rows.filter(r => ((r.tf||{})[sp5CurTF]||{}).l==='blue');
   else if (sp5CurFilter === 'triple') rows = rows.filter(r => r.sentiment==='bull' && ((r.tf||{})[sp5CurTF]||{}).b==='bull' && ((r.tf||{})[sp5CurTF]||{}).l==='gold');
   // Sort
-  if (sp5CurSort === 'az')       rows.sort((a,b) => a.sym.localeCompare(b.sym));
+  if (sp5CurSort === 'mktcap_d') rows.sort((a,b) => (b.mktCapB||0)-(a.mktCapB||0));
+  else if (sp5CurSort === 'mktcap_a') rows.sort((a,b) => (a.mktCapB||0)-(b.mktCapB||0));
+  else if (sp5CurSort === 'az')       rows.sort((a,b) => a.sym.localeCompare(b.sym));
   else if (sp5CurSort === 'az_r') rows.sort((a,b) => b.sym.localeCompare(a.sym));
   else if (sp5CurSort === 'chg_d') rows.sort((a,b) => sp5GetChgPct(b)-sp5GetChgPct(a));
   else if (sp5CurSort === 'chg_a') rows.sort((a,b) => sp5GetChgPct(a)-sp5GetChgPct(b));
@@ -2332,6 +2339,7 @@ function sp5Render() {
       <td><div class="ticker-sym">${r.sym}</div><div class="ticker-name">${r.name}</div></td>
       <td class="r"><span class="price-val">${priceFmt}</span></td>
       <td class="r"><span class="${pc}">${chgPct>=0?'+':''}${Number(chgPct).toFixed(2)}%</span></td>
+      <td class="r" style="font-size:11px;color:var(--muted);">${r.mktCapB ? '$'+r.mktCapB.toFixed(0)+'B' : '--'}</td>
       <td class="r">
         <div class="w52-bar">
           <span class="w52-pct">${Math.round(pos52*100)}%</span>
