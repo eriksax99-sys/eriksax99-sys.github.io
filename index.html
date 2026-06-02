@@ -191,6 +191,7 @@
   <!-- TAB NAVIGATION -->
   <nav class="tab-nav">
     <button class="tab-btn active" id="tabWatchlist" onclick="switchTab('watchlist')">Nasdaq60</button>
+    <button class="tab-btn" id="tabSP500" onclick="switchTab('sp500')">S&amp;P 500</button>
     <button class="tab-btn" id="tabOMX" onclick="switchTab('omx')">OMX50</button>
     <button class="tab-btn" id="tabCrypto" onclick="switchTab('crypto')">Crypto50</button>
     <button class="tab-btn" id="tabWatchlist2" onclick="switchTab('watchlist2')">Watchlist</button>
@@ -267,6 +268,75 @@
   </div>
 
   </div><!-- /paneWatchlist -->
+  <!-- S&P 500 TAB -->
+  <div class="tab-pane" id="paneSP500">
+
+  <!-- SUMMARY: compact single-line chips -->
+  <div style="display:flex;gap:6px;flex-wrap:wrap;padding:3px 0;border-bottom:1px solid var(--border);align-items:center;position:-webkit-sticky;position:sticky;top:33px;z-index:9;background:var(--bg);">
+    <span style="font-family:var(--mono);font-size:10px;color:var(--muted);">▲ Trend <span class="green" id="sp5TrendBull" style="font-weight:700;">—</span></span>
+    <span style="font-family:var(--mono);font-size:10px;color:var(--muted);">▼ Trend <span class="red" id="sp5TrendBear" style="font-weight:700;">—</span></span>
+    <span style="font-family:var(--mono);font-size:10px;color:var(--muted);">B Bull <span class="green" id="sp5BBull" style="font-weight:700;">—</span></span>
+    <span style="font-family:var(--mono);font-size:10px;color:var(--muted);">B Bear <span class="red" id="sp5BBear" style="font-weight:700;">—</span></span>
+    <span style="font-family:var(--mono);font-size:10px;color:var(--muted);">L Gold <span style="color:var(--amber);font-weight:700;" id="sp5LGold">—</span></span>
+    <span style="font-family:var(--mono);font-size:10px;color:var(--muted);">L Blue <span style="color:#4fc3f7;font-weight:700;" id="sp5LBlue">—</span></span>
+  </div>
+
+  <!-- CONTROLS -->
+  <div class="controls" style="position:-webkit-sticky;position:sticky;top:52px;z-index:9;background:var(--bg);">
+    <button class="filter-btn active" onclick="setSP5Filter('all',this)">All</button>
+    <button class="filter-btn" onclick="setSP5Filter('bull',this)">&#9650; Trend Bull</button>
+    <button class="filter-btn" onclick="setSP5Filter('bear',this)">&#9660; Trend Bear</button>
+    <button class="filter-btn" onclick="setSP5Filter('bbull',this)" style="border-color:var(--green-border);color:var(--green);">&#9650; B:Bull</button>
+    <button class="filter-btn" onclick="setSP5Filter('bbear',this)" style="border-color:var(--red-border);color:var(--red);">&#9660; B:Bear</button>
+    <button class="filter-btn" onclick="setSP5Filter('lgold',this)" style="border-color:var(--amber-border);color:var(--amber);">&#9733; L:Gold</button>
+    <button class="filter-btn" onclick="setSP5Filter('lblue',this)" style="border-color:var(--blue-border);color:var(--blue);">&#9679; L:Blue</button>
+    <button class="filter-btn has-tip" onclick="setSP5Filter('triple',this)" style="border-color:var(--accent);color:var(--accent);font-weight:600;" data-tip="Triple Bull: Trend bullish + B bullish + L gold on selected timeframe">&#9889; Triple Bull</button>
+    <select class="sort-select" id="sp5TfSelect" onchange="setSP5TF(this.value)" style="margin-left:0;border-color:var(--accent);color:var(--accent);">
+      <option value="2H">Timeframe: 2H</option>
+      <option value="4H">Timeframe: 4H</option>
+      <option value="D" selected>Timeframe: Daily</option>
+      <option value="W">Timeframe: Weekly</option>
+      <option value="M">Timeframe: Monthly</option>
+    </select>
+    <select class="sort-select" onchange="setSP5Sort(this.value)">
+      <option value="">Sort: Default</option>
+      <option value="chg_d">% Change &#8595;</option>
+      <option value="chg_a">% Change &#8593;</option>
+      <option value="price_d">Price &#8595;</option>
+      <option value="price_a">Price &#8593;</option>
+      <option value="az">Ticker A-Z</option>
+      <option value="w52_d">52W &#8595;</option>
+      <option value="w52_a">52W &#8593;</option>
+      <option value="bflip_d">B Flip Recent</option>
+      <option value="lflip_d">L Flip Recent</option>
+    </select>
+  </div>
+
+  <!-- TABLE -->
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th style="cursor:pointer;" onclick="setSP5Sort(sp5CurSort==='az'?'az_r':'az')">Ticker</th>
+          <th class="r" style="cursor:pointer;" onclick="setSP5Sort(sp5CurSort==='price_d'?'price_a':'price_d')">Price</th>
+          <th class="r" style="cursor:pointer;" onclick="setSP5Sort(sp5CurSort==='chg_d'?'chg_a':'chg_d')">% Chg</th>
+          <th class="r" style="cursor:pointer;" onclick="setSP5Sort(sp5CurSort==='w52_d'?'w52_a':'w52_d')">52W</th>
+          <th class="c">Trend</th>
+          <th class="c b-col has-tip" data-tip="B = Momentum signal. SMMA21 of close with ATR14x2.5 volatility band.">B</th>
+          <th class="c has-tip" style="font-size:10px;color:var(--green);border-bottom:2px solid var(--green-border);cursor:pointer;" onclick="setSP5Sort(sp5CurSort==='bflip_d'?'bflip_a':'bflip_d')" data-tip="When the B signal last flipped. Click to sort.">B Flip</th>
+          <th class="c l-col has-tip" data-tip="L = Ribbon signal. SMMA15 vs SMMA25 on (H+L)/2.">L</th>
+          <th class="c has-tip" style="font-size:10px;color:var(--amber);border-bottom:2px solid var(--amber-border);cursor:pointer;" onclick="setSP5Sort(sp5CurSort==='lflip_d'?'lflip_a':'lflip_d')" data-tip="When the L signal last flipped. Click to sort.">L Flip</th>
+          <th class="r">Volume</th>
+        </tr>
+      </thead>
+      <tbody id="sp5Tbody">
+        <tr class="state-row"><td colspan="10">Loading S&amp;P 500 data...</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  </div><!-- /paneSP500 -->
+
 
   <!-- ALERTS TAB -->
   <div class="tab-pane" id="paneAlerts">
@@ -2103,18 +2173,21 @@ async function loadWatchlistTab() {
 function switchTab(tab) {
   curTab = tab;
   document.getElementById('paneWatchlist').classList.toggle('active',  tab === 'watchlist');
+  document.getElementById('paneSP500').classList.toggle('active',      tab === 'sp500');
   document.getElementById('paneAlerts').classList.toggle('active',     tab === 'alerts');
   document.getElementById('paneCrypto').classList.toggle('active',     tab === 'crypto');
   document.getElementById('paneOMX').classList.toggle('active',        tab === 'omx');
   document.getElementById('panePortfolio').classList.toggle('active',  tab === 'portfolio');
   document.getElementById('paneWatchlist2').classList.toggle('active', tab === 'watchlist2');
   document.getElementById('tabWatchlist').classList.toggle('active',   tab === 'watchlist');
+  document.getElementById('tabSP500').classList.toggle('active',       tab === 'sp500');
   document.getElementById('tabAlerts').classList.toggle('active',      tab === 'alerts');
   document.getElementById('tabCrypto').classList.toggle('active',      tab === 'crypto');
   document.getElementById('tabOMX').classList.toggle('active',         tab === 'omx');
   document.getElementById('tabPortfolio').classList.toggle('active',   tab === 'portfolio');
   document.getElementById('tabWatchlist2').classList.toggle('active',  tab === 'watchlist2');
   if (tab === 'alerts')    renderAlerts();
+  if (tab === 'sp500'     && sp5AllData.length === 0)     loadSP5Data();
   if (tab === 'crypto'    && cryptoAllData.length === 0) loadCryptoData();
   if (tab === 'omx'       && omxAllData.length === 0)    loadOMXData();
   if (tab === 'portfolio') loadPortfolioTab();
@@ -2139,6 +2212,148 @@ async function loadAlertsFromDB() {
     </div>`;
   }).join('');
 }
+
+
+// ── S&P 500 TAB ────────────────────────────────────────────────────────────────
+let sp5AllData   = [];
+let sp5CurFilter = 'all';
+let sp5CurSort   = '';
+let sp5CurTF     = 'D';
+
+async function loadSP5Data() {
+  try {
+    const [priceRows, flipRows] = await Promise.all([
+      supaFetch('sp500_price_data?select=sym,name,price,chg,chg_pct,chg_2h,chg_pct_2h,chg_4h,chg_pct_4h,chg_w,chg_pct_w,chg_m,chg_pct_m,hi52,lo52,vol,b_2h,b_4h,b_d,b_w,b_m,l_2h,l_4h,l_d,l_w,l_m,updated_at'),
+      supaFetch('sp500_flip_history?select=sym,b_flip_time,l_flip_time,b_flip_time_2h,l_flip_time_2h,b_flip_time_4h,l_flip_time_4h,b_flip_time_w,l_flip_time_w,b_flip_time_m,l_flip_time_m'),
+    ]);
+    if (!priceRows?.length) { document.getElementById('sp5Tbody').innerHTML = '<tr class="state-row"><td colspan="10">No S&P 500 data yet. Wait for sp500-processor to run.</td></tr>'; return; }
+    const flipMap = {};
+    for (const r of (flipRows||[])) flipMap[r.sym] = r;
+    sp5AllData = priceRows.map(r => {
+      const chgPct = r.chg_pct || 0;
+      const hi52 = r.hi52||0; const lo52 = r.lo52||0;
+      const pos52 = (hi52&&lo52&&hi52>lo52)?(r.price-lo52)/(hi52-lo52):0.5;
+      let score = 0;
+      if (chgPct>1.5) score+=2; else if (chgPct>0.3) score+=1;
+      else if (chgPct<-1.5) score-=2; else if (chgPct<-0.3) score-=1;
+      if (pos52>0.75) score+=1; else if (pos52<0.3) score-=1;
+      const sentiment = score>=2?'bull':score<=-1?'bear':'neutral';
+      const f = flipMap[r.sym]||{};
+      return {
+        sym:r.sym, name:r.name||r.sym, price:r.price||0,
+        chgPct:r.chg_pct||0, hi52:r.hi52||0, lo52:r.lo52||0, vol:r.vol||0,
+        sentiment,
+        tf:{
+          '2H':{b:r.b_2h, l:r.l_2h, bFlip:f.b_flip_time_2h, lFlip:f.l_flip_time_2h},
+          '4H':{b:r.b_4h, l:r.l_4h, bFlip:f.b_flip_time_4h, lFlip:f.l_flip_time_4h},
+          'D': {b:r.b_d,  l:r.l_d,  bFlip:f.b_flip_time,    lFlip:f.l_flip_time},
+          'W': {b:r.b_w,  l:r.l_w,  bFlip:f.b_flip_time_w,  lFlip:f.l_flip_time_w},
+          'M': {b:r.b_m,  l:r.l_m,  bFlip:f.b_flip_time_m,  lFlip:f.l_flip_time_m},
+        },
+        chgByTF:{'2H':r.chg_pct_2h||0,'4H':r.chg_pct_4h||0,'D':r.chg_pct||0,'W':r.chg_pct_w||0,'M':r.chg_pct_m||0},
+      };
+    });
+    sp5Render();
+    sp5RenderSummary();
+  } catch(e) { console.error('SP500 load error:', e); }
+}
+
+function sp5GetChgPct(r) { return r.chgByTF?.[sp5CurTF] ?? r.chgPct ?? 0; }
+function sp5GetBFlip(r)  { return r.tf?.[sp5CurTF]?.bFlip || ''; }
+function sp5GetLFlip(r)  { return r.tf?.[sp5CurTF]?.lFlip || ''; }
+
+function sp5RenderSummary() {
+  const rows = sp5AllData;
+  if (!rows.length) return;
+  const bull  = rows.filter(r => r.sentiment==='bull').length;
+  const bear  = rows.filter(r => r.sentiment==='bear').length;
+  const bbull = rows.filter(r => ((r.tf||{})[sp5CurTF]||{}).b==='bull').length;
+  const bbear = rows.filter(r => ((r.tf||{})[sp5CurTF]||{}).b==='bear').length;
+  const lgold = rows.filter(r => ((r.tf||{})[sp5CurTF]||{}).l==='gold').length;
+  const lblue = rows.filter(r => ((r.tf||{})[sp5CurTF]||{}).l==='blue').length;
+  const el = id => document.getElementById(id);
+  if (el('sp5TrendBull')) el('sp5TrendBull').textContent = bull;
+  if (el('sp5TrendBear')) el('sp5TrendBear').textContent = bear;
+  if (el('sp5BBull'))     el('sp5BBull').textContent     = bbull;
+  if (el('sp5BBear'))     el('sp5BBear').textContent     = bbear;
+  if (el('sp5LGold'))     el('sp5LGold').textContent     = lgold;
+  if (el('sp5LBlue'))     el('sp5LBlue').textContent     = lblue;
+}
+
+function sp5Render() {
+  const tbody = document.getElementById('sp5Tbody');
+  if (!tbody) return;
+  if (!sp5AllData.length) { tbody.innerHTML = '<tr class="state-row"><td colspan="10">Loading...</td></tr>'; return; }
+  let rows = [...sp5AllData];
+  // Filter
+  if (sp5CurFilter === 'bull')   rows = rows.filter(r => r.sentiment==='bull');
+  else if (sp5CurFilter === 'bear')   rows = rows.filter(r => r.sentiment==='bear');
+  else if (sp5CurFilter === 'bbull')  rows = rows.filter(r => ((r.tf||{})[sp5CurTF]||{}).b==='bull');
+  else if (sp5CurFilter === 'bbear')  rows = rows.filter(r => ((r.tf||{})[sp5CurTF]||{}).b==='bear');
+  else if (sp5CurFilter === 'lgold')  rows = rows.filter(r => ((r.tf||{})[sp5CurTF]||{}).l==='gold');
+  else if (sp5CurFilter === 'lblue')  rows = rows.filter(r => ((r.tf||{})[sp5CurTF]||{}).l==='blue');
+  else if (sp5CurFilter === 'triple') rows = rows.filter(r => r.sentiment==='bull' && ((r.tf||{})[sp5CurTF]||{}).b==='bull' && ((r.tf||{})[sp5CurTF]||{}).l==='gold');
+  // Sort
+  if (sp5CurSort === 'az')       rows.sort((a,b) => a.sym.localeCompare(b.sym));
+  else if (sp5CurSort === 'az_r') rows.sort((a,b) => b.sym.localeCompare(a.sym));
+  else if (sp5CurSort === 'chg_d') rows.sort((a,b) => sp5GetChgPct(b)-sp5GetChgPct(a));
+  else if (sp5CurSort === 'chg_a') rows.sort((a,b) => sp5GetChgPct(a)-sp5GetChgPct(b));
+  else if (sp5CurSort === 'price_d') rows.sort((a,b) => (b.price||0)-(a.price||0));
+  else if (sp5CurSort === 'price_a') rows.sort((a,b) => (a.price||0)-(b.price||0));
+  else if (sp5CurSort === 'w52_d') rows.sort((a,b) => { const pa=(a.hi52&&a.lo52&&a.hi52>a.lo52)?(a.price-a.lo52)/(a.hi52-a.lo52):0.5; const pb=(b.hi52&&b.lo52&&b.hi52>b.lo52)?(b.price-b.lo52)/(b.hi52-b.lo52):0.5; return pb-pa; });
+  else if (sp5CurSort === 'w52_a') rows.sort((a,b) => { const pa=(a.hi52&&a.lo52&&a.hi52>a.lo52)?(a.price-a.lo52)/(a.hi52-a.lo52):0.5; const pb=(b.hi52&&b.lo52&&b.hi52>b.lo52)?(b.price-b.lo52)/(b.hi52-b.lo52):0.5; return pa-pb; });
+  else if (sp5CurSort === 'bflip_d') rows.sort((a,b) => parseDateStr(sp5GetBFlip(b))-parseDateStr(sp5GetBFlip(a)));
+  else if (sp5CurSort === 'bflip_a') rows.sort((a,b) => parseDateStr(sp5GetBFlip(a))-parseDateStr(sp5GetBFlip(b)));
+  else if (sp5CurSort === 'lflip_d') rows.sort((a,b) => parseDateStr(sp5GetLFlip(b))-parseDateStr(sp5GetLFlip(a)));
+  else if (sp5CurSort === 'lflip_a') rows.sort((a,b) => parseDateStr(sp5GetLFlip(a))-parseDateStr(sp5GetLFlip(b)));
+
+  tbody.innerHTML = rows.map(r => {
+    const activeTF = (r.tf||{})[sp5CurTF]||{};
+    const bSig   = activeTF.b || 'neutral';
+    const lSig   = activeTF.l || 'gray';
+    const bCls   = bSig==='bull'?'b-bull':bSig==='bear'?'b-bear':'b-neut';
+    const bLabel = bSig==='bull'?'Bullish':bSig==='bear'?'Bearish':'Neutral';
+    const lCls   = lSig==='gold'?'l-gold':lSig==='blue'?'l-blue':'l-gray';
+    const lLabel = lSig==='gold'?'Gold':lSig==='blue'?'Blue':'Gray';
+    const chgPct = sp5GetChgPct(r);
+    const pc     = chgPct > 0.05 ? 'chg-pos' : chgPct < -0.05 ? 'chg-neg' : 'chg-neu';
+    const priceFmt = r.price >= 1000 ? '$'+r.price.toLocaleString('en-US',{maximumFractionDigits:0})
+                   : r.price >= 1    ? '$'+Number(r.price).toFixed(2)
+                   : '$'+Number(r.price).toFixed(4);
+    const sentCls = r.sentiment==='bull'?'chg-pos':r.sentiment==='bear'?'chg-neg':'chg-neu';
+    const sentLbl = r.sentiment==='bull'?'BULL':r.sentiment==='bear'?'BEAR':'NEUT';
+    const pos52   = (r.hi52&&r.lo52&&r.hi52>r.lo52)?Math.max(0,Math.min(1,(r.price-r.lo52)/(r.hi52-r.lo52))):0.5;
+    const barColor = pos52>0.7?'var(--green)':pos52<0.3?'var(--red)':'var(--accent)';
+    const fmtVol  = v => { if(!v) return '--'; if(v>=1e9) return (v/1e9).toFixed(1)+'B'; if(v>=1e6) return (v/1e6).toFixed(1)+'M'; if(v>=1e3) return (v/1e3).toFixed(1)+'K'; return v.toFixed(0); };
+    return `<tr>
+      <td><div class="ticker-sym">${r.sym}</div><div class="ticker-name">${r.name}</div></td>
+      <td class="r"><span class="price-val">${priceFmt}</span></td>
+      <td class="r"><span class="${pc}">${chgPct>=0?'+':''}${Number(chgPct).toFixed(2)}%</span></td>
+      <td class="r">
+        <div class="w52-bar">
+          <span class="w52-pct">${Math.round(pos52*100)}%</span>
+          <div class="w52-track"><div class="w52-fill" style="width:${Math.round(pos52*100)}%;background:${barColor}"></div></div>
+        </div>
+      </td>
+      <td class="c"><span class="trend-pill ${sentCls}">${sentLbl}</span></td>
+      <td class="c"><span class="${bCls}">${bLabel}</span></td>
+      <td class="c">${flipCell(sp5GetBFlip(r))}</td>
+      <td class="c"><span class="${lCls}">${lLabel}</span></td>
+      <td class="c">${flipCell(sp5GetLFlip(r))}</td>
+      <td class="r" style="font-size:11px;color:var(--muted);">${fmtVol(r.vol)}</td>
+    </tr>`;
+  }).join('');
+}
+
+function setSP5Filter(f, btn) {
+  sp5CurFilter = f;
+  document.querySelectorAll('#paneSP500 .filter-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  sp5Render();
+}
+function setSP5Sort(s) { sp5CurSort = s; sp5Render(); }
+function setSP5TF(tf)  { sp5CurTF = tf; sp5RenderSummary(); sp5Render(); }
+// ── END S&P 500 TAB ────────────────────────────────────────────────────────────
 
 </script>
   <!-- ADD TO WATCHLIST MODAL -->
