@@ -2307,6 +2307,9 @@ function sp5Render() {
   else if (sp5CurSort === 'lflip_d') rows.sort((a,b) => parseDateStr(sp5GetLFlip(b))-parseDateStr(sp5GetLFlip(a)));
   else if (sp5CurSort === 'lflip_a') rows.sort((a,b) => parseDateStr(sp5GetLFlip(a))-parseDateStr(sp5GetLFlip(b)));
 
+  const flipCell = t => t
+    ? `<span class="flip-time">${t}</span>`
+    : `<span style="color:var(--dim)">--</span>`;
   tbody.innerHTML = rows.map(r => {
     const activeTF = (r.tf||{})[sp5CurTF]||{};
     const bSig   = activeTF.b || 'neutral';
