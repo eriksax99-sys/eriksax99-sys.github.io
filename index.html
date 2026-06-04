@@ -249,6 +249,7 @@
           <th class="r" style="cursor:pointer;" onclick="setSort(curSort==='price_d'?'price_a':'price_d')" title="Sort by Price">Price</th>
           <th class="r" style="cursor:pointer;" onclick="setSort(curSort==='chgabs_d'?'chgabs_a':'chgabs_d')" title="Sort by absolute change">Chg</th>
           <th class="r" style="cursor:pointer;" onclick="setSort(curSort==='chg_d'?'chg_a':'chg_d')" title="Sort by % change">% Chg</th>
+          <th class="r has-tip" data-tip="Pre-market % change vs yesterday's close. Blank when markets open or no pre-market data.">% Pre</th>
           <th class="c" style="width:28px;" title="Add to watchlist">W+</th>
           <th class="c" style="width:70px;font-size:10px;cursor:pointer;" onclick="setSort(curSort==='wl_d'?'wl_a':'wl_d')">In Watch</th>
           <th class="c" style="width:28px;" title="Add to portfolio">P+</th>
@@ -325,6 +326,7 @@
           <th class="r" style="cursor:pointer;" onclick="setSP5Sort(sp5CurSort==='price_d'?'price_a':'price_d')">Price</th>
           <th class="r" style="cursor:pointer;" onclick="setSP5Sort(sp5CurSort==='chg_d'?'chg_a':'chg_d')">% Chg</th>
           <th class="r" style="cursor:pointer;" onclick="setSP5Sort(sp5CurSort==='mktcap_d'?'mktcap_a':'mktcap_d')" title="Sort by market cap">Mkt Cap</th>
+          <th class="r has-tip" data-tip="Pre-market or after-hours price and % change vs previous close. Blank during regular session.">Ext Hrs</th>
           <th class="r" style="cursor:pointer;" onclick="setSP5Sort(sp5CurSort==='w52_d'?'w52_a':'w52_d')">52W</th>
           <th class="c">Trend</th>
           <th class="c b-col has-tip" data-tip="B = Momentum signal. SMMA21 of close with ATR14x2.5 volatility band.">B</th>
@@ -335,7 +337,7 @@
         </tr>
       </thead>
       <tbody id="sp5Tbody">
-        <tr class="state-row"><td colspan="11">Loading S&amp;P 500 data...</td></tr>
+        <tr class="state-row"><td colspan="12">Loading S&amp;P 500 data...</td></tr>
       </tbody>
     </table>
   </div>
@@ -732,6 +734,7 @@ async function loadFromSupabase() {
       price:    r.price,
       chg:      r.chg,
       chgPct:   r.chg_pct,
+      preChgPct: r.pre_mkt_chg_pct ?? null,
       chg2h:    r.chg_2h,
       chgPct2h: r.chg_pct_2h,
       chg4h:    r.chg_4h,
@@ -923,6 +926,7 @@ function render() {
       <td class="r"><span class="price-val">${priceFmt}</span></td>
       <td class="r"><span class="${pc}">${chgSign}${Number(tfChg).toFixed(2)}</span></td>
       <td class="r"><span class="${pc}">${pctSign}${Number(tfChgPct).toFixed(2)}%</span></td>
+      <td class="r">${r.preChgPct != null ? `<span class="${r.preChgPct>0?'chg-pos':r.preChgPct<0?'chg-neg':'chg-neu'}">${r.preChgPct>=0?'+':''}${Number(r.preChgPct).toFixed(2)}%</span>` : '<span style="color:var(--dim)">--</span>'}</td>
       <td class="c" style="width:28px;">
         <button onclick="openAddToWatchlist('${r.sym}')" style="background:none;border:1px solid var(--muted);color:var(--muted);border-radius:3px;width:20px;height:20px;cursor:pointer;font-size:13px;line-height:1;padding:0;" title="Add to watchlist">+</button>
       </td>
@@ -2242,7 +2246,7 @@ let sp5CurTF     = 'D';
 async function loadSP5Data() {
   try {
     const [priceRows, flipRows] = await Promise.all([
-      supaFetch('sp500_price_data?select=sym,name,price,chg,chg_pct,chg_2h,chg_pct_2h,chg_4h,chg_pct_4h,chg_w,chg_pct_w,chg_m,chg_pct_m,hi52,lo52,vol,mkt_cap_b,b_2h,b_4h,b_d,b_w,b_m,l_2h,l_4h,l_d,l_w,l_m,updated_at'),
+      supaFetch('sp500_price_data?select=sym,name,price,chg,chg_pct,chg_2h,chg_pct_2h,chg_4h,chg_pct_4h,chg_w,chg_pct_w,chg_m,chg_pct_m,hi52,lo52,vol,mkt_cap_b,ext_hrs_price,ext_hrs_chg_pct,ext_hrs_label,b_2h,b_4h,b_d,b_w,b_m,l_2h,l_4h,l_d,l_w,l_m,updated_at'),
       supaFetch('sp500_flip_history?select=sym,b_flip_time,l_flip_time,b_flip_time_2h,l_flip_time_2h,b_flip_time_4h,l_flip_time_4h,b_flip_time_w,l_flip_time_w,b_flip_time_m,l_flip_time_m'),
     ]);
     if (!priceRows?.length) { document.getElementById('sp5Tbody').innerHTML = '<tr class="state-row"><td colspan="10">No S&P 500 data yet. Wait for sp500-processor to run.</td></tr>'; return; }
@@ -2262,6 +2266,9 @@ async function loadSP5Data() {
         sym:r.sym, name:r.name||r.sym, price:r.price||0,
         chgPct:r.chg_pct||0, hi52:r.hi52||0, lo52:r.lo52||0, vol:r.vol||0,
         mktCapB: r.mkt_cap_b || 0,
+        extHrsPrice: r.ext_hrs_price || null,
+        extHrsChgPct: r.ext_hrs_chg_pct || null,
+        extHrsLabel: r.ext_hrs_label || null,
         sentiment,
         tf:{
           '2H':{b:r.b_2h, l:r.l_2h, bFlip:f.b_flip_time_2h, lFlip:f.l_flip_time_2h},
@@ -2358,6 +2365,7 @@ function sp5Render() {
       <td class="r"><span class="price-val">${priceFmt}</span></td>
       <td class="r"><span class="${pc}">${chgPct>=0?'+':''}${Number(chgPct).toFixed(2)}%</span></td>
       <td class="r" style="font-size:11px;color:var(--muted);">${r.mktCapB ? '$'+r.mktCapB.toFixed(0)+'B' : '--'}</td>
+      <td class="r" style="font-size:11px;white-space:nowrap;">${r.extHrsPrice ? `<span style="color:var(--muted);font-size:9px;">${r.extHrsLabel}</span> <span style="font-family:var(--mono);">$${Number(r.extHrsPrice).toFixed(2)}</span> <span class="${r.extHrsChgPct > 0 ? 'chg-pos' : r.extHrsChgPct < 0 ? 'chg-neg' : 'chg-neu'}">${r.extHrsChgPct >= 0 ? '+' : ''}${Number(r.extHrsChgPct).toFixed(2)}%</span>` : '<span style="color:var(--dim)">--</span>'}</td>
       <td class="r">
         <div class="w52-bar">
           <span class="w52-pct">${Math.round(pos52*100)}%</span>
