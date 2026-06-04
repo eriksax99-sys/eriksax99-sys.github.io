@@ -926,7 +926,7 @@ function render() {
       <td class="r"><span class="price-val">${priceFmt}</span></td>
       <td class="r"><span class="${pc}">${chgSign}${Number(tfChg).toFixed(2)}</span></td>
       <td class="r"><span class="${pc}">${pctSign}${Number(tfChgPct).toFixed(2)}%</span></td>
-      <td class="r">${r.preChgPct != null ? '<span class="'+(r.preChgPct>0?'chg-pos':r.preChgPct<0?'chg-neg':'chg-neu')+'">'+(r.preChgPct>=0?'+':'')+Number(r.preChgPct).toFixed(2)+'%</span>' : '<span style="color:var(--dim)">--</span>'}</td>
+      <td class="r">${r.preChgPct != null ? `<span class="${r.preChgPct>0?'chg-pos':r.preChgPct<0?'chg-neg':'chg-neu'}">${r.preChgPct>=0?'+':''}${Number(r.preChgPct).toFixed(2)}%</span>` : '<span style="color:var(--dim)">--</span>'}</td>
       <td class="c" style="width:28px;">
         <button onclick="openAddToWatchlist('${r.sym}')" style="background:none;border:1px solid var(--muted);color:var(--muted);border-radius:3px;width:20px;height:20px;cursor:pointer;font-size:13px;line-height:1;padding:0;" title="Add to watchlist">+</button>
       </td>
