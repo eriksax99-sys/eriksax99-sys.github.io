@@ -1295,7 +1295,10 @@ function cryptoRenderSummary() {
 function setCryptoFilter(f, btn) {
   cryptoCurFilter = f;
   document.querySelectorAll('#paneCrypto .filter-btn').forEach(b => b.classList.remove('active'));
-  if (btn) btn.classList.add('active');
+  if (btn) {
+    btn.classList.add('active');
+    if (f === 'triple') { btn.style.color = '#000'; btn.style.background = 'var(--accent)'; } else { btn.style.color = ''; btn.style.background = ''; }
+  }
   cryptoRender();
 }
 function setCryptoSort(s) { cryptoCurSort = s; cryptoRender(); }
@@ -1560,7 +1563,10 @@ function omxRenderSummary() {
 function setOMXFilter(f, btn) {
   omxCurFilter = f;
   document.querySelectorAll('#paneOMX .filter-btn').forEach(b => b.classList.remove('active'));
-  if (btn) btn.classList.add('active');
+  if (btn) {
+    btn.classList.add('active');
+    if (f === 'triple') { btn.style.color = '#000'; btn.style.background = 'var(--accent)'; } else { btn.style.color = ''; btn.style.background = ''; }
+  }
   omxRender();
 }
 function setOMXSort(s)  { omxCurSort = s; omxRender(); }
@@ -1930,9 +1936,10 @@ function setPortFilter(f, el) {
     b.classList.remove('active','active-bull','active-bear');
   });
   if (el) {
-    if (f==='bull'||f==='bbull'||f==='lgold'||f==='triple') el.classList.add('active-bull');
-    else if (f==='bear'||f==='bbear')                        el.classList.add('active-bear');
-    else                                                      el.classList.add('active');
+    if (f==='triple') { el.classList.add('active'); el.style.color='#000'; el.style.background='var(--accent)'; }
+    else if (f==='bull'||f==='bbull'||f==='lgold') { el.classList.add('active-bull'); el.style.color=''; el.style.background=''; }
+    else if (f==='bear'||f==='bbear') { el.classList.add('active-bear'); el.style.color=''; el.style.background=''; }
+    else { el.classList.add('active'); el.style.color=''; el.style.background=''; }
   }
   renderPortfolioTable();
 }
@@ -2101,9 +2108,10 @@ function setWLFilter(f, el) {
     b.classList.remove('active','active-bull','active-bear');
   });
   if (el) {
-    if (f==='bull'||f==='bbull'||f==='lgold'||f==='triple') el.classList.add('active-bull');
-    else if (f==='bear'||f==='bbear')                        el.classList.add('active-bear');
-    else                                                      el.classList.add('active');
+    if (f==='triple') { el.classList.add('active'); el.style.color='#000'; el.style.background='var(--accent)'; }
+    else if (f==='bull'||f==='bbull'||f==='lgold') { el.classList.add('active-bull'); el.style.color=''; el.style.background=''; }
+    else if (f==='bear'||f==='bbear') { el.classList.add('active-bear'); el.style.color=''; el.style.background=''; }
+    else { el.classList.add('active'); el.style.color=''; el.style.background=''; }
   }
   renderWatchlistTable();
 }
@@ -2440,7 +2448,10 @@ function sp5Render() {
 function setSP5Filter(f, btn) {
   sp5CurFilter = f;
   document.querySelectorAll('#paneSP500 .filter-btn').forEach(b => b.classList.remove('active'));
-  if (btn) btn.classList.add('active');
+  if (btn) {
+    btn.classList.add('active');
+    if (f === 'triple') { btn.style.color = '#000'; btn.style.background = 'var(--accent)'; } else { btn.style.color = ''; btn.style.background = ''; }
+  }
   sp5Render();
 }
 function setSP5Sort(s) { sp5CurSort = s; sp5Render(); }
