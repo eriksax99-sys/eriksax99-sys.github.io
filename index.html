@@ -1308,7 +1308,7 @@ function cryptoRenderSummary() {
 
 function setCryptoFilter(f, btn) {
   cryptoCurFilter = f;
-  document.querySelectorAll('#paneCrypto .filter-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('#paneCrypto .filter-btn').forEach(b => { b.classList.remove('active'); b.style.background=''; b.style.color=''; });
   if (btn) {
     btn.classList.add('active');
     if (f === 'triple' || f === 'double') { btn.style.color = '#000'; btn.style.background = 'var(--accent)'; } else { btn.style.color = ''; btn.style.background = ''; }
@@ -1577,7 +1577,7 @@ function omxRenderSummary() {
 
 function setOMXFilter(f, btn) {
   omxCurFilter = f;
-  document.querySelectorAll('#paneOMX .filter-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('#paneOMX .filter-btn').forEach(b => { b.classList.remove('active'); b.style.background=''; b.style.color=''; });
   if (btn) {
     btn.classList.add('active');
     if (f === 'triple' || f === 'double') { btn.style.color = '#000'; btn.style.background = 'var(--accent)'; } else { btn.style.color = ''; btn.style.background = ''; }
@@ -2465,7 +2465,7 @@ function sp5Render() {
 
 function setSP5Filter(f, btn) {
   sp5CurFilter = f;
-  document.querySelectorAll('#paneSP500 .filter-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('#paneSP500 .filter-btn').forEach(b => { b.classList.remove('active'); b.style.background=''; b.style.color=''; });
   if (btn) {
     btn.classList.add('active');
     if (f === 'triple' || f === 'double') { btn.style.color = '#000'; btn.style.background = 'var(--accent)'; } else { btn.style.color = ''; btn.style.background = ''; }
