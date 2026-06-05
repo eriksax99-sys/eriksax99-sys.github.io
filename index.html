@@ -222,6 +222,7 @@
     <button class="filter-btn" onclick="setFilter('lgold',this)" style="border-color:var(--amber-border);color:var(--amber);">★ L:Gold</button>
     <button class="filter-btn" onclick="setFilter('lblue',this)" style="border-color:var(--blue-border);color:var(--blue);">● L:Blue</button>
     <button class="filter-btn has-tip" id="tripleBtn" onclick="setFilter('triple',this)" style="border-color:var(--accent);color:var(--accent);font-weight:600;" data-tip="Triple Bull: Trend bullish + B bullish + L gold on selected timeframe">&#9889; Triple Bull</button>
+    <button class="filter-btn has-tip" id="doubleBtn" onclick="setFilter('double',this)" style="border-color:var(--accent);color:var(--accent);font-weight:600;" data-tip="Double Bull: B bullish + L gold on selected timeframe">&#9889; Double Bull</button>
     <select class="sort-select" id="tfSelect" style="margin-left:0; border-color:var(--accent); color:var(--accent); pointer-events:none; opacity:0.6;">
       <option value="2H">Timeframe: 2H</option>
       <option value="4H">Timeframe: 4H</option>
@@ -296,6 +297,7 @@
     <button class="filter-btn" onclick="setSP5Filter('lgold',this)" style="border-color:var(--amber-border);color:var(--amber);">&#9733; L:Gold</button>
     <button class="filter-btn" onclick="setSP5Filter('lblue',this)" style="border-color:var(--blue-border);color:var(--blue);">&#9679; L:Blue</button>
     <button class="filter-btn has-tip" onclick="setSP5Filter('triple',this)" style="border-color:var(--accent);color:var(--accent);font-weight:600;" data-tip="Triple Bull: Trend bullish + B bullish + L gold on selected timeframe">&#9889; Triple Bull</button>
+    <button class="filter-btn has-tip" onclick="setSP5Filter('double',this)" style="border-color:var(--accent);color:var(--accent);font-weight:600;" data-tip="Double Bull: B bullish + L gold on selected timeframe">&#9889; Double Bull</button>
     <select class="sort-select" id="sp5TfSelect" style="margin-left:0;border-color:var(--accent);color:var(--accent);pointer-events:none;opacity:0.6;">
       <option value="2H">Timeframe: 2H</option>
       <option value="4H">Timeframe: 4H</option>
@@ -387,6 +389,7 @@
     <button class="filter-btn" onclick="setCryptoFilter('lgold',this)" style="border-color:var(--amber-border);color:var(--amber);">&#9733; L:Gold</button>
     <button class="filter-btn" onclick="setCryptoFilter('lblue',this)" style="border-color:var(--blue-border);color:var(--blue);">&#9679; L:Blue</button>
     <button class="filter-btn has-tip" onclick="setCryptoFilter('triple',this)" style="border-color:var(--accent);color:var(--accent);font-weight:600;" data-tip="Triple Bull: Trend bullish + B bullish + L gold on selected timeframe">&#9889; Triple Bull</button>
+    <button class="filter-btn has-tip" onclick="setCryptoFilter('double',this)" style="border-color:var(--accent);color:var(--accent);font-weight:600;" data-tip="Double Bull: B bullish + L gold on selected timeframe">&#9889; Double Bull</button>
     <select class="sort-select" id="cryptoTfSelect" style="margin-left:0;border-color:var(--accent);color:var(--accent);pointer-events:none;opacity:0.6;">
       <option value="2H">Timeframe: 2H</option>
       <option value="4H">Timeframe: 4H</option>
@@ -458,6 +461,7 @@
       <button class="filter-btn" onclick="setOMXFilter('lgold',this)" style="border-color:var(--amber-border);color:var(--amber);">&#9733; L:Gold</button>
       <button class="filter-btn" onclick="setOMXFilter('lblue',this)" style="border-color:var(--blue-border);color:var(--blue);">&#9679; L:Blue</button>
       <button class="filter-btn has-tip" onclick="setOMXFilter('triple',this)" style="border-color:var(--accent);color:var(--accent);font-weight:600;" data-tip="Triple Bull: Trend bullish + B bullish + L gold on selected timeframe">&#9889; Triple Bull</button>
+      <button class="filter-btn has-tip" onclick="setOMXFilter('double',this)" style="border-color:var(--accent);color:var(--accent);font-weight:600;" data-tip="Double Bull: B bullish + L gold on selected timeframe">&#9889; Double Bull</button>
       <select class="sort-select" id="omxTfSelect" style="margin-left:0; border-color:var(--accent);color:var(--accent);pointer-events:none;opacity:0.6;">
         <option value="2H">Timeframe: 2H</option>
         <option value="4H">Timeframe: 4H</option>
@@ -536,6 +540,7 @@
       <button class="filter-btn"        id="wfLGold"  onclick="setWLFilter('lgold',this)" style="border-color:var(--amber-border);color:var(--amber);">★ L:Gold</button>
       <button class="filter-btn"        id="wfLBlue"  onclick="setWLFilter('lblue',this)" style="border-color:var(--blue-border);color:var(--blue);">● L:Blue</button>
       <button class="filter-btn has-tip" id="wfTriple" onclick="setWLFilter('triple',this)" style="border-color:var(--accent);color:var(--accent);font-weight:600;" data-tip="Triple Bull: Trend bullish + B bullish + L gold on selected timeframe">&#9889; Triple Bull</button>
+      <button class="filter-btn has-tip" id="wfDouble" onclick="setWLFilter('double',this)" style="border-color:var(--accent);color:var(--accent);font-weight:600;" data-tip="Double Bull: B bullish + L gold on selected timeframe">&#9889; Double Bull</button>
       <div style="margin-left:auto;display:flex;align-items:center;gap:6px;">
         <select id="wlSortSelect" onchange="setWLSort(this.value)" style="background:var(--bg2);color:var(--fg);border:1px solid var(--border);border-radius:4px;padding:4px 8px;font-size:11px;">
           <option value="">Sort: Default</option>
@@ -599,6 +604,7 @@
       <button class="filter-btn"        id="pfLGold"  onclick="setPortFilter('lgold',this)"  style="border-color:var(--amber-border);color:var(--amber);">★ L:Gold</button>
       <button class="filter-btn"        id="pfLBlue"  onclick="setPortFilter('lblue',this)"  style="border-color:var(--blue-border);color:var(--blue);">● L:Blue</button>
       <button class="filter-btn has-tip" id="pfTriple" onclick="setPortFilter('triple',this)" style="border-color:var(--accent);color:var(--accent);font-weight:600;" data-tip="Triple Bull: Trend bullish + B bullish + L gold on selected timeframe">&#9889; Triple Bull</button>
+      <button class="filter-btn has-tip" id="pfDouble" onclick="setPortFilter('double',this)" style="border-color:var(--accent);color:var(--accent);font-weight:600;" data-tip="Double Bull: B bullish + L gold on selected timeframe">&#9889; Double Bull</button>
       <div style="margin-left:auto;display:flex;align-items:center;gap:6px;">
         <select id="portSortSelect" onchange="setPortSort(this.value)" style="background:var(--bg2);color:var(--fg);border:1px solid var(--border);border-radius:4px;padding:4px 8px;font-size:11px;">
           <option value="">Sort: Default</option>
@@ -839,6 +845,13 @@ function render() {
   else if (curFilter === 'bbear')   rows = rows.filter(r => ((r.tf||{})[curTF]||{}).b === 'bear');
   else if (curFilter === 'lgold')   rows = rows.filter(r => ((r.tf||{})[curTF]||{}).l === 'gold');
   else if (curFilter === 'lblue')   rows = rows.filter(r => ((r.tf||{})[curTF]||{}).l === 'blue');
+  else if (curFilter === 'double') {
+    rows = rows.filter(r => {
+      const activeTF = (r.tf || {})[curTF] || {b:'neutral', l:'gray'};
+      return activeTF.b === 'bull' && activeTF.l === 'gold';
+    });
+    if (!curSort) rows.sort((a,b) => { const d=parseDateStr(getBFlip(b))-parseDateStr(getBFlip(a)); return d!==0?d:parseDateStr(getLFlip(b))-parseDateStr(getLFlip(a)); });
+  }
   else if (curFilter === 'triple') {
     // Triple Bull: Trend=Bull AND B=Bullish AND L=Gold for the ACTIVE timeframe
     rows = rows.filter(r => {
@@ -1023,9 +1036,9 @@ function setFilter(f, el) {
     el.style.background = 'var(--red-bg)';
     el.style.color = 'var(--red)';
     el.classList.add('active-bear');
-  } else if (f==='triple') {
+  } else if (f==='triple' || f==='double') {
     el.classList.add('active');
-    el.style.color = '#000'; // force black text on teal background
+    el.style.color = '#000';
     el.style.background = 'var(--accent)';
   } else {
     el.classList.add('active');
@@ -1193,6 +1206,7 @@ function cryptoRender() {
   else if (cryptoCurFilter === 'bbear')  rows = rows.filter(r => ((r.tf||{})[cryptoCurTF]||{}).b === 'bear');
   else if (cryptoCurFilter === 'lgold')  rows = rows.filter(r => ((r.tf||{})[cryptoCurTF]||{}).l === 'gold');
   else if (cryptoCurFilter === 'lblue')  rows = rows.filter(r => ((r.tf||{})[cryptoCurTF]||{}).l === 'blue');
+  else if (cryptoCurFilter === 'double') rows = rows.filter(r => { const tf=((r.tf||{})[cryptoCurTF]||{}); return tf.b==='bull' && tf.l==='gold'; });
   else if (cryptoCurFilter === 'triple') rows = rows.filter(r => {
     const tf = ((r.tf||{})[cryptoCurTF]||{});
     return r.sentiment==='bull' && tf.b==='bull' && tf.l==='gold';
@@ -1297,7 +1311,7 @@ function setCryptoFilter(f, btn) {
   document.querySelectorAll('#paneCrypto .filter-btn').forEach(b => b.classList.remove('active'));
   if (btn) {
     btn.classList.add('active');
-    if (f === 'triple') { btn.style.color = '#000'; btn.style.background = 'var(--accent)'; } else { btn.style.color = ''; btn.style.background = ''; }
+    if (f === 'triple' || f === 'double') { btn.style.color = '#000'; btn.style.background = 'var(--accent)'; } else { btn.style.color = ''; btn.style.background = ''; }
   }
   cryptoRender();
 }
@@ -1440,6 +1454,7 @@ function omxRender() {
   else if (omxCurFilter === 'bbear')  rows = rows.filter(r => ((r.tf||{})[omxCurTF]||{}).b === 'bear');
   else if (omxCurFilter === 'lgold')  rows = rows.filter(r => ((r.tf||{})[omxCurTF]||{}).l === 'gold');
   else if (omxCurFilter === 'lblue')  rows = rows.filter(r => ((r.tf||{})[omxCurTF]||{}).l === 'blue');
+  else if (omxCurFilter === 'double') rows = rows.filter(r => { const tf=((r.tf||{})[omxCurTF]||{}); return tf.b==='bull' && tf.l==='gold'; });
   else if (omxCurFilter === 'triple') rows = rows.filter(r => {
     const tf = ((r.tf||{})[omxCurTF]||{});
     return r.sentiment==='bull' && tf.b==='bull' && tf.l==='gold';
@@ -1565,7 +1580,7 @@ function setOMXFilter(f, btn) {
   document.querySelectorAll('#paneOMX .filter-btn').forEach(b => b.classList.remove('active'));
   if (btn) {
     btn.classList.add('active');
-    if (f === 'triple') { btn.style.color = '#000'; btn.style.background = 'var(--accent)'; } else { btn.style.color = ''; btn.style.background = ''; }
+    if (f === 'triple' || f === 'double') { btn.style.color = '#000'; btn.style.background = 'var(--accent)'; } else { btn.style.color = ''; btn.style.background = ''; }
   }
   omxRender();
 }
@@ -1845,6 +1860,7 @@ function renderPortfolioTable() {
   else if (portFilter === 'bbear')  rows = rows.filter(r => ((r.tf||{})[curTF]||{}).b === 'bear');
   else if (portFilter === 'lgold')  rows = rows.filter(r => ((r.tf||{})[curTF]||{}).l === 'gold');
   else if (portFilter === 'lblue')  rows = rows.filter(r => ((r.tf||{})[curTF]||{}).l === 'blue');
+  else if (portFilter === 'double') rows = rows.filter(r => { const tf=(r.tf||{})[curTF]||{}; return tf.b==='bull' && tf.l==='gold'; });
   else if (portFilter === 'triple') rows = rows.filter(r => {
     const tf = (r.tf||{})[curTF]||{};
     return r.sentiment==='bull' && tf.b==='bull' && tf.l==='gold';
@@ -1936,7 +1952,7 @@ function setPortFilter(f, el) {
     b.classList.remove('active','active-bull','active-bear');
   });
   if (el) {
-    if (f==='triple') { el.classList.add('active'); el.style.color='#000'; el.style.background='var(--accent)'; }
+    if (f==='triple' || f==='double') { el.classList.add('active'); el.style.color='#000'; el.style.background='var(--accent)'; }
     else if (f==='bull'||f==='bbull'||f==='lgold') { el.classList.add('active-bull'); el.style.color=''; el.style.background=''; }
     else if (f==='bear'||f==='bbear') { el.classList.add('active-bear'); el.style.color=''; el.style.background=''; }
     else { el.classList.add('active'); el.style.color=''; el.style.background=''; }
@@ -2108,7 +2124,7 @@ function setWLFilter(f, el) {
     b.classList.remove('active','active-bull','active-bear');
   });
   if (el) {
-    if (f==='triple') { el.classList.add('active'); el.style.color='#000'; el.style.background='var(--accent)'; }
+    if (f==='triple' || f==='double') { el.classList.add('active'); el.style.color='#000'; el.style.background='var(--accent)'; }
     else if (f==='bull'||f==='bbull'||f==='lgold') { el.classList.add('active-bull'); el.style.color=''; el.style.background=''; }
     else if (f==='bear'||f==='bbear') { el.classList.add('active-bear'); el.style.color=''; el.style.background=''; }
     else { el.classList.add('active'); el.style.color=''; el.style.background=''; }
@@ -2146,6 +2162,7 @@ function renderWatchlistTable() {
   else if (wlFilter === 'bbear')  rows = rows.filter(r => ((r.tf||{})[curTF]||{}).b === 'bear');
   else if (wlFilter === 'lgold')  rows = rows.filter(r => ((r.tf||{})[curTF]||{}).l === 'gold');
   else if (wlFilter === 'lblue')  rows = rows.filter(r => ((r.tf||{})[curTF]||{}).l === 'blue');
+  else if (wlFilter === 'double') rows = rows.filter(r => { const tf=(r.tf||{})[curTF]||{}; return tf.b==='bull' && tf.l==='gold'; });
   else if (wlFilter === 'triple') rows = rows.filter(r => {
     const tf = (r.tf||{})[curTF]||{};
     return r.sentiment==='bull' && tf.b==='bull' && tf.l==='gold';
@@ -2365,6 +2382,7 @@ function sp5Render() {
   else if (sp5CurFilter === 'bbear')  rows = rows.filter(r => ((r.tf||{})[sp5CurTF]||{}).b==='bear');
   else if (sp5CurFilter === 'lgold')  rows = rows.filter(r => ((r.tf||{})[sp5CurTF]||{}).l==='gold');
   else if (sp5CurFilter === 'lblue')  rows = rows.filter(r => ((r.tf||{})[sp5CurTF]||{}).l==='blue');
+  else if (sp5CurFilter === 'double') rows = rows.filter(r => ((r.tf||{})[sp5CurTF]||{}).b==='bull' && ((r.tf||{})[sp5CurTF]||{}).l==='gold');
   else if (sp5CurFilter === 'triple') rows = rows.filter(r => r.sentiment==='bull' && ((r.tf||{})[sp5CurTF]||{}).b==='bull' && ((r.tf||{})[sp5CurTF]||{}).l==='gold');
   // Sort
   if (sp5CurSort === 'mktcap_d') rows.sort((a,b) => (b.mktCapB||0)-(a.mktCapB||0));
@@ -2450,7 +2468,7 @@ function setSP5Filter(f, btn) {
   document.querySelectorAll('#paneSP500 .filter-btn').forEach(b => b.classList.remove('active'));
   if (btn) {
     btn.classList.add('active');
-    if (f === 'triple') { btn.style.color = '#000'; btn.style.background = 'var(--accent)'; } else { btn.style.color = ''; btn.style.background = ''; }
+    if (f === 'triple' || f === 'double') { btn.style.color = '#000'; btn.style.background = 'var(--accent)'; } else { btn.style.color = ''; btn.style.background = ''; }
   }
   sp5Render();
 }
