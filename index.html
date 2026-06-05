@@ -222,7 +222,7 @@
     <button class="filter-btn" onclick="setFilter('lgold',this)" style="border-color:var(--amber-border);color:var(--amber);">★ L:Gold</button>
     <button class="filter-btn" onclick="setFilter('lblue',this)" style="border-color:var(--blue-border);color:var(--blue);">● L:Blue</button>
     <button class="filter-btn has-tip" id="tripleBtn" onclick="setFilter('triple',this)" style="border-color:var(--accent);color:var(--accent);font-weight:600;" data-tip="Triple Bull: Trend bullish + B bullish + L gold on selected timeframe">&#9889; Triple Bull</button>
-    <select class="sort-select" id="tfSelect" onchange="setTF(this.value)" disabled style="margin-left:0; border-color:var(--accent); color:var(--accent);">
+    <select class="sort-select" id="tfSelect" style="margin-left:0; border-color:var(--accent); color:var(--accent); pointer-events:none; opacity:0.6;">
       <option value="2H">Timeframe: 2H</option>
       <option value="4H">Timeframe: 4H</option>
       <option value="D" selected>Timeframe: Daily</option>
@@ -293,7 +293,7 @@
     <button class="filter-btn" onclick="setSP5Filter('lgold',this)" style="border-color:var(--amber-border);color:var(--amber);">&#9733; L:Gold</button>
     <button class="filter-btn" onclick="setSP5Filter('lblue',this)" style="border-color:var(--blue-border);color:var(--blue);">&#9679; L:Blue</button>
     <button class="filter-btn has-tip" onclick="setSP5Filter('triple',this)" style="border-color:var(--accent);color:var(--accent);font-weight:600;" data-tip="Triple Bull: Trend bullish + B bullish + L gold on selected timeframe">&#9889; Triple Bull</button>
-    <select class="sort-select" id="sp5TfSelect" onchange="setSP5TF(this.value)" disabled style="margin-left:0;border-color:var(--accent);color:var(--accent);">
+    <select class="sort-select" id="sp5TfSelect" style="margin-left:0;border-color:var(--accent);color:var(--accent);pointer-events:none;opacity:0.6;">
       <option value="2H">Timeframe: 2H</option>
       <option value="4H">Timeframe: 4H</option>
       <option value="D" selected>Timeframe: Daily</option>
@@ -384,7 +384,7 @@
     <button class="filter-btn" onclick="setCryptoFilter('lgold',this)" style="border-color:var(--amber-border);color:var(--amber);">&#9733; L:Gold</button>
     <button class="filter-btn" onclick="setCryptoFilter('lblue',this)" style="border-color:var(--blue-border);color:var(--blue);">&#9679; L:Blue</button>
     <button class="filter-btn has-tip" onclick="setCryptoFilter('triple',this)" style="border-color:var(--accent);color:var(--accent);font-weight:600;" data-tip="Triple Bull: Trend bullish + B bullish + L gold on selected timeframe">&#9889; Triple Bull</button>
-    <select class="sort-select" id="cryptoTfSelect" onchange="setCryptoTF(this.value)" disabled style="margin-left:0;border-color:var(--accent);color:var(--accent);">
+    <select class="sort-select" id="cryptoTfSelect" style="margin-left:0;border-color:var(--accent);color:var(--accent);pointer-events:none;opacity:0.6;">
       <option value="2H">Timeframe: 2H</option>
       <option value="4H">Timeframe: 4H</option>
       <option value="D" selected>Timeframe: Daily</option>
@@ -455,7 +455,7 @@
       <button class="filter-btn" onclick="setOMXFilter('lgold',this)" style="border-color:var(--amber-border);color:var(--amber);">&#9733; L:Gold</button>
       <button class="filter-btn" onclick="setOMXFilter('lblue',this)" style="border-color:var(--blue-border);color:var(--blue);">&#9679; L:Blue</button>
       <button class="filter-btn has-tip" onclick="setOMXFilter('triple',this)" style="border-color:var(--accent);color:var(--accent);font-weight:600;" data-tip="Triple Bull: Trend bullish + B bullish + L gold on selected timeframe">&#9889; Triple Bull</button>
-      <select class="sort-select" id="omxTfSelect" onchange="setOMXTF(this.value)" disabled style="margin-left:0; border-color:var(--accent);color:var(--accent);">
+      <select class="sort-select" id="omxTfSelect" style="margin-left:0; border-color:var(--accent);color:var(--accent);pointer-events:none;opacity:0.6;">
         <option value="2H">Timeframe: 2H</option>
         <option value="4H">Timeframe: 4H</option>
         <option value="D" selected>Timeframe: Daily</option>
@@ -542,7 +542,7 @@
           <option value="bflip_d">B Flip Recent</option>
           <option value="lflip_d">L Flip Recent</option>
         </select>
-        <select class="sort-select" id="wlTFSelect" onchange="setWLTF(this.value)" disabled style="border-color:var(--accent);color:var(--accent);">
+        <select class="sort-select" id="wlTFSelect" style="border-color:var(--accent);color:var(--accent);pointer-events:none;opacity:0.6;">
           <option value="2H">Timeframe: 2H</option>
           <option value="4H">Timeframe: 4H</option>
           <option value="D" selected>Timeframe: Daily</option>
@@ -611,7 +611,7 @@
           <option value="bflip_d">B Flip Recent</option>
           <option value="lflip_d">L Flip Recent</option>
         </select>
-        <select class="sort-select" id="portTFSelect" onchange="setPortTF(this.value)" disabled style="border-color:var(--accent);color:var(--accent);">
+        <select class="sort-select" id="portTFSelect" style="border-color:var(--accent);color:var(--accent);pointer-events:none;opacity:0.6;">
           <option value="2H">Timeframe: 2H</option>
           <option value="4H">Timeframe: 4H</option>
           <option value="D" selected>Timeframe: Daily</option>
