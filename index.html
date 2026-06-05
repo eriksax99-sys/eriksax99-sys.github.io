@@ -236,6 +236,8 @@
       <option value="price_d">Price ↓</option>
       <option value="price_a">Price ↑</option>
       <option value="az">Ticker A–Z</option>
+      <option value="mktcap_d">Mkt Cap ↓</option>
+      <option value="mktcap_a">Mkt Cap ↑</option>
     </select>
     <span class="sort-select" style="cursor:default;color:var(--accent);border-color:var(--accent);margin-left:0;" id="nqStockCount">— stocks</span>
   </div>
@@ -254,6 +256,7 @@
           <th class="c" style="width:70px;font-size:10px;cursor:pointer;" onclick="setSort(curSort==='wl_d'?'wl_a':'wl_d')">In Watch</th>
           <th class="c" style="width:28px;" title="Add to portfolio">P+</th>
           <th class="c" style="width:70px;font-size:10px;cursor:pointer;" onclick="setSort(curSort==='in_d'?'in_a':'in_d')">In Port</th>
+          <th class="r" style="cursor:pointer;" onclick="setSort(curSort==='mktcap_d'?'mktcap_a':'mktcap_d')" title="Sort by market cap">Mkt Cap</th>
           <th class="r" style="cursor:pointer;" onclick="setSort(curSort==='w52_d'?'w52_a':'w52_d')" title="Sort by 52-week range position">52W</th>
           <th class="c">Trend</th>
           <th class="c b-col has-tip" data-tip="B = Momentum signal. SMMA21 of close with ATR14×2.5 volatility band. State-based and sticky.">B</th>
@@ -264,7 +267,7 @@
         </tr>
       </thead>
       <tbody id="tbody">
-        <tr class="state-row"><td colspan="16">Loading data from database…</td></tr>
+        <tr class="state-row"><td colspan="17">Loading data from database…</td></tr>
       </tbody>
     </table>
   </div>
@@ -894,7 +897,7 @@ function render() {
 
   const tbody = document.getElementById('tbody');
   if (!rows.length) {
-    tbody.innerHTML = `<tr class="state-row"><td colspan="12">No stocks match this filter.</td></tr>`;
+    tbody.innerHTML = `<tr class="state-row"><td colspan="17">No stocks match this filter.</td></tr>`;
     return;
   }
 
@@ -948,6 +951,7 @@ function render() {
         <button onclick="openAddToPortfolio('${r.sym}')" style="background:none;border:1px solid var(--muted);color:var(--muted);border-radius:3px;width:20px;height:20px;cursor:pointer;font-size:13px;line-height:1;padding:0;" title="Add to portfolio">+</button>
       </td>
       <td class="c" style="width:70px;font-size:10px;color:var(--muted);">${getPortfolioLabel(r.sym)}</td>
+      <td class="r" style="font-size:11px;color:var(--muted);">${r.mktCapB ? '$'+r.mktCapB.toFixed(0)+'B' : '--'}</td>
       <td class="r">
         <div class="w52-bar">
           <span class="w52-pct">${Math.round(pos52*100)}%</span>
@@ -1514,6 +1518,7 @@ function omxRender() {
         <button onclick="openAddToPortfolio('${r.sym}')" style="background:none;border:1px solid var(--muted);color:var(--muted);border-radius:3px;width:20px;height:20px;cursor:pointer;font-size:13px;line-height:1;padding:0;" title="Add to portfolio">+</button>
       </td>
       <td class="c" style="width:70px;font-size:10px;color:var(--muted);">${getPortfolioLabel(r.sym)}</td>
+      <td class="r" style="font-size:11px;color:var(--muted);">${r.mktCapB ? '$'+r.mktCapB.toFixed(0)+'B' : '--'}</td>
       <td class="r">
         <div class="w52-bar">
           <span class="w52-pct">${pos52!==null?Math.round(pos52*100)+'%':'--'}</span>
