@@ -709,8 +709,8 @@ async function loadFromSupabase() {
     };
 
     const [priceRes, flipRes] = await Promise.all([
-      fetch(`${SUPABASE_URL}/rest/v1/price_data?select=*`, { headers }),
-      fetch(`${SUPABASE_URL}/rest/v1/flip_history?select=*`, { headers }),
+      fetch(`${SUPABASE_URL}/rest/v1/price_data?select=*`, { headers, cache: "no-store" }),
+      fetch(`${SUPABASE_URL}/rest/v1/flip_history?select=*`, { headers, cache: "no-store" }),
     ]);
 
     if (!priceRes.ok) throw new Error(`Supabase HTTP ${priceRes.status}`);
@@ -1293,8 +1293,8 @@ async function loadCryptoData() {
       'Authorization': 'Bearer ' + SUPABASE_ANON,
     };
     const [priceRes, flipRes] = await Promise.all([
-      fetch(SUPABASE_URL + '/rest/v1/crypto_price_data?select=*', {headers}),
-      fetch(SUPABASE_URL + '/rest/v1/crypto_flip_history?select=*', {headers}),
+      fetch(SUPABASE_URL + '/rest/v1/crypto_price_data?select=*', {headers, cache: "no-store"}),
+      fetch(SUPABASE_URL + '/rest/v1/crypto_flip_history?select=*', {headers, cache: "no-store"}),
     ]);
     if (!priceRes.ok) throw new Error('crypto_price_data HTTP ' + priceRes.status);
     if (!flipRes.ok)  throw new Error('crypto_flip_history HTTP ' + flipRes.status);
@@ -1552,8 +1552,8 @@ async function loadOMXData() {
       'Authorization': 'Bearer ' + SUPABASE_ANON,
     };
     const [priceRes, flipRes] = await Promise.all([
-      fetch(SUPABASE_URL + '/rest/v1/omx_price_data?select=*',    {headers}),
-      fetch(SUPABASE_URL + '/rest/v1/omx_flip_history?select=*',  {headers}),
+      fetch(SUPABASE_URL + '/rest/v1/omx_price_data?select=*',    {headers, cache: "no-store"}),
+      fetch(SUPABASE_URL + '/rest/v1/omx_flip_history?select=*',  {headers, cache: "no-store"}),
     ]);
     if (!priceRes.ok) throw new Error('omx_price_data HTTP ' + priceRes.status);
     if (!flipRes.ok)  throw new Error('omx_flip_history HTTP ' + flipRes.status);
@@ -1632,6 +1632,7 @@ let pendingAddSym   = null; // sym waiting to be added to portfolio
 
 async function supaFetch(path, opts={}) {
   const res = await fetch(SUPA_URL + '/rest/v1/' + path, {
+    cache: 'no-store',
     headers: {
       'apikey': SUPA_KEY,
       'Authorization': 'Bearer ' + SUPA_KEY,
