@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Snowish Trading</title>
+<title>Snowish</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
@@ -152,7 +152,7 @@
 </head>
 <body>
 <div id="authWall" style="display:flex;position:fixed;inset:0;background:var(--bg);z-index:9999;align-items:center;justify-content:center;flex-direction:column;gap:16px;">
-  <div style="font-family:var(--mono);font-size:22px;color:var(--accent);font-weight:700;">▸ Snowish Trading</div>
+  <div style="font-family:var(--mono);font-size:22px;color:var(--accent);font-weight:700;">▸ Snowish</div>
   <div style="font-family:var(--mono);font-size:12px;color:var(--muted);margin-bottom:8px;">Enter password to continue</div>
   <input id="pwInput" type="password" placeholder="Password" onkeydown="if(event.key==='Enter')checkPw()" style="background:var(--bg2);color:var(--fg);border:1px solid var(--border);border-radius:4px;padding:10px 16px;font-size:14px;font-family:var(--mono);width:240px;outline:none;" autofocus />
   <button onclick="checkPw()" style="background:var(--accent);color:#000;border:none;border-radius:4px;padding:8px 24px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--mono);">Enter</button>
@@ -163,9 +163,7 @@
 
   <header>
     <div class="header-left">
-      <div class="logo">▸ Market Terminal</div>
-      <h1>Snowish Trading</h1>
-      <div class="header-meta">Powered by Supabase</div>
+      <h1>Snowish</h1>
     </div>
     <div class="header-right">
       <button class="btn-refresh" id="refreshBtn" onclick="loadFromSupabase()">
@@ -260,6 +258,7 @@
           <th class="r" style="cursor:pointer;" onclick="setSort(curSort==='mktcap_d'?'mktcap_a':'mktcap_d')" title="Sort by market cap">Mkt Cap</th>
           <th class="r" style="cursor:pointer;" onclick="setSort(curSort==='w52_d'?'w52_a':'w52_d')" title="Sort by 52-week range position">52W</th>
           <th class="c">Trend</th>
+          <th class="c has-tip" data-tip="Yahoo Finance analyst consensus rating (Strong Buy / Buy / Hold / Sell / Strong Sell).">Analyst</th>
           <th class="c b-col has-tip" data-tip="B = Momentum signal. SMMA21 of close with ATR14×2.5 volatility band. State-based and sticky.">B</th>
           <th class="c has-tip" style="font-size:10px;color:var(--green);border-bottom:2px solid var(--green-border);cursor:pointer;" data-tip="When the B signal last flipped (CET). Click to sort." onclick="setSort(curSort==='bflip_d'?'bflip_a':'bflip_d')" title="Sort by B Flip date">B Flip <span id="bflipArrow"></span></th>
           <th class="c l-col has-tip" data-tip="L = Ribbon signal. SMMA15 vs SMMA25 on (H+L)/2. Gold = uptrend, Blue = downtrend.">L</th>
@@ -268,7 +267,7 @@
         </tr>
       </thead>
       <tbody id="tbody">
-        <tr class="state-row"><td colspan="17">Loading data from database…</td></tr>
+        <tr class="state-row"><td colspan="18">Loading data from database…</td></tr>
       </tbody>
     </table>
   </div>
@@ -654,8 +653,7 @@
   </div><!-- /panePortfolio -->
 
   <footer>
-    <span>GEESTMAN'S NQ60 WATCHLIST · POWERED BY SUPABASE + YAHOO FINANCE</span>
-    <span>DATA UPDATES EVERY 30 MIN · NOT FINANCIAL ADVICE</span>
+
   </footer>
 </div>
 
@@ -803,6 +801,7 @@ async function loadFromSupabase() {
         if (score <= -1) return 'bear';
         return 'neutral';
       })(),
+      analystRating: r.analyst_rating ?? null,
       bSignal:   r.b_d,
       lSignal:   r.l_d, // daily -- used for flip detection baseline only
     }));
@@ -834,6 +833,19 @@ async function loadFromSupabase() {
 }
 
 // -- RENDER TABLE --------------------------------------------------------------
+function analystCell(r) {
+  if (!r) return '<span style="color:var(--dim);font-family:var(--mono);font-size:10px;">--</span>';
+  const map = {
+    'strong_buy':  {label:'Strong Buy',  cls:'chg-pos', weight: 700},
+    'buy':         {label:'Buy',         cls:'chg-pos', weight: 400},
+    'hold':        {label:'Hold',        cls:'chg-neu', weight: 400},
+    'underperform':{label:'Underperform',cls:'chg-neg', weight: 400},
+    'sell':        {label:'Sell',        cls:'chg-neg', weight: 400},
+    'strong_sell': {label:'Strong Sell', cls:'chg-neg', weight: 700},
+  };
+  const m = map[r] || {label: r, cls: 'chg-neu', weight: 400};
+  return `<span style="font-family:var(--mono);font-size:10px;font-weight:${m.weight};" class="${m.cls}">${m.label}</span>`;
+}
 function render() {
   let rows = [...allData];
 
@@ -910,7 +922,7 @@ function render() {
 
   const tbody = document.getElementById('tbody');
   if (!rows.length) {
-    tbody.innerHTML = `<tr class="state-row"><td colspan="17">No stocks match this filter.</td></tr>`;
+    tbody.innerHTML = `<tr class="state-row"><td colspan="18">No stocks match this filter.</td></tr>`;
     return;
   }
 
@@ -972,6 +984,7 @@ function render() {
         </div>
       </td>
       <td class="c"><span class="badge ${badgeCls}">${badgeLabel}</span></td>
+      <td class="c">${analystCell(r.analystRating)}</td>
       <td class="c"><span class="${bCls}">${bLabel}</span></td>
       <td class="c">${flipCell(getBFlip(r))}</td>
       <td class="c"><span class="${lCls}">${lLabel}</span></td>
