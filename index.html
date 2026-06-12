@@ -166,25 +166,11 @@
       <h1>Snowish</h1>
     </div>
     <div class="header-right">
-      <button class="btn-refresh" id="refreshBtn" onclick="loadFromSupabase()">
-        <span id="refreshIcon">↻</span> Refresh
-      </button>
+
     </div>
   </header>
 
-  <div class="status-bar">
-    <div class="status-dot" id="statusDot"></div>
-    <span id="statusText">Loading data from database…</span>
-    <span style="margin-left:auto;display:flex;align-items:center;gap:8px;">
-      <span id="countdown"></span>
-      <div class="refresh-ring" id="refreshRing" style="display:none">
-        <svg width="28" height="28" viewBox="0 0 28 28">
-          <circle cx="14" cy="14" r="11"/>
-          <circle class="prog" id="ringProg" cx="14" cy="14" r="11"/>
-        </svg>
-      </div>
-    </span>
-  </div>
+
 
   <!-- TAB NAVIGATION -->
   <nav class="tab-nav">
@@ -194,7 +180,17 @@
     <button class="tab-btn" id="tabCrypto" onclick="switchTab('crypto')">Crypto50</button>
     <button class="tab-btn" id="tabWatchlist2" onclick="switchTab('watchlist2')">Watchlist</button>
     <button class="tab-btn" id="tabPortfolio" onclick="switchTab('portfolio')">Portfolio</button>
-    <button class="tab-btn" id="tabAlerts" onclick="switchTab('alerts')" style="margin-left:auto;">&#9889; Alerts<span id="alertStar" class="alert-star" style="color:var(--green)">&#9733;</span></button>
+    <button class="tab-btn" id="tabAlerts" onclick="switchTab('alerts')">&#9889; Alerts<span id="alertStar" class="alert-star" style="color:var(--green)">&#9733;</span></button>
+    <div style="margin-left:auto;display:flex;align-items:center;gap:6px;padding:0 8px;">
+      <button onclick="loadFromSupabase()" style="background:transparent;color:var(--muted);border:1px solid var(--border);border-radius:4px;font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:0.08em;padding:4px 10px;cursor:pointer;white-space:nowrap;" onmouseover="this.style.color='var(--text)'" onmouseout="this.style.color='var(--muted)'">↻ Refresh</button>
+      <div class="refresh-ring" id="refreshRing" style="display:none;">
+        <svg width="22" height="22" viewBox="0 0 28 28">
+          <circle cx="14" cy="14" r="11"/>
+          <circle class="prog" id="ringProg" cx="14" cy="14" r="11"/>
+        </svg>
+      </div>
+      <span id="countdown" style="font-family:var(--mono);font-size:10px;color:var(--muted);"></span>
+    </div>
   </nav>
 
   <!-- WATCHLIST TAB -->
@@ -238,7 +234,7 @@
       <option value="mktcap_d">Mkt Cap ↓</option>
       <option value="mktcap_a">Mkt Cap ↑</option>
     </select>
-    <span class="sort-select" style="cursor:default;color:var(--accent);border-color:var(--accent);margin-left:0;" id="nqStockCount">— stocks</span>
+    
   </div>
 
   <!-- TABLE -->
@@ -246,12 +242,12 @@
     <table>
       <thead>
         <tr>
-          <th style="cursor:pointer;" onclick="setSort(curSort==='az'?'az_r':'az')">Ticker</th>
-          <th class="r" style="cursor:pointer;" onclick="setSort(curSort==='price_d'?'price_a':'price_d')" title="Sort by Price">Price</th>
-          <th class="r" style="cursor:pointer;" onclick="setSort(curSort==='chgabs_d'?'chgabs_a':'chgabs_d')" title="Sort by absolute change">Chg</th>
-          <th class="r" style="cursor:pointer;" onclick="setSort(curSort==='chg_d'?'chg_a':'chg_d')" title="Sort by % change">% Chg</th>
-          <th class="r has-tip" data-tip="Pre-market % change vs yesterday's close. Blank when markets open or no pre-market data.">% Pre</th>
-          <th class="r has-tip" data-tip="Pre-market price">Pre $</th>
+          <th style="cursor:pointer;" onclick="setSort(curSort==='az'?'az_r':'az')">Ticker <span id="nqStockCount" style="font-weight:normal;opacity:0.7;"></span></th>
+          <th class="r" style="cursor:pointer;" onclick="setSort(curSort==='price_d'?'price_a':'price_d')" title="Sort by Live Price">Live Price</th>
+          <th class="r has-tip" style="cursor:pointer;" data-tip="Pre-market price" onclick="setSort(curSort==='preprice_d'?'preprice_a':'preprice_d')">Pre Price<br><span style="font-size:9px;font-weight:normal;opacity:0.6">CTN</span></th>
+          <th class="r has-tip" style="cursor:pointer;" data-tip="Pre-market % change vs yesterday's close." onclick="setSort(curSort==='prepct_d'?'prepct_a':'prepct_d')">% Pre Price<br><span style="font-size:9px;font-weight:normal;opacity:0.6">CTN</span></th>
+          <th class="r" style="cursor:pointer;" onclick="setSort(curSort==='chgabs_d'?'chgabs_a':'chgabs_d')" title="Sort by absolute change">Chg<br><span style="font-size:9px;font-weight:normal;opacity:0.6">DTD</span></th>
+          <th class="r" style="cursor:pointer;" onclick="setSort(curSort==='chg_d'?'chg_a':'chg_d')" title="Sort by % change">% Chg<br><span style="font-size:9px;font-weight:normal;opacity:0.6">DTD</span></th>
           <th class="c" style="width:28px;" title="Add to watchlist">W+</th>
           <th class="c" style="width:70px;font-size:10px;cursor:pointer;" onclick="setSort(curSort==='wl_d'?'wl_a':'wl_d')">In Watch</th>
           <th class="c" style="width:28px;" title="Add to portfolio">P+</th>
@@ -323,7 +319,7 @@
       <option value="in_d">In Port</option>
       <option value="wl_d">In Watch</option>
     </select>
-    <span class="sort-select" style="cursor:default;color:var(--accent);border-color:var(--accent);margin-left:0;" id="sp5StockCount">— stocks</span>
+    
   </div>
 
   <!-- TABLE -->
@@ -331,12 +327,12 @@
     <table>
       <thead>
         <tr>
-          <th style="cursor:pointer;" onclick="setSP5Sort(sp5CurSort==='az'?'az_r':'az')">Ticker</th>
-          <th class="r" style="cursor:pointer;" onclick="setSP5Sort(sp5CurSort==='price_d'?'price_a':'price_d')" title="Sort by Price">Price</th>
-          <th class="r" style="cursor:pointer;" onclick="setSP5Sort(sp5CurSort==='chgabs_d'?'chgabs_a':'chgabs_d')" title="Sort by absolute change">Chg</th>
-          <th class="r" style="cursor:pointer;" onclick="setSP5Sort(sp5CurSort==='chg_d'?'chg_a':'chg_d')" title="Sort by % change">% Chg</th>
-          <th class="r has-tip" data-tip="Pre-market % change vs yesterday's close. Blank when markets open or no pre-market data.">% Pre</th>
-          <th class="r has-tip" data-tip="Pre-market price">Pre $</th>
+          <th style="cursor:pointer;" onclick="setSP5Sort(sp5CurSort==='az'?'az_r':'az')">Ticker <span id="sp5StockCount" style="font-weight:normal;opacity:0.7;"></span></th>
+          <th class="r" style="cursor:pointer;" onclick="setSP5Sort(sp5CurSort==='price_d'?'price_a':'price_d')" title="Sort by Live Price">Live Price</th>
+          <th class="r has-tip" style="cursor:pointer;" data-tip="Pre-market price" onclick="setSP5Sort(sp5CurSort==='preprice_d'?'preprice_a':'preprice_d')">Pre Price<br><span style="font-size:9px;font-weight:normal;opacity:0.6">CTN</span></th>
+          <th class="r has-tip" style="cursor:pointer;" data-tip="Pre-market % change vs yesterday's close." onclick="setSP5Sort(sp5CurSort==='prepct_d'?'prepct_a':'prepct_d')">% Pre Price<br><span style="font-size:9px;font-weight:normal;opacity:0.6">CTN</span></th>
+          <th class="r" style="cursor:pointer;" onclick="setSP5Sort(sp5CurSort==='chgabs_d'?'chgabs_a':'chgabs_d')" title="Sort by absolute change">Chg<br><span style="font-size:9px;font-weight:normal;opacity:0.6">DTD</span></th>
+          <th class="r" style="cursor:pointer;" onclick="setSP5Sort(sp5CurSort==='chg_d'?'chg_a':'chg_d')" title="Sort by % change">% Chg<br><span style="font-size:9px;font-weight:normal;opacity:0.6">DTD</span></th>
           <th class="c" style="width:28px;" title="Add to watchlist">W+</th>
           <th class="c" style="width:70px;font-size:10px;cursor:pointer;" onclick="setSP5Sort(sp5CurSort==='wl_d'?'wl_a':'wl_d')">In Watch</th>
           <th class="c" style="width:28px;" title="Add to portfolio">P+</th>
@@ -409,7 +405,7 @@
       <option value="bflip_d">B Flip &#8595;</option>
       <option value="lflip_d">L Flip &#8595;</option>
     </select>
-    <span class="sort-select" style="cursor:default;color:var(--accent);border-color:var(--accent);margin-left:0;" id="cryptoStockCount">— stocks</span>
+    
   </div>
 
   <!-- Table -->
@@ -417,7 +413,7 @@
     <table>
       <thead>
         <tr>
-          <th style="cursor:pointer;" onclick="setCryptoSort(cryptoCurSort==='az'?'az_r':'az')">Coin</th>
+          <th style="cursor:pointer;" onclick="setCryptoSort(cryptoCurSort==='az'?'az_r':'az')">Coin <span id="cryptoStockCount" style="font-weight:normal;opacity:0.7;"></span></th>
           <th class="r" style="cursor:pointer;" onclick="setCryptoSort(cryptoCurSort==='price_d'?'price_a':'price_d')">Price</th>
           <th class="r" style="cursor:pointer;" onclick="setCryptoSort(cryptoCurSort==='chg_d'?'chg_a':'chg_d')">% Chg</th>
           <th class="r" style="cursor:pointer;" onclick="setCryptoSort(cryptoCurSort==='mktcap_d'?'mktcap_a':'mktcap_d')" title="Sort by market cap">Mkt Cap</th>
@@ -486,7 +482,7 @@
         <option value="bflip_d">B Flip &#8595;</option>
         <option value="lflip_d">L Flip &#8595;</option>
       </select>
-      <span class="sort-select" style="cursor:default;color:var(--accent);border-color:var(--accent);margin-left:0;" id="omxStockCount">— stocks</span>
+      
     </div>
 
     <!-- Table -->
@@ -494,12 +490,12 @@
       <table>
         <thead>
           <tr>
-            <th style="cursor:pointer;" onclick="setOMXSort(omxCurSort==='az'?'az_r':'az')">Ticker</th>
-            <th class="r" style="cursor:pointer;" onclick="setOMXSort(omxCurSort==='price_d'?'price_a':'price_d')" title="Sort by Price">Price</th>
-            <th class="r" style="cursor:pointer;" onclick="setOMXSort(omxCurSort==='chgabs_d'?'chgabs_a':'chgabs_d')" title="Sort by absolute change">Chg</th>
-            <th class="r" style="cursor:pointer;" onclick="setOMXSort(omxCurSort==='chg_d'?'chg_a':'chg_d')" title="Sort by % change">% Chg</th>
-            <th class="r has-tip" data-tip="Pre-market % change vs yesterday's close. Blank when markets open or no pre-market data.">% Pre</th>
-          <th class="r has-tip" data-tip="Pre-market price">Pre $</th>
+            <th style="cursor:pointer;" onclick="setOMXSort(omxCurSort==='az'?'az_r':'az')">Ticker <span id="omxStockCount" style="font-weight:normal;opacity:0.7;"></span></th>
+            <th class="r" style="cursor:pointer;" onclick="setOMXSort(omxCurSort==='price_d'?'price_a':'price_d')" title="Sort by Live Price">Live Price</th>
+            <th class="r has-tip" style="cursor:pointer;" data-tip="Pre-market price" onclick="setOMXSort(omxCurSort==='preprice_d'?'preprice_a':'preprice_d')">Pre Price<br><span style="font-size:9px;font-weight:normal;opacity:0.6">CTN</span></th>
+            <th class="r has-tip" style="cursor:pointer;" data-tip="Pre-market % change vs yesterday's close." onclick="setOMXSort(omxCurSort==='prepct_d'?'prepct_a':'prepct_d')">% Pre Price<br><span style="font-size:9px;font-weight:normal;opacity:0.6">CTN</span></th>
+            <th class="r" style="cursor:pointer;" onclick="setOMXSort(omxCurSort==='chgabs_d'?'chgabs_a':'chgabs_d')" title="Sort by absolute change">Chg<br><span style="font-size:9px;font-weight:normal;opacity:0.6">DTD</span></th>
+            <th class="r" style="cursor:pointer;" onclick="setOMXSort(omxCurSort==='chg_d'?'chg_a':'chg_d')" title="Sort by % change">% Chg<br><span style="font-size:9px;font-weight:normal;opacity:0.6">DTD</span></th>
             <th class="c" style="width:28px;" title="Add to watchlist">W+</th>
             <th class="c" style="width:70px;font-size:10px;cursor:pointer;" onclick="setOMXSort(omxCurSort==='wl_d'?'wl_a':'wl_d')">In Watch</th>
             <th class="c" style="width:28px;" title="Add to portfolio">P+</th>
@@ -717,10 +713,6 @@ window.addEventListener('DOMContentLoaded_disabled', () => { loadFromSupabase();
 // -- SUPABASE READ -------------------------------------------------------------
 async function loadFromSupabase() {
   setStatus('loading', 'Reading from database');
-  const btn  = document.getElementById('refreshBtn');
-  const icon = document.getElementById('refreshIcon');
-  btn.disabled = true;
-  icon.classList.add('spin');
   clearTimers();
 
   try {
@@ -831,8 +823,6 @@ async function loadFromSupabase() {
     setStatus('error', 'Failed to load: ' + e.message);
     console.error(e);
   } finally {
-    btn.disabled = false;
-    icon.classList.remove('spin');
   }
 }
 
@@ -888,7 +878,11 @@ function render() {
 
   // Sort always applies -- filter first, then sort within filtered results
   // (like Excel: filter limits rows, sort orders them within that limit)
-  if (curSort === 'chg_d')         rows.sort((a,b) => getChgPct(b)-getChgPct(a));
+  if (curSort === 'preprice_d')   rows.sort((a,b) => (b.preMktPrice||0)-(a.preMktPrice||0));
+  else if (curSort === 'preprice_a') rows.sort((a,b) => (a.preMktPrice||0)-(b.preMktPrice||0));
+  else if (curSort === 'prepct_d')      rows.sort((a,b) => (b.preChgPct||0)-(a.preChgPct||0));
+  else if (curSort === 'prepct_a') rows.sort((a,b) => (a.preChgPct||0)-(b.preChgPct||0));
+  else if (curSort === 'chg_d')    rows.sort((a,b) => getChgPct(b)-getChgPct(a));
   else if (curSort === 'chg_a')    rows.sort((a,b) => getChgPct(a)-getChgPct(b));
   else if (curSort === 'chgabs_d') rows.sort((a,b) => getTfChg(b)-getTfChg(a));
   else if (curSort === 'chgabs_a') rows.sort((a,b) => getTfChg(a)-getTfChg(b));
@@ -968,11 +962,11 @@ function render() {
 
     return `<tr>
       <td><div class="ticker-sym">${r.sym}</div><div class="ticker-name">${r.name}</div></td>
+      <td class="r"><span class="price-val">${r.preMktPrice != null ? (r.preMktPrice >= 1000 ? '$'+r.preMktPrice.toLocaleString('en-US',{maximumFractionDigits:0}) : '$'+Number(r.preMktPrice).toFixed(2)) : '<span style="color:var(--dim)">--</span>'}</span></td>
+      <td class="r">${r.preChgPct != null ? '<span class="'+(r.preChgPct>0?'chg-pos':r.preChgPct<0?'chg-neg':'chg-neu')+'">'+(r.preChgPct>=0?'+':'')+Number(r.preChgPct).toFixed(2)+'%</span>' : '<span style="color:var(--dim)">--</span>'}</td>
       <td class="r"><span class="price-val">${priceFmt}</span></td>
       <td class="r"><span class="${pc}">${chgSign}${Number(tfChg).toFixed(2)}</span></td>
       <td class="r"><span class="${pc}">${pctSign}${Number(tfChgPct).toFixed(2)}%</span></td>
-      <td class="r">${r.preChgPct != null ? '<span class="'+(r.preChgPct>0?'chg-pos':r.preChgPct<0?'chg-neg':'chg-neu')+'">'+(r.preChgPct>=0?'+':'')+Number(r.preChgPct).toFixed(2)+'%</span>' : '<span style="color:var(--dim)">--</span>'}</td>
-      <td class="r num">${r.preMktPrice != null ? (r.preMktPrice >= 1000 ? '$'+r.preMktPrice.toLocaleString('en-US',{maximumFractionDigits:0}) : '$'+Number(r.preMktPrice).toFixed(2)) : '<span style="color:var(--dim)">--</span>'}</td>
       <td class="c" style="width:28px;">
         <button onclick="openAddToWatchlist('${r.sym}')" style="background:none;border:1px solid var(--muted);color:var(--muted);border-radius:3px;width:20px;height:20px;cursor:pointer;font-size:13px;line-height:1;padding:0;" title="Add to watchlist">+</button>
       </td>
@@ -1015,7 +1009,7 @@ function renderSummary() {
   document.getElementById('sLGold').textContent  = lgold;
   document.getElementById('sLBlue').textContent  = lblue;
   const nqEl = document.getElementById('nqStockCount');
-  if (nqEl) nqEl.textContent = allData.length + ' stocks';
+  if (nqEl) nqEl.textContent = '(' + allData.length + ')';
 }
 
 // -- CONTROLS ------------------------------------------------------------------
@@ -1321,7 +1315,7 @@ function cryptoRenderSummary() {
   if (el('csLGold')) el('csLGold').textContent = lgold;
   if (el('csLBlue')) el('csLBlue').textContent = lblue;
   const csEl = document.getElementById('cryptoStockCount');
-  if (csEl) csEl.textContent = cryptoAllData.length + ' stocks';
+  if (csEl) csEl.textContent = '(' + cryptoAllData.length + ')';
 }
 
 function setCryptoFilter(f, btn) {
@@ -1480,7 +1474,11 @@ function omxRender() {
   });
 
   // Sort
-  if      (omxCurSort === 'chg_d')   rows.sort((a,b) => omxGetChgPct(b)-omxGetChgPct(a));
+  if      (omxCurSort === 'preprice_d') rows.sort((a,b) => (b.preMktPrice||0)-(a.preMktPrice||0));
+  else if (omxCurSort === 'preprice_a') rows.sort((a,b) => (a.preMktPrice||0)-(b.preMktPrice||0));
+  else if (omxCurSort === 'prepct_d') rows.sort((a,b) => (b.preChgPct||0)-(a.preChgPct||0));
+  else if (omxCurSort === 'prepct_a') rows.sort((a,b) => (a.preChgPct||0)-(b.preChgPct||0));
+  else if (omxCurSort === 'chg_d')   rows.sort((a,b) => omxGetChgPct(b)-omxGetChgPct(a));
   else if (omxCurSort === 'chg_a')   rows.sort((a,b) => omxGetChgPct(a)-omxGetChgPct(b));
   else if (omxCurSort === 'price_d') rows.sort((a,b) => (b.price||0)-(a.price||0));
   else if (omxCurSort === 'price_a') rows.sort((a,b) => (a.price||0)-(b.price||0));
@@ -1543,11 +1541,11 @@ function omxRender() {
     const barColor = pos52!==null?(pos52>0.7?'var(--green)':pos52<0.3?'var(--red)':'var(--accent)'):'var(--dim)';
     return `<tr>
       <td><div class="ticker-sym">${r.sym.replace('.ST','')}</div><div class="ticker-name">${r.name}</div></td>
+      <td class="r"><span class="price-val">${r.preMktPrice != null ? (r.preMktPrice >= 1000 ? '$'+r.preMktPrice.toLocaleString('en-US',{maximumFractionDigits:0}) : '$'+Number(r.preMktPrice).toFixed(2)) : '<span style="color:var(--dim)">--</span>'}</span></td>
+      <td class="r">${r.preChgPct != null ? '<span class="'+(r.preChgPct>0?'chg-pos':r.preChgPct<0?'chg-neg':'chg-neu')+'">'+(r.preChgPct>=0?'+':'')+Number(r.preChgPct).toFixed(2)+'%</span>' : '<span style="color:var(--dim)">--</span>'}</td>
       <td class="r"><span class="price-val">${priceFmt}</span></td>
       <td class="r"><span class="${pc}">${chgSign}${Number(chg).toFixed(2)}</span></td>
       <td class="r"><span class="${pc}">${chgSign}${Number(chgPct).toFixed(2)}%</span></td>
-      <td class="r">${r.preChgPct != null ? '<span class="'+(r.preChgPct>0?'chg-pos':r.preChgPct<0?'chg-neg':'chg-neu')+'">'+(r.preChgPct>=0?'+':'')+Number(r.preChgPct).toFixed(2)+'%</span>' : '<span style="color:var(--dim)">--</span>'}</td>
-      <td class="r num">${r.preMktPrice != null ? (r.preMktPrice >= 1000 ? '$'+r.preMktPrice.toLocaleString('en-US',{maximumFractionDigits:0}) : '$'+Number(r.preMktPrice).toFixed(2)) : '<span style="color:var(--dim)">--</span>'}</td>
       <td class="c" style="width:28px;">
         <button onclick="openAddToWatchlist('${r.sym}')" style="background:none;border:1px solid var(--muted);color:var(--muted);border-radius:3px;width:20px;height:20px;cursor:pointer;font-size:13px;line-height:1;padding:0;" title="Add to watchlist">+</button>
       </td>
@@ -1592,7 +1590,7 @@ function omxRenderSummary() {
   if (el('osLGold'))     el('osLGold').textContent     = lgold;
   if (el('osLBlue'))     el('osLBlue').textContent     = lblue;
   const omxEl = document.getElementById('omxStockCount');
-  if (omxEl) omxEl.textContent = omxAllData.length + ' stocks';
+  if (omxEl) omxEl.textContent = '(' + omxAllData.length + ')';
 }
 
 function setOMXFilter(f, btn) {
@@ -2388,7 +2386,7 @@ function sp5RenderSummary() {
   if (el('sp5LGold'))     el('sp5LGold').textContent     = lgold;
   if (el('sp5LBlue'))     el('sp5LBlue').textContent     = lblue;
   const sp5El = document.getElementById('sp5StockCount');
-  if (sp5El) sp5El.textContent = rows.length + ' stocks';
+  if (sp5El) sp5El.textContent = '(' + rows.length + ')';
 }
 
 function sp5Render() {
@@ -2410,6 +2408,10 @@ function sp5Render() {
   else if (sp5CurSort === 'mktcap_a') rows.sort((a,b) => (a.mktCapB||0)-(b.mktCapB||0));
   else if (sp5CurSort === 'az')       rows.sort((a,b) => a.sym.localeCompare(b.sym));
   else if (sp5CurSort === 'az_r') rows.sort((a,b) => b.sym.localeCompare(a.sym));
+  else if (sp5CurSort === 'preprice_d') rows.sort((a,b) => (b.preMktPrice||0)-(a.preMktPrice||0));
+  else if (sp5CurSort === 'preprice_a') rows.sort((a,b) => (a.preMktPrice||0)-(b.preMktPrice||0));
+  else if (sp5CurSort === 'prepct_d') rows.sort((a,b) => (b.preChgPct||0)-(a.preChgPct||0));
+  else if (sp5CurSort === 'prepct_a') rows.sort((a,b) => (a.preChgPct||0)-(b.preChgPct||0));
   else if (sp5CurSort === 'chg_d') rows.sort((a,b) => sp5GetChgPct(b)-sp5GetChgPct(a));
   else if (sp5CurSort === 'chg_a') rows.sort((a,b) => sp5GetChgPct(a)-sp5GetChgPct(b));
   else if (sp5CurSort === 'price_d') rows.sort((a,b) => (b.price||0)-(a.price||0));
@@ -2455,11 +2457,11 @@ function sp5Render() {
     const fmtVol  = v => { if(!v) return '--'; if(v>=1e9) return (v/1e9).toFixed(1)+'B'; if(v>=1e6) return (v/1e6).toFixed(1)+'M'; if(v>=1e3) return (v/1e3).toFixed(1)+'K'; return v.toFixed(0); };
     return `<tr>
       <td><div class="ticker-sym">${r.sym}</div><div class="ticker-name">${r.name}</div></td>
+      <td class="r"><span class="price-val">${r.preMktPrice != null ? (r.preMktPrice >= 1000 ? '$'+r.preMktPrice.toLocaleString('en-US',{maximumFractionDigits:0}) : '$'+Number(r.preMktPrice).toFixed(2)) : '<span style="color:var(--dim)">--</span>'}</span></td>
+      <td class="r">${r.preChgPct != null ? '<span class="'+(r.preChgPct>0?'chg-pos':r.preChgPct<0?'chg-neg':'chg-neu')+'">'+(r.preChgPct>=0?'+':'')+Number(r.preChgPct).toFixed(2)+'%</span>' : '<span style="color:var(--dim)">--</span>'}</td>
       <td class="r"><span class="price-val">${priceFmt}</span></td>
       <td class="r"><span class="${pc}">${chgSign}${Number(tfChg).toFixed(2)}</span></td>
       <td class="r"><span class="${pc}">${pctSign}${Number(tfChgPct).toFixed(2)}%</span></td>
-      <td class="r">${r.preChgPct != null ? '<span class="'+(r.preChgPct>0?'chg-pos':r.preChgPct<0?'chg-neg':'chg-neu')+'">'+(r.preChgPct>=0?'+':'')+Number(r.preChgPct).toFixed(2)+'%</span>' : '<span style="color:var(--dim)">--</span>'}</td>
-      <td class="r num">${r.preMktPrice != null ? (r.preMktPrice >= 1000 ? '$'+r.preMktPrice.toLocaleString('en-US',{maximumFractionDigits:0}) : '$'+Number(r.preMktPrice).toFixed(2)) : '<span style="color:var(--dim)">--</span>'}</td>
       <td class="c" style="width:28px;">
         <button onclick="openAddToWatchlist('${r.sym}')" style="background:none;border:1px solid var(--muted);color:var(--muted);border-radius:3px;width:20px;height:20px;cursor:pointer;font-size:13px;line-height:1;padding:0;" title="Add to watchlist">+</button>
       </td>
