@@ -1070,8 +1070,10 @@ function setTF(tf)   { curTF = tf; render(); }
 
 // -- STATUS --------------------------------------------------------------------
 function setStatus(type, msg) {
-  document.getElementById('statusDot').className = 'status-dot'+(type==='live'?' live':type==='error'?' error':'');
-  document.getElementById('statusText').textContent = msg;
+  const dot  = document.getElementById('statusDot');
+  const text = document.getElementById('statusText');
+  if (dot)  dot.className = 'status-dot'+(type==='live'?' live':type==='error'?' error':'');
+  if (text) text.textContent = msg;
 }
 
 // -- COUNTDOWN -----------------------------------------------------------------
