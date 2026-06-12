@@ -75,7 +75,7 @@
 
   .table-wrap{overflow-x:auto;}
   table{width:100%;border-collapse:collapse;min-width:1000px;}
-  thead th{font-family:var(--mono);font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--dim);padding:10px 10px;text-align:left;border-bottom:1px solid var(--border);cursor:pointer;user-select:none;white-space:nowrap;transition:color 0.15s;}
+  thead th{font-family:var(--mono);font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--dim);padding:10px 10px;text-align:left;border-bottom:1px solid var(--border);cursor:pointer;user-select:none;white-space:nowrap;transition:color 0.15s;vertical-align:top;}
   thead th:hover{color:var(--muted);}
   thead th.r{text-align:right;}
   thead th.c{text-align:center;}
@@ -218,11 +218,11 @@
     <button class="filter-btn has-tip" id="tripleBtn" onclick="setFilter('triple',this)" style="border-color:var(--accent);color:var(--accent);font-weight:600;" data-tip="Triple Bull: Trend bullish + B bullish + L gold on selected timeframe">&#9889; Triple Bull</button>
     <button class="filter-btn has-tip" id="doubleBtn" onclick="setFilter('double',this)" style="border-color:var(--accent);color:var(--accent);font-weight:600;" data-tip="Double Bull: B bullish + L gold on selected timeframe">&#9889; Double Bull</button>
     <select class="sort-select" id="tfSelect" style="margin-left:0; border-color:var(--accent); color:var(--accent); pointer-events:none; opacity:0.6;">
-      <option value="2H">Timeframe: 2H</option>
-      <option value="4H">Timeframe: 4H</option>
-      <option value="D" selected>Timeframe: Daily</option>
-      <option value="W">Timeframe: Weekly</option>
-      <option value="M">Timeframe: Monthly</option>
+      <option value="2H">2H</option>
+      <option value="4H">4H</option>
+      <option value="D" selected>Daily</option>
+      <option value="W">Weekly</option>
+      <option value="M">Monthly</option>
     </select>
     <select class="sort-select" onchange="setSort(this.value)">
       <option value="">Sort: Default</option>
@@ -243,11 +243,11 @@
       <thead>
         <tr>
           <th style="cursor:pointer;" onclick="setSort(curSort==='az'?'az_r':'az')">Ticker <span id="nqStockCount" style="font-weight:normal;opacity:0.7;"></span></th>
-          <th class="r" style="cursor:pointer;" onclick="setSort(curSort==='price_d'?'price_a':'price_d')" title="Sort by Live Price">Live Price</th>
           <th class="r has-tip" style="cursor:pointer;" data-tip="Pre-market price" onclick="setSort(curSort==='preprice_d'?'preprice_a':'preprice_d')">Pre Price<br><span style="font-size:9px;font-weight:normal;opacity:0.6">CTN</span></th>
           <th class="r has-tip" style="cursor:pointer;" data-tip="Pre-market % change vs yesterday's close." onclick="setSort(curSort==='prepct_d'?'prepct_a':'prepct_d')">% Pre Price<br><span style="font-size:9px;font-weight:normal;opacity:0.6">CTN</span></th>
-          <th class="r" style="cursor:pointer;" onclick="setSort(curSort==='chgabs_d'?'chgabs_a':'chgabs_d')" title="Sort by absolute change">Chg<br><span style="font-size:9px;font-weight:normal;opacity:0.6">DTD</span></th>
-          <th class="r" style="cursor:pointer;" onclick="setSort(curSort==='chg_d'?'chg_a':'chg_d')" title="Sort by % change">% Chg<br><span style="font-size:9px;font-weight:normal;opacity:0.6">DTD</span></th>
+          <th class="r" style="cursor:pointer;" onclick="setSort(curSort==='price_d'?'price_a':'price_d')" title="Sort by Live Price">Live Price</th>
+          <th class="r" style="cursor:pointer;" onclick="setSort(curSort==='chgabs_d'?'chgabs_a':'chgabs_d')" title="Sort by absolute change">Chg<br><span style="font-size:9px;font-weight:normal;opacity:0.6">CTC</span></th>
+          <th class="r" style="cursor:pointer;" onclick="setSort(curSort==='chg_d'?'chg_a':'chg_d')" title="Sort by % change">% Chg<br><span style="font-size:9px;font-weight:normal;opacity:0.6">CTC</span></th>
           <th class="c" style="width:28px;" title="Add to watchlist">W+</th>
           <th class="c" style="width:70px;font-size:10px;cursor:pointer;" onclick="setSort(curSort==='wl_d'?'wl_a':'wl_d')">In Watch</th>
           <th class="c" style="width:28px;" title="Add to portfolio">P+</th>
@@ -295,11 +295,11 @@
     <button class="filter-btn has-tip" onclick="setSP5Filter('triple',this)" style="border-color:var(--accent);color:var(--accent);font-weight:600;" data-tip="Triple Bull: Trend bullish + B bullish + L gold on selected timeframe">&#9889; Triple Bull</button>
     <button class="filter-btn has-tip" onclick="setSP5Filter('double',this)" style="border-color:var(--accent);color:var(--accent);font-weight:600;" data-tip="Double Bull: B bullish + L gold on selected timeframe">&#9889; Double Bull</button>
     <select class="sort-select" id="sp5TfSelect" style="margin-left:0;border-color:var(--accent);color:var(--accent);pointer-events:none;opacity:0.6;">
-      <option value="2H">Timeframe: 2H</option>
-      <option value="4H">Timeframe: 4H</option>
-      <option value="D" selected>Timeframe: Daily</option>
-      <option value="W">Timeframe: Weekly</option>
-      <option value="M">Timeframe: Monthly</option>
+      <option value="2H">2H</option>
+      <option value="4H">4H</option>
+      <option value="D" selected>Daily</option>
+      <option value="W">Weekly</option>
+      <option value="M">Monthly</option>
     </select>
     <select class="sort-select" onchange="setSP5Sort(this.value)">
       <option value="">Sort: Default</option>
@@ -328,11 +328,11 @@
       <thead>
         <tr>
           <th style="cursor:pointer;" onclick="setSP5Sort(sp5CurSort==='az'?'az_r':'az')">Ticker <span id="sp5StockCount" style="font-weight:normal;opacity:0.7;"></span></th>
-          <th class="r" style="cursor:pointer;" onclick="setSP5Sort(sp5CurSort==='price_d'?'price_a':'price_d')" title="Sort by Live Price">Live Price</th>
           <th class="r has-tip" style="cursor:pointer;" data-tip="Pre-market price" onclick="setSP5Sort(sp5CurSort==='preprice_d'?'preprice_a':'preprice_d')">Pre Price<br><span style="font-size:9px;font-weight:normal;opacity:0.6">CTN</span></th>
           <th class="r has-tip" style="cursor:pointer;" data-tip="Pre-market % change vs yesterday's close." onclick="setSP5Sort(sp5CurSort==='prepct_d'?'prepct_a':'prepct_d')">% Pre Price<br><span style="font-size:9px;font-weight:normal;opacity:0.6">CTN</span></th>
-          <th class="r" style="cursor:pointer;" onclick="setSP5Sort(sp5CurSort==='chgabs_d'?'chgabs_a':'chgabs_d')" title="Sort by absolute change">Chg<br><span style="font-size:9px;font-weight:normal;opacity:0.6">DTD</span></th>
-          <th class="r" style="cursor:pointer;" onclick="setSP5Sort(sp5CurSort==='chg_d'?'chg_a':'chg_d')" title="Sort by % change">% Chg<br><span style="font-size:9px;font-weight:normal;opacity:0.6">DTD</span></th>
+          <th class="r" style="cursor:pointer;" onclick="setSP5Sort(sp5CurSort==='price_d'?'price_a':'price_d')" title="Sort by Live Price">Live Price</th>
+          <th class="r" style="cursor:pointer;" onclick="setSP5Sort(sp5CurSort==='chgabs_d'?'chgabs_a':'chgabs_d')" title="Sort by absolute change">Chg<br><span style="font-size:9px;font-weight:normal;opacity:0.6">CTC</span></th>
+          <th class="r" style="cursor:pointer;" onclick="setSP5Sort(sp5CurSort==='chg_d'?'chg_a':'chg_d')" title="Sort by % change">% Chg<br><span style="font-size:9px;font-weight:normal;opacity:0.6">CTC</span></th>
           <th class="c" style="width:28px;" title="Add to watchlist">W+</th>
           <th class="c" style="width:70px;font-size:10px;cursor:pointer;" onclick="setSP5Sort(sp5CurSort==='wl_d'?'wl_a':'wl_d')">In Watch</th>
           <th class="c" style="width:28px;" title="Add to portfolio">P+</th>
@@ -388,11 +388,11 @@
     <button class="filter-btn has-tip" onclick="setCryptoFilter('triple',this)" style="border-color:var(--accent);color:var(--accent);font-weight:600;" data-tip="Triple Bull: Trend bullish + B bullish + L gold on selected timeframe">&#9889; Triple Bull</button>
     <button class="filter-btn has-tip" onclick="setCryptoFilter('double',this)" style="border-color:var(--accent);color:var(--accent);font-weight:600;" data-tip="Double Bull: B bullish + L gold on selected timeframe">&#9889; Double Bull</button>
     <select class="sort-select" id="cryptoTfSelect" style="margin-left:0;border-color:var(--accent);color:var(--accent);pointer-events:none;opacity:0.6;">
-      <option value="2H">Timeframe: 2H</option>
-      <option value="4H">Timeframe: 4H</option>
-      <option value="D" selected>Timeframe: Daily</option>
-      <option value="W">Timeframe: Weekly</option>
-      <option value="M">Timeframe: Monthly</option>
+      <option value="2H">2H</option>
+      <option value="4H">4H</option>
+      <option value="D" selected>Daily</option>
+      <option value="W">Weekly</option>
+      <option value="M">Monthly</option>
     </select>
     <select class="sort-select" onchange="setCryptoSort(this.value)">
       <option value="">Sort: Default</option>
@@ -460,11 +460,11 @@
       <button class="filter-btn has-tip" onclick="setOMXFilter('triple',this)" style="border-color:var(--accent);color:var(--accent);font-weight:600;" data-tip="Triple Bull: Trend bullish + B bullish + L gold on selected timeframe">&#9889; Triple Bull</button>
       <button class="filter-btn has-tip" onclick="setOMXFilter('double',this)" style="border-color:var(--accent);color:var(--accent);font-weight:600;" data-tip="Double Bull: B bullish + L gold on selected timeframe">&#9889; Double Bull</button>
       <select class="sort-select" id="omxTfSelect" style="margin-left:0; border-color:var(--accent);color:var(--accent);pointer-events:none;opacity:0.6;">
-        <option value="2H">Timeframe: 2H</option>
-        <option value="4H">Timeframe: 4H</option>
-        <option value="D" selected>Timeframe: Daily</option>
-        <option value="W">Timeframe: Weekly</option>
-        <option value="M">Timeframe: Monthly</option>
+        <option value="2H">2H</option>
+        <option value="4H">4H</option>
+        <option value="D" selected>Daily</option>
+        <option value="W">Weekly</option>
+        <option value="M">Monthly</option>
       </select>
       <select class="sort-select" onchange="setOMXSort(this.value)">
         <option value="">Sort: Default</option>
@@ -491,11 +491,11 @@
         <thead>
           <tr>
             <th style="cursor:pointer;" onclick="setOMXSort(omxCurSort==='az'?'az_r':'az')">Ticker <span id="omxStockCount" style="font-weight:normal;opacity:0.7;"></span></th>
-            <th class="r" style="cursor:pointer;" onclick="setOMXSort(omxCurSort==='price_d'?'price_a':'price_d')" title="Sort by Live Price">Live Price</th>
             <th class="r has-tip" style="cursor:pointer;" data-tip="Pre-market price" onclick="setOMXSort(omxCurSort==='preprice_d'?'preprice_a':'preprice_d')">Pre Price<br><span style="font-size:9px;font-weight:normal;opacity:0.6">CTN</span></th>
             <th class="r has-tip" style="cursor:pointer;" data-tip="Pre-market % change vs yesterday's close." onclick="setOMXSort(omxCurSort==='prepct_d'?'prepct_a':'prepct_d')">% Pre Price<br><span style="font-size:9px;font-weight:normal;opacity:0.6">CTN</span></th>
-            <th class="r" style="cursor:pointer;" onclick="setOMXSort(omxCurSort==='chgabs_d'?'chgabs_a':'chgabs_d')" title="Sort by absolute change">Chg<br><span style="font-size:9px;font-weight:normal;opacity:0.6">DTD</span></th>
-            <th class="r" style="cursor:pointer;" onclick="setOMXSort(omxCurSort==='chg_d'?'chg_a':'chg_d')" title="Sort by % change">% Chg<br><span style="font-size:9px;font-weight:normal;opacity:0.6">DTD</span></th>
+            <th class="r" style="cursor:pointer;" onclick="setOMXSort(omxCurSort==='price_d'?'price_a':'price_d')" title="Sort by Live Price">Live Price</th>
+            <th class="r" style="cursor:pointer;" onclick="setOMXSort(omxCurSort==='chgabs_d'?'chgabs_a':'chgabs_d')" title="Sort by absolute change">Chg<br><span style="font-size:9px;font-weight:normal;opacity:0.6">CTC</span></th>
+            <th class="r" style="cursor:pointer;" onclick="setOMXSort(omxCurSort==='chg_d'?'chg_a':'chg_d')" title="Sort by % change">% Chg<br><span style="font-size:9px;font-weight:normal;opacity:0.6">CTC</span></th>
             <th class="c" style="width:28px;" title="Add to watchlist">W+</th>
             <th class="c" style="width:70px;font-size:10px;cursor:pointer;" onclick="setOMXSort(omxCurSort==='wl_d'?'wl_a':'wl_d')">In Watch</th>
             <th class="c" style="width:28px;" title="Add to portfolio">P+</th>
@@ -549,11 +549,11 @@
           <option value="lflip_d">L Flip Recent</option>
         </select>
         <select class="sort-select" id="wlTFSelect" style="border-color:var(--accent);color:var(--accent);pointer-events:none;opacity:0.6;">
-          <option value="2H">Timeframe: 2H</option>
-          <option value="4H">Timeframe: 4H</option>
-          <option value="D" selected>Timeframe: Daily</option>
-          <option value="W">Timeframe: Weekly</option>
-          <option value="M">Timeframe: Monthly</option>
+          <option value="2H">2H</option>
+          <option value="4H">4H</option>
+          <option value="D" selected>Daily</option>
+          <option value="W">Weekly</option>
+          <option value="M">Monthly</option>
         </select>
         <span class="sort-select" style="cursor:default;color:var(--accent);border-color:var(--accent);margin-left:0;" id="wlStockCount">— stocks</span>
       </div>
@@ -619,11 +619,11 @@
           <option value="lflip_d">L Flip Recent</option>
         </select>
         <select class="sort-select" id="portTFSelect" style="border-color:var(--accent);color:var(--accent);pointer-events:none;opacity:0.6;">
-          <option value="2H">Timeframe: 2H</option>
-          <option value="4H">Timeframe: 4H</option>
-          <option value="D" selected>Timeframe: Daily</option>
-          <option value="W">Timeframe: Weekly</option>
-          <option value="M">Timeframe: Monthly</option>
+          <option value="2H">2H</option>
+          <option value="4H">4H</option>
+          <option value="D" selected>Daily</option>
+          <option value="W">Weekly</option>
+          <option value="M">Monthly</option>
         </select>
         <span class="sort-select" style="cursor:default;color:var(--accent);border-color:var(--accent);margin-left:0;" id="portStockCount">— stocks</span>
       </div>
