@@ -1285,7 +1285,7 @@ function cryptoRender() {
       return v.toFixed(2);
     };
     return `<tr>
-      <td><div class="ticker-sym">${r.sym}</div><div class="ticker-name">${r.name}</div></td>
+      <td><div class="ticker-sym"><a href="https://www.tradingview.com/chart/?symbol=${r.sym}USDT" target="_blank" rel="noopener" style="color:inherit;text-decoration:none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">${r.sym}</a></div><div class="ticker-name">${r.name}</div></td>
       <td class="r"><span class="price-val">${priceFmt}</span></td>
       <td class="r"><span class="${pc}">${chgSign}${Number(chgPct).toFixed(2)}%</span></td>
       <td class="r" style="font-size:11px;color:var(--muted);">${r.mktCapB ? '$'+r.mktCapB.toFixed(1)+'B' : '--'}</td>
@@ -1945,7 +1945,7 @@ function renderPortfolioTable() {
       ? `<span class="flip-time">${t}</span>`
       : `<span style="color:var(--dim);font-family:var(--mono);font-size:11px;">--</span>`;
     return `<tr>
-      <td><div class="ticker-sym">${r.sym}</div><div class="ticker-name">${r.name}</div></td>
+      <td><div class="ticker-sym"><a href="https://www.tradingview.com/chart/?symbol=NASDAQ:${r.sym}" target="_blank" rel="noopener" style="color:inherit;text-decoration:none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">${r.sym}</a></div><div class="ticker-name">${r.name}</div></td>
       <td class="r"><span class="price-val">${priceFmt}</span></td>
       <td class="r"><span class="${pc}">${chgSign}${Number(tfChgPct).toFixed(2)}%</span></td>
       <td class="r">
@@ -2240,7 +2240,7 @@ function renderWatchlistTable() {
       ? `<span class="flip-time">${t}</span>`
       : `<span style="color:var(--dim);font-family:var(--mono);font-size:11px;">--</span>`;
     return `<tr>
-      <td><div class="ticker-sym">${r.sym}</div><div class="ticker-name">${r.name}</div></td>
+      <td><div class="ticker-sym"><a href="https://www.tradingview.com/chart/?symbol=NASDAQ:${r.sym}" target="_blank" rel="noopener" style="color:inherit;text-decoration:none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">${r.sym}</a></div><div class="ticker-name">${r.name}</div></td>
       <td class="r"><span class="price-val">${priceFmt}</span></td>
       <td class="r"><span class="${pc}">${chgSign}${Number(tfChgPct).toFixed(2)}%</span></td>
       <td class="r">
