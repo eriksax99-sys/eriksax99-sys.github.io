@@ -508,6 +508,7 @@
             <th class="c" style="width:70px;font-size:10px;cursor:pointer;" onclick="setOMXSort(omxCurSort==='wl_d'?'wl_a':'wl_d')">In Watch</th>
             <th class="c" style="width:28px;" title="Add to portfolio">P+</th>
             <th class="c" style="width:70px;font-size:10px;cursor:pointer;" onclick="setOMXSort(omxCurSort==='in_d'?'in_a':'in_d')">In Port</th>
+            <th class="r" style="cursor:pointer;" onclick="setOMXSort(omxCurSort==='w52_d'?'w52_a':'w52_d')" title="Sort by market cap">Mkt Cap</th>
             <th class="r" style="cursor:pointer;" onclick="setOMXSort(omxCurSort==='w52_d'?'w52_a':'w52_d')" title="Sort by 52-week range position">52W</th>
             <th class="c">Trend</th>
             <th class="c has-tip" data-tip="Yahoo Finance analyst consensus rating (Strong Buy / Buy / Hold / Sell / Strong Sell).">Analyst</th>
@@ -519,7 +520,7 @@
           </tr>
         </thead>
         <tbody id="omxTbody">
-          <tr class="state-row"><td colspan="17">Loading OMX data...</td></tr>
+          <tr class="state-row"><td colspan="20">Loading OMX data...</td></tr>
         </tbody>
       </table>
     </div>
@@ -1526,7 +1527,7 @@ function omxRender() {
   const tbody = document.getElementById('omxTbody');
   if (!tbody) return;
   if (!omxAllData.length) {
-    tbody.innerHTML = '<tr class="state-row"><td colspan="17">No OMX data yet. Deploy omx-processor edge function.</td></tr>';
+    tbody.innerHTML = '<tr class="state-row"><td colspan="20">No OMX data yet. Deploy omx-processor edge function.</td></tr>';
     return;
   }
   let rows = [...omxAllData];
@@ -1625,6 +1626,7 @@ function omxRender() {
         <button onclick="openAddToPortfolio('${r.sym}')" style="background:none;border:1px solid var(--muted);color:var(--muted);border-radius:3px;width:20px;height:20px;cursor:pointer;font-size:13px;line-height:1;padding:0;" title="Add to portfolio">+</button>
       </td>
       <td class="c" style="width:70px;font-size:10px;color:var(--muted);">${getPortfolioLabel(r.sym)}</td>
+      <td class="r" style="font-size:11px;color:var(--muted);">${r.mktCapB ? '$'+r.mktCapB.toFixed(0)+'B' : '--'}</td>
       <td class="r" style="font-size:11px;color:var(--muted);">${r.mktCapB ? '$'+r.mktCapB.toFixed(0)+'B' : '--'}</td>
       <td class="r">
         <div class="w52-bar">
