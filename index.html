@@ -19,7 +19,7 @@
     --mono:'IBM Plex Mono',monospace; --sans:'DM Sans',sans-serif;
   }
   *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-  body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14px;min-height:100vh;line-height:1.5;}
+  body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14px;min-height:100vh;line-height:1.5;overflow-y:scroll;}
   body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,212,170,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,212,170,0.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0;}
   .container{max-width:1600px;margin:0 auto;padding:0 24px 60px;isolation:isolate;}
 
@@ -73,9 +73,9 @@
   .sort-select{margin-left:auto;background:var(--bg2);border:1px solid var(--border);border-radius:6px;color:var(--muted);font-family:var(--mono);font-size:11px;padding:5px 10px;cursor:pointer;outline:none;}
   .sort-select:focus{border-color:var(--accent);}
 
-  .table-wrap{overflow-x:auto;}
+  .table-wrap{overflow-x:auto;overflow-y:visible;}
   table{width:100%;border-collapse:collapse;min-width:1000px;}
-  thead th{font-family:var(--mono);font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--dim);padding:10px 10px;text-align:left;border-bottom:1px solid var(--border);cursor:pointer;user-select:none;white-space:nowrap;transition:color 0.15s;vertical-align:top;position:sticky;top:0;z-index:5;background:var(--bg);}
+  thead th{font-family:var(--mono);font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--dim);padding:10px 10px;text-align:left;border-bottom:1px solid var(--border);cursor:pointer;user-select:none;white-space:nowrap;transition:color 0.15s;vertical-align:top;position:sticky;top:93px;z-index:5;background:var(--bg);}
   thead th:hover{color:var(--muted);}
   thead th.r{text-align:center;}
   thead th.c{text-align:center;}
@@ -2655,8 +2655,11 @@ async function loadStatsData() {
   const now = Date.now();
 
   // Fetch: latest run per processor + price row counts + alerts
-  const [runsRows, nqRows, sp5Rows, omxRows, cryptoRows, alertRows] = await Promise.all([
-    supaFetch('processor_runs?select=*&order=run_at.desc&limit=200'),
+  const [nq60Runs, sp500Runs, omxRuns, cryptoRuns, nqRows, sp5Rows, omxRows, cryptoRows, alertRows] = await Promise.all([
+    supaFetch('processor_runs?select=*&processor=eq.nq60&order=run_at.desc&limit=50'),
+    supaFetch('processor_runs?select=*&processor=eq.sp500&order=run_at.desc&limit=50'),
+    supaFetch('processor_runs?select=*&processor=eq.omx&order=run_at.desc&limit=50'),
+    supaFetch('processor_runs?select=*&processor=eq.crypto&order=run_at.desc&limit=50'),
     supaFetch('price_data?select=sym,pre_mkt_price,updated_at'),
     supaFetch('sp500_price_data?select=sym,pre_mkt_price,updated_at'),
     supaFetch('omx_price_data?select=sym,updated_at'),
@@ -2664,17 +2667,16 @@ async function loadStatsData() {
     supaFetch('alert_history?select=sym,name,message,source,created_at&order=created_at.desc&limit=5'),
   ]);
 
-  // Group runs by processor — latest run first
-  const runsByProc = {};
-  (runsRows || []).forEach(r => {
-    if (!runsByProc[r.processor]) runsByProc[r.processor] = [];
-    runsByProc[r.processor].push(r);
-  });
-
-  // Get latest completed run per processor
+  // Already grouped per processor
+  const runsByProc = {
+    nq60:   nq60Runs   || [],
+    sp500:  sp500Runs  || [],
+    omx:    omxRuns    || [],
+    crypto: cryptoRuns || [],
+  };
   const latestRun = {};
   Object.keys(runsByProc).forEach(p => {
-    latestRun[p] = runsByProc[p][0]; // already ordered desc
+    latestRun[p] = runsByProc[p][0];
   });
 
   // For each processor, aggregate across all batches in the latest full cycle
