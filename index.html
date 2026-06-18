@@ -181,6 +181,7 @@
     <button class="tab-btn" id="tabWatchlist2" onclick="switchTab('watchlist2')">Watchlist</button>
     <button class="tab-btn" id="tabPortfolio" onclick="switchTab('portfolio')">Portfolio</button>
     <button class="tab-btn" id="tabAlerts" onclick="switchTab('alerts')">&#9889; Alerts<span id="alertStar" class="alert-star" style="color:var(--green)">&#9733;</span></button>
+    <button class="tab-btn" id="tabStats" onclick="switchTab('stats')">Stats</button>
     <div style="margin-left:auto;display:flex;align-items:center;gap:6px;padding:0 8px;">
       <button onclick="loadFromSupabase()" style="background:transparent;color:var(--muted);border:1px solid var(--border);border-radius:4px;font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:0.08em;padding:4px 10px;cursor:pointer;white-space:nowrap;" onmouseover="this.style.color='var(--text)'" onmouseout="this.style.color='var(--muted)'">↻ Refresh</button>
       <div class="refresh-ring" id="refreshRing" style="display:none;">
@@ -658,6 +659,41 @@
       </table>
     </div>
   </div><!-- /panePortfolio -->
+
+  <!-- STATS TAB -->
+  <div class="tab-pane" id="paneStats">
+    <div style="padding:16px 0;font-family:var(--mono);">
+
+      <!-- Summary metrics -->
+      <div id="statsMetricRow" style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px;"></div>
+
+      <!-- Processor status table -->
+      <div style="background:var(--card);border:0.5px solid var(--border);border-radius:10px;padding:1rem 1.25rem;margin-bottom:14px;">
+        <div style="font-size:11px;color:var(--muted);letter-spacing:0.06em;font-weight:600;margin-bottom:10px;text-transform:uppercase;">Processor status</div>
+        <table style="width:100%;border-collapse:collapse;font-size:12px;">
+          <thead>
+            <tr>
+              <th style="text-align:left;font-weight:600;font-size:11px;color:var(--muted);padding:4px 8px;border-bottom:0.5px solid var(--border);white-space:nowrap;">Universe</th>
+              <th style="text-align:left;font-weight:600;font-size:11px;color:var(--muted);padding:4px 8px;border-bottom:0.5px solid var(--border);white-space:nowrap;">Updated</th>
+              <th style="text-align:left;font-weight:600;font-size:11px;color:var(--muted);padding:4px 8px;border-bottom:0.5px solid var(--border);white-space:nowrap;">Last updated</th>
+              <th style="text-align:left;font-weight:600;font-size:11px;color:var(--muted);padding:4px 8px;border-bottom:0.5px solid var(--border);white-space:nowrap;">Age</th>
+              <th style="text-align:left;font-weight:600;font-size:11px;color:var(--muted);padding:4px 8px;border-bottom:0.5px solid var(--border);white-space:nowrap;">Pre-mkt</th>
+              <th style="text-align:left;font-weight:600;font-size:11px;color:var(--muted);padding:4px 8px;border-bottom:0.5px solid var(--border);white-space:nowrap;">Cron</th>
+              <th style="text-align:left;font-weight:600;font-size:11px;color:var(--muted);padding:4px 8px;border-bottom:0.5px solid var(--border);white-space:nowrap;">Status</th>
+            </tr>
+          </thead>
+          <tbody id="statsTableBody"></tbody>
+        </table>
+      </div>
+
+      <!-- Recent alerts -->
+      <div style="background:var(--card);border:0.5px solid var(--border);border-radius:10px;padding:1rem 1.25rem;">
+        <div style="font-size:11px;color:var(--muted);letter-spacing:0.06em;font-weight:600;margin-bottom:10px;text-transform:uppercase;">Recent alerts</div>
+        <div id="statsAlertsList" style="display:grid;gap:6px;"></div>
+      </div>
+
+    </div>
+  </div><!-- /paneStats -->
 
   <footer>
 
@@ -2286,6 +2322,7 @@ async function loadWatchlistTab() {
 function switchTab(tab) {
   curTab = tab;
   document.getElementById('paneWatchlist').classList.toggle('active',  tab === 'watchlist');
+  document.getElementById('paneStats').classList.toggle('active',      tab === 'stats');
   document.getElementById('paneSP500').classList.toggle('active',      tab === 'sp500');
   document.getElementById('paneAlerts').classList.toggle('active',     tab === 'alerts');
   document.getElementById('paneCrypto').classList.toggle('active',     tab === 'crypto');
@@ -2295,12 +2332,14 @@ function switchTab(tab) {
   document.getElementById('tabWatchlist').classList.toggle('active',   tab === 'watchlist');
   document.getElementById('tabSP500').classList.toggle('active',       tab === 'sp500');
   document.getElementById('tabAlerts').classList.toggle('active',      tab === 'alerts');
+  document.getElementById('tabStats').classList.toggle('active',       tab === 'stats');
   document.getElementById('tabCrypto').classList.toggle('active',      tab === 'crypto');
   document.getElementById('tabOMX').classList.toggle('active',         tab === 'omx');
   document.getElementById('tabPortfolio').classList.toggle('active',   tab === 'portfolio');
   document.getElementById('tabWatchlist2').classList.toggle('active',  tab === 'watchlist2');
   if (tab === 'alerts')    renderAlerts();
   if (tab === 'sp500'     && sp5AllData.length === 0)     loadSP5Data();
+  if (tab === 'stats')                                     loadStatsData();
   if (tab === 'crypto'    && cryptoAllData.length === 0) loadCryptoData();
   if (tab === 'omx'       && omxAllData.length === 0)    loadOMXData();
   if (tab === 'portfolio') loadPortfolioTab();
@@ -2529,6 +2568,190 @@ function setSP5Filter(f, btn) {
 function setSP5Sort(s) { sp5CurSort = s; sp5Render(); }
 function setSP5TF(tf)  { sp5CurTF = tf; sp5RenderSummary(); sp5Render(); }
 // ── END S&P 500 TAB ────────────────────────────────────────────────────────────
+
+
+// ── STATS TAB ──────────────────────────────────────────────────────────
+async function loadStatsData() {
+  const now = Date.now();
+
+  // Fetch: latest run per processor + price row counts + alerts
+  const [runsRows, nqRows, sp5Rows, omxRows, cryptoRows, alertRows] = await Promise.all([
+    supaFetch('processor_runs?select=*&order=run_at.desc&limit=200'),
+    supaFetch('price_data?select=sym,pre_mkt_price,updated_at'),
+    supaFetch('sp500_price_data?select=sym,pre_mkt_price,updated_at'),
+    supaFetch('omx_price_data?select=sym,updated_at'),
+    supaFetch('crypto_price_data?select=sym,updated_at'),
+    supaFetch('alert_history?select=sym,name,message,source,created_at&order=created_at.desc&limit=5'),
+  ]);
+
+  // Group runs by processor — latest run first
+  const runsByProc = {};
+  (runsRows || []).forEach(r => {
+    if (!runsByProc[r.processor]) runsByProc[r.processor] = [];
+    runsByProc[r.processor].push(r);
+  });
+
+  // Get latest completed run per processor
+  const latestRun = {};
+  Object.keys(runsByProc).forEach(p => {
+    latestRun[p] = runsByProc[p][0]; // already ordered desc
+  });
+
+  // For each processor, aggregate across all batches in the latest full cycle
+  // A full cycle = all batches since the offset last reset to 0
+  function getLatestCycleRuns(proc) {
+    const runs = runsByProc[proc] || [];
+    if (!runs.length) return [];
+    // Walk back from latest run until we find the start of this cycle (batch_offset === 0)
+    // or until offset increases (new cycle started)
+    const cycle = [runs[0]];
+    for (let i = 1; i < runs.length; i++) {
+      if (runs[i].batch_offset >= runs[i-1].batch_offset) break; // went back up = new cycle
+      cycle.push(runs[i]);
+      if (runs[i].batch_offset === 0) break; // found cycle start
+    }
+    return cycle;
+  }
+
+  const universes = [
+    { key: 'nq60',  name: 'NQ60',   rows: nqRows    || [], cron: '*/3 min', preMkt: true  },
+    { key: 'sp500', name: 'SP500',  rows: sp5Rows   || [], cron: '*/3 min', preMkt: true  },
+    { key: 'omx',   name: 'OMX',    rows: omxRows   || [], cron: '*/5 min', preMkt: false },
+    { key: 'crypto',name: 'Crypto', rows: cryptoRows|| [], cron: '*/5 min', preMkt: false },
+  ];
+
+  // ── Summary metrics ──
+  const totalStocks = universes.reduce((a, u) => a + u.rows.length, 0);
+  let freshestMs = 0;
+  universes.forEach(u => u.rows.forEach(r => {
+    if (!r.updated_at) return;
+    const t = new Date(r.updated_at).getTime();
+    if (t > freshestMs) freshestMs = t;
+  }));
+  const freshestAge = freshestMs ? Math.round((now - freshestMs) / 60000) : '?';
+  const preMktEligible = (nqRows||[]).length + (sp5Rows||[]).length;
+  const preMktPopulated = [...(nqRows||[]), ...(sp5Rows||[])].filter(r => r.pre_mkt_price != null).length;
+
+  const mrow = document.getElementById('statsMetricRow');
+  if (mrow) mrow.innerHTML = `
+    <div style="background:var(--bg);border:0.5px solid var(--border);border-radius:8px;padding:12px;">
+      <div style="font-size:11px;color:var(--muted);margin:0 0 4px;">Total stocks tracked</div>
+      <div style="font-size:22px;font-weight:600;color:var(--text);">${totalStocks}</div>
+      <div style="font-size:11px;color:var(--muted);margin:2px 0 0;">across 4 universes</div>
+    </div>
+    <div style="background:var(--bg);border:0.5px solid var(--border);border-radius:8px;padding:12px;">
+      <div style="font-size:11px;color:var(--muted);margin:0 0 4px;">Freshest update</div>
+      <div style="font-size:22px;font-weight:600;color:var(--text);">${freshestAge}m</div>
+      <div style="font-size:11px;color:var(--muted);margin:2px 0 0;">ago</div>
+    </div>
+    <div style="background:var(--bg);border:0.5px solid var(--border);border-radius:8px;padding:12px;">
+      <div style="font-size:11px;color:var(--muted);margin:0 0 4px;">Pre-market populated</div>
+      <div style="font-size:22px;font-weight:600;color:var(--text);">${preMktPopulated}</div>
+      <div style="font-size:11px;color:var(--muted);margin:2px 0 0;">of ${preMktEligible} eligible</div>
+    </div>
+  `;
+
+  // ── Processor table ──
+  const tbody = document.getElementById('statsTableBody');
+  if (!tbody) return;
+  tbody.innerHTML = '';
+
+  universes.forEach((u, ui) => {
+    const cycleRuns = getLatestCycleRuns(u.key);
+    const latest = latestRun[u.key];
+
+    // Aggregate succeeded/failed across latest cycle
+    const cycleSucceeded = cycleRuns.reduce((a, r) => a + (r.succeeded || 0), 0);
+    const cycleFailed = cycleRuns.reduce((a, r) => a + (r.failed || 0), 0);
+    const allFailedSyms = cycleRuns.flatMap(r => r.failed_syms || []);
+    const totalProcessed = cycleSucceeded + cycleFailed;
+
+    // If no run data yet, fall back to row count
+    const displayTotal = totalProcessed > 0 ? totalProcessed : u.rows.length;
+    const displaySucceeded = totalProcessed > 0 ? cycleSucceeded : u.rows.length;
+    const allGood = allFailedSyms.length === 0;
+    const dotColor = allGood ? 'var(--green)' : '#ef4444';
+
+    // Last run time
+    const lastRunTs = latest ? new Date(latest.run_at).getTime() : 0;
+    const ageMin = lastRunTs ? Math.round((now - lastRunTs) / 60000) : '?';
+    const timeStr = lastRunTs ? new Date(lastRunTs).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',second:'2-digit',timeZone:'Europe/Stockholm'}) : '--:--:--';
+
+    // Duration of latest run
+    const durStr = latest?.duration_ms ? `${(latest.duration_ms/1000).toFixed(1)}s` : '';
+
+    const statusPill = allGood
+      ? `<span style="display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;padding:3px 8px;border-radius:99px;background:rgba(52,211,153,0.15);color:var(--green);">&#9679; OK</span>`
+      : `<span style="display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;padding:3px 8px;border-radius:99px;background:rgba(239,68,68,0.12);color:#ef4444;">&#9679; Missed</span>`;
+
+    const preMktCell = !u.preMkt ? '<span style="color:var(--muted)">n/a</span>'
+      : `${u.rows.filter(r=>r.pre_mkt_price!=null).length} / ${u.rows.length}`;
+
+    const missedChips = allFailedSyms.map(s =>
+      `<span style="font-size:11px;font-family:var(--mono);background:rgba(239,68,68,0.12);color:#ef4444;padding:2px 6px;border-radius:4px;">${s}</span>`
+    ).join('');
+
+    const missedSection = allFailedSyms.length > 0 ? `
+      <div style="display:flex;align-items:center;flex-wrap:wrap;gap:5px;margin-top:5px;">
+        ${missedChips}
+        <button onclick="statsRetry('${u.key}','${u.name}',this)" style="font-size:11px;padding:3px 8px;border-radius:4px;border:0.5px solid var(--border);background:var(--bg);color:var(--muted);cursor:pointer;">&#8635; Retry</button>
+      </div>` : '';
+
+    const isLast = ui === universes.length - 1;
+    const border = isLast ? 'none' : '0.5px solid var(--border)';
+
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td style="padding:9px 8px;border-bottom:${border};font-weight:600;">${u.name}</td>
+      <td style="padding:9px 8px;border-bottom:${border};vertical-align:top;">
+        <div style="display:flex;align-items:flex-start;gap:6px;">
+          <span style="width:8px;height:8px;border-radius:50%;background:${dotColor};display:inline-block;flex-shrink:0;margin-top:3px;"></span>
+          <div>
+            <span>${displaySucceeded} / ${displayTotal}</span>
+            ${missedSection}
+          </div>
+        </div>
+      </td>
+      <td style="padding:9px 8px;border-bottom:${border};font-family:var(--mono);font-size:11px;">${timeStr}</td>
+      <td style="padding:9px 8px;border-bottom:${border};color:var(--muted);font-size:11px;">${ageMin}m ago</td>
+      <td style="padding:9px 8px;border-bottom:${border};">${preMktCell}</td>
+      <td style="padding:9px 8px;border-bottom:${border};color:var(--muted);font-size:11px;">${u.cron}</td>
+      <td style="padding:9px 8px;border-bottom:${border};">${statusPill}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  // ── Recent alerts ──
+  const alertsList = document.getElementById('statsAlertsList');
+  if (alertsList && alertRows) {
+    const badgeMap = {
+      nq60:    ['#E6F1FB','#0C447C','NQ60'],
+      sp500:   ['#EAF3DE','#27500A','SP500'],
+      omx50:   ['#EEEDFE','#3C3489','OMX'],
+      crypto50:['#FAEEDA','#633806','Crypto'],
+    };
+    alertsList.innerHTML = alertRows.map(a => {
+      const key = (a.source||'').toLowerCase().replace(/[^a-z0-9]/g,'');
+      const [bg,fg,label] = badgeMap[key] || ['#E6F1FB','#0C447C', a.source||'?'];
+      const t = new Date(a.created_at);
+      const timeStr = t.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',timeZone:'Europe/Stockholm'});
+      return `<div style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:var(--bg);border:0.5px solid var(--border);border-radius:6px;font-size:12px;">
+        <span style="font-size:11px;font-weight:600;padding:2px 7px;border-radius:99px;white-space:nowrap;background:${bg};color:${fg};">${label}</span>
+        <span style="font-weight:600;min-width:50px;font-family:var(--mono);">${a.sym}</span>
+        <span style="color:var(--muted);flex:1;">${a.message||''}</span>
+        <span style="color:var(--muted);white-space:nowrap;">${timeStr}</span>
+      </div>`;
+    }).join('');
+  }
+}
+
+function statsRetry(procKey, procName, btn) {
+  btn.textContent = 'Retrying…';
+  btn.disabled = true;
+  // Re-fetch stats after 5s to pick up any new processor_runs rows
+  setTimeout(() => loadStatsData(), 5000);
+}
+// ── END STATS TAB ──────────────────────────────────────────────────────
 
 </script>
   <!-- ADD TO WATCHLIST MODAL -->
