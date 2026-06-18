@@ -572,19 +572,29 @@
         <thead>
           <tr>
             <th>Ticker</th>
+            <th class="r">Pre Price</th>
+            <th class="r">% Pre</th>
             <th class="r">Price</th>
+            <th class="r">Chg</th>
             <th class="r">% Chg</th>
+            <th class="c" style="width:28px;">W+</th>
+            <th class="c" style="width:70px;">In Watch</th>
+            <th class="c" style="width:28px;">P+</th>
+            <th class="c" style="width:70px;">In Port</th>
+            <th class="r">Mkt Cap</th>
             <th class="r">52W</th>
             <th class="c">Trend</th>
+            <th class="c">Analyst</th>
             <th class="c">B</th>
             <th class="c" style="font-size:10px;">B Flip</th>
             <th class="c">L</th>
             <th class="c" style="font-size:10px;">L Flip</th>
+            <th class="r">Vol</th>
             <th class="c" style="width:60px;">Remove</th>
           </tr>
         </thead>
         <tbody id="watchlistTbody">
-          <tr class="state-row"><td colspan="10">Select or create a watchlist above.</td></tr>
+          <tr class="state-row"><td colspan="20">Select or create a watchlist above.</td></tr>
         </tbody>
       </table>
     </div>
@@ -642,19 +652,29 @@
         <thead>
           <tr>
             <th style="cursor:pointer;" onclick="setPortSort(portSort==='az'?'az_r':'az')">Ticker</th>
+            <th class="r">Pre Price</th>
+            <th class="r">% Pre</th>
             <th class="r" style="cursor:pointer;" onclick="setPortSort(portSort==='price_d'?'price_a':'price_d')">Price</th>
+            <th class="r">Chg</th>
             <th class="r" style="cursor:pointer;" onclick="setPortSort(portSort==='chg_d'?'chg_a':'chg_d')">% Chg</th>
+            <th class="c" style="width:28px;">W+</th>
+            <th class="c" style="width:70px;">In Watch</th>
+            <th class="c" style="width:28px;">P+</th>
+            <th class="c" style="width:70px;">In Port</th>
+            <th class="r">Mkt Cap</th>
             <th class="r" style="cursor:pointer;" onclick="setPortSort(portSort==='w52_d'?'w52_a':'w52_d')">52W</th>
             <th class="c" style="cursor:pointer;" onclick="setPortSort(portSort==='trend_d'?'trend_a':'trend_d')">Trend</th>
+            <th class="c">Analyst</th>
             <th class="c b-col">B</th>
             <th class="c" style="font-size:10px;color:var(--green);border-bottom:2px solid var(--green-border);cursor:pointer;" onclick="setPortSort(portSort==='bflip_d'?'bflip_a':'bflip_d')">B Flip</th>
             <th class="c l-col">L</th>
             <th class="c" style="font-size:10px;color:var(--amber);border-bottom:2px solid var(--amber-border);cursor:pointer;" onclick="setPortSort(portSort==='lflip_d'?'lflip_a':'lflip_d')">L Flip</th>
+            <th class="r">Vol</th>
             <th class="c" style="width:60px;">Remove</th>
           </tr>
         </thead>
         <tbody id="portfolioTbody">
-          <tr class="state-row"><td colspan="10">Select or create a portfolio above.</td></tr>
+          <tr class="state-row"><td colspan="20">Select or create a portfolio above.</td></tr>
         </tbody>
       </table>
     </div>
@@ -1913,13 +1933,13 @@ function selectPortfolio(id) {
 function renderPortfolioTable() {
   const tbody = document.getElementById('portfolioTbody');
   if (!activePortfolio) {
-    tbody.innerHTML = '<tr class="state-row"><td colspan="10">Select or create a portfolio above.</td></tr>';
+    tbody.innerHTML = '<tr class="state-row"><td colspan="20">Select or create a portfolio above.</td></tr>';
     document.getElementById('portfolioStatus').textContent = '';
     return;
   }
   const holdings = allHoldings.filter(h => h.portfolio_id === activePortfolio);
   if (holdings.length === 0) {
-    tbody.innerHTML = '<tr class="state-row"><td colspan="10">No stocks in this portfolio yet. Use the + button in the Nasdaq60 tab.</td></tr>';
+    tbody.innerHTML = '<tr class="state-row"><td colspan="20">No stocks in this portfolio yet. Use the + button in the Nasdaq60 tab.</td></tr>';
     document.getElementById('portfolioStatus').textContent = '0 stocks';
     return;
   }
@@ -1960,7 +1980,7 @@ function renderPortfolioTable() {
   else if (portSort === 'lflip_a') rows.sort((a,b) => parseDateStr(getLFlip(a))-parseDateStr(getLFlip(b)));
 
   if (rows.length === 0) {
-    tbody.innerHTML = '<tr class="state-row"><td colspan="10">No stocks match the current filter.</td></tr>';
+    tbody.innerHTML = '<tr class="state-row"><td colspan="20">No stocks match the current filter.</td></tr>';
     document.getElementById('portfolioStatus').textContent = `0 / ${holdings.length} stocks`;
     return;
   }
@@ -1988,21 +2008,32 @@ function renderPortfolioTable() {
     const flipCell = t => t
       ? `<span class="flip-time">${t}</span>`
       : `<span style="color:var(--dim);font-family:var(--mono);font-size:11px;">--</span>`;
+    const volFmtP = v => !v?'--':v>=1e9?(v/1e9).toFixed(1)+'B':v>=1e6?(v/1e6).toFixed(1)+'M':(v/1e3).toFixed(0)+'K';
     return `<tr>
       <td><div class="ticker-sym"><a href="https://www.tradingview.com/chart/?symbol=NASDAQ:${r.sym}" target="_blank" rel="noopener" style="color:inherit;text-decoration:none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">${r.sym}</a></div><div class="ticker-name">${r.name}</div></td>
+      <td class="r"><span class="price-val">${r.preMktPrice != null ? (r.preMktPrice >= 1000 ? '$'+r.preMktPrice.toLocaleString('en-US',{maximumFractionDigits:0}) : '$'+Number(r.preMktPrice).toFixed(2)) : '<span style="color:var(--dim)">--</span>'}</span></td>
+      <td class="r">${r.preChgPct != null ? '<span class="'+(r.preChgPct>0?'chg-pos':r.preChgPct<0?'chg-neg':'chg-neu')+'">'+(r.preChgPct>=0?'+':'')+Number(r.preChgPct).toFixed(2)+'%</span>' : '<span style="color:var(--dim)">--</span>'}</td>
       <td class="r"><span class="price-val">${priceFmt}</span></td>
+      <td class="r"><span class="${pc}">${chgSign}${Number(tfChg).toFixed(2)}</span></td>
       <td class="r"><span class="${pc}">${chgSign}${Number(tfChgPct).toFixed(2)}%</span></td>
+      <td class="c" style="width:28px;"><button onclick="openAddToWatchlist('${r.sym}')" style="background:none;border:1px solid var(--muted);color:var(--muted);border-radius:3px;width:20px;height:20px;cursor:pointer;font-size:13px;line-height:1;padding:0;" title="Add to watchlist">+</button></td>
+      <td class="c" style="width:70px;font-size:10px;color:var(--muted);">${getWatchlistLabel(r.sym)}</td>
+      <td class="c" style="width:28px;"><button onclick="openAddToPortfolio('${r.sym}')" style="background:none;border:1px solid var(--muted);color:var(--muted);border-radius:3px;width:20px;height:20px;cursor:pointer;font-size:13px;line-height:1;padding:0;" title="Add to portfolio">+</button></td>
+      <td class="c" style="width:70px;font-size:10px;color:var(--muted);">${getPortfolioLabel(r.sym)}</td>
+      <td class="r" style="font-size:11px;color:var(--muted);">${r.mktCapB ? '$'+r.mktCapB.toFixed(0)+'B' : '--'}</td>
       <td class="r">
         <div class="w52-bar">
           <span class="w52-pct">${Math.round(pos52*100)}%</span>
           <div class="w52-track"><div class="w52-fill" style="width:${Math.round(pos52*100)}%;background:${barColor}"></div></div>
         </div>
       </td>
-      <td class="c"><span class="trend-pill ${sentCls}">${sentLbl}</span></td>
+      <td class="c"><span class="badge ${sentCls==='chg-pos'?'badge-bull':sentCls==='chg-neg'?'badge-bear':'badge-neut'}">${sentLbl==='BULL'?' BULL':sentLbl==='BEAR'?' BEAR':' NEUT'}</span></td>
+      <td class="c">${analystCell(r.analystRating)}</td>
       <td class="c"><span class="${bCls}">${bLabel}</span></td>
       <td class="c">${flipCell(getBFlip(r))}</td>
       <td class="c"><span class="${lCls}">${lLabel}</span></td>
       <td class="c">${flipCell(getLFlip(r))}</td>
+      <td class="r"><span class="vol-text">${volFmtP(r.vol)}</span></td>
       <td class="c"><button onclick="removeHolding('${r._hid}','${r._pid}','${r.sym}')" style="background:none;border:1px solid var(--red);color:var(--red);border-radius:3px;padding:2px 7px;cursor:pointer;font-size:11px;">✕</button></td>
     </tr>`;
   }).join('');
@@ -2216,13 +2247,13 @@ function setWLTF(tf) { curTF = tf; renderWatchlistTable(); }
 function renderWatchlistTable() {
   const tbody = document.getElementById('watchlistTbody');
   if (!activeWatchlist) {
-    tbody.innerHTML = '<tr class="state-row"><td colspan="10">Select or create a watchlist above.</td></tr>';
+    tbody.innerHTML = '<tr class="state-row"><td colspan="20">Select or create a watchlist above.</td></tr>';
     document.getElementById('watchlistStatus').textContent = '';
     return;
   }
   const items = allWLItems.filter(i => i.watchlist_id === activeWatchlist);
   if (items.length === 0) {
-    tbody.innerHTML = '<tr class="state-row"><td colspan="10">No stocks in this watchlist yet. Use the W+ button in the Nasdaq60 or OMX50 tab.</td></tr>';
+    tbody.innerHTML = '<tr class="state-row"><td colspan="20">No stocks in this watchlist yet. Use the W+ button in the Nasdaq60 or OMX50 tab.</td></tr>';
     document.getElementById('watchlistStatus').textContent = '0 stocks';
     return;
   }
@@ -2255,7 +2286,7 @@ function renderWatchlistTable() {
   else if (wlSort === 'lflip_d') rows.sort((a,b) => parseDateStr(getLFlip(b))-parseDateStr(getLFlip(a)));
 
   if (rows.length === 0) {
-    tbody.innerHTML = '<tr class="state-row"><td colspan="10">No stocks match the current filter.</td></tr>';
+    tbody.innerHTML = '<tr class="state-row"><td colspan="20">No stocks match the current filter.</td></tr>';
     document.getElementById('watchlistStatus').textContent = `0 / ${items.length} stocks`;
     return;
   }
@@ -2283,21 +2314,32 @@ function renderWatchlistTable() {
     const flipCell = t => t
       ? `<span class="flip-time">${t}</span>`
       : `<span style="color:var(--dim);font-family:var(--mono);font-size:11px;">--</span>`;
+    const volFmtWL = v => !v?'--':v>=1e9?(v/1e9).toFixed(1)+'B':v>=1e6?(v/1e6).toFixed(1)+'M':(v/1e3).toFixed(0)+'K';
     return `<tr>
       <td><div class="ticker-sym"><a href="https://www.tradingview.com/chart/?symbol=NASDAQ:${r.sym}" target="_blank" rel="noopener" style="color:inherit;text-decoration:none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">${r.sym}</a></div><div class="ticker-name">${r.name}</div></td>
+      <td class="r"><span class="price-val">${r.preMktPrice != null ? (r.preMktPrice >= 1000 ? '$'+r.preMktPrice.toLocaleString('en-US',{maximumFractionDigits:0}) : '$'+Number(r.preMktPrice).toFixed(2)) : '<span style="color:var(--dim)">--</span>'}</span></td>
+      <td class="r">${r.preChgPct != null ? '<span class="'+(r.preChgPct>0?'chg-pos':r.preChgPct<0?'chg-neg':'chg-neu')+'">'+(r.preChgPct>=0?'+':'')+Number(r.preChgPct).toFixed(2)+'%</span>' : '<span style="color:var(--dim)">--</span>'}</td>
       <td class="r"><span class="price-val">${priceFmt}</span></td>
+      <td class="r"><span class="${pc}">${chgSign}${Number(tfChg).toFixed(2)}</span></td>
       <td class="r"><span class="${pc}">${chgSign}${Number(tfChgPct).toFixed(2)}%</span></td>
+      <td class="c" style="width:28px;"><button onclick="openAddToWatchlist('${r.sym}')" style="background:none;border:1px solid var(--muted);color:var(--muted);border-radius:3px;width:20px;height:20px;cursor:pointer;font-size:13px;line-height:1;padding:0;" title="Add to watchlist">+</button></td>
+      <td class="c" style="width:70px;font-size:10px;color:var(--muted);">${getWatchlistLabel(r.sym)}</td>
+      <td class="c" style="width:28px;"><button onclick="openAddToPortfolio('${r.sym}')" style="background:none;border:1px solid var(--muted);color:var(--muted);border-radius:3px;width:20px;height:20px;cursor:pointer;font-size:13px;line-height:1;padding:0;" title="Add to portfolio">+</button></td>
+      <td class="c" style="width:70px;font-size:10px;color:var(--muted);">${getPortfolioLabel(r.sym)}</td>
+      <td class="r" style="font-size:11px;color:var(--muted);">${r.mktCapB ? '$'+r.mktCapB.toFixed(0)+'B' : '--'}</td>
       <td class="r">
         <div class="w52-bar">
           <span class="w52-pct">${Math.round(pos52*100)}%</span>
           <div class="w52-track"><div class="w52-fill" style="width:${Math.round(pos52*100)}%;background:${barColor}"></div></div>
         </div>
       </td>
-      <td class="c"><span class="trend-pill ${sentCls}">${sentLbl}</span></td>
+      <td class="c"><span class="badge ${sentCls==='chg-pos'?'badge-bull':sentCls==='chg-neg'?'badge-bear':'badge-neut'}">${sentLbl==='BULL'?' BULL':sentLbl==='BEAR'?' BEAR':' NEUT'}</span></td>
+      <td class="c">${analystCell(r.analystRating)}</td>
       <td class="c"><span class="${bCls}">${bLabel}</span></td>
       <td class="c">${flipCell(getBFlip(r))}</td>
       <td class="c"><span class="${lCls}">${lLabel}</span></td>
       <td class="c">${flipCell(getLFlip(r))}</td>
+      <td class="r"><span class="vol-text">${volFmtWL(r.vol)}</span></td>
       <td class="c"><button onclick="removeWLItem('${r._iid}','${r._wid}','${r.sym}')" style="background:none;border:1px solid var(--red);color:var(--red);border-radius:3px;padding:2px 7px;cursor:pointer;font-size:11px;">✕</button></td>
     </tr>`;
   }).join('');
