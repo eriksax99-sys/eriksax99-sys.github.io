@@ -19,7 +19,7 @@
     --mono:'IBM Plex Mono',monospace; --sans:'DM Sans',sans-serif;
   }
   *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-  body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14px;min-height:100vh;line-height:1.5;}
+  body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14px;min-height:100vh;line-height:1.5;overflow-y:scroll;}
   body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,212,170,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,212,170,0.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0;}
   .container{max-width:1600px;margin:0 auto;padding:0 24px 60px;isolation:isolate;}
 
@@ -508,7 +508,7 @@
             <th class="c" style="width:70px;font-size:10px;cursor:pointer;" onclick="setOMXSort(omxCurSort==='wl_d'?'wl_a':'wl_d')">In Watch</th>
             <th class="c" style="width:28px;" title="Add to portfolio">P+</th>
             <th class="c" style="width:70px;font-size:10px;cursor:pointer;" onclick="setOMXSort(omxCurSort==='in_d'?'in_a':'in_d')">In Port</th>
-            <th class="r" style="cursor:pointer;" onclick="setOMXSort(omxCurSort==='w52_d'?'w52_a':'w52_d')" title="Sort by market cap">Mkt Cap</th>
+            <th class="r" style="cursor:pointer;" onclick="setOMXSort(omxCurSort==='mktcap_d'?'mktcap_a':'mktcap_d')" title="Sort by market cap">Mkt Cap</th>
             <th class="r" style="cursor:pointer;" onclick="setOMXSort(omxCurSort==='w52_d'?'w52_a':'w52_d')" title="Sort by 52-week range position">52W</th>
             <th class="c">Trend</th>
             <th class="c has-tip" data-tip="Yahoo Finance analyst consensus rating (Strong Buy / Buy / Hold / Sell / Strong Sell).">Analyst</th>
@@ -1427,6 +1427,7 @@ async function loadCryptoData() {
       sym: r.sym, name: r.name, price: r.price,
       preChgPct: r.pre_mkt_chg_pct ?? null,
       preMktPrice: r.pre_mkt_price ?? null,
+      mktCapB: r.mkt_cap_b ?? null,
       chg: r.chg, chgPct: r.chg_pct,
       chg2h: r.chg_2h, chgPct2h: r.chg_pct_2h,
       chg4h: r.chg_4h, chgPct4h: r.chg_pct_4h,
@@ -1550,6 +1551,8 @@ function omxRender() {
   else if (omxCurSort === 'preprice_a') rows.sort((a,b) => (a.preMktPrice||0)-(b.preMktPrice||0));
   else if (omxCurSort === 'prepct_d') rows.sort((a,b) => (b.preChgPct||0)-(a.preChgPct||0));
   else if (omxCurSort === 'prepct_a') rows.sort((a,b) => (a.preChgPct||0)-(b.preChgPct||0));
+  else if (omxCurSort === 'mktcap_d') rows.sort((a,b) => (b.mktCapB||0)-(a.mktCapB||0));
+  else if (omxCurSort === 'mktcap_a') rows.sort((a,b) => (a.mktCapB||0)-(b.mktCapB||0));
   else if (omxCurSort === 'chg_d')   rows.sort((a,b) => omxGetChgPct(b)-omxGetChgPct(a));
   else if (omxCurSort === 'chg_a')   rows.sort((a,b) => omxGetChgPct(a)-omxGetChgPct(b));
   else if (omxCurSort === 'price_d') rows.sort((a,b) => (b.price||0)-(a.price||0));
@@ -1626,7 +1629,6 @@ function omxRender() {
         <button onclick="openAddToPortfolio('${r.sym}')" style="background:none;border:1px solid var(--muted);color:var(--muted);border-radius:3px;width:20px;height:20px;cursor:pointer;font-size:13px;line-height:1;padding:0;" title="Add to portfolio">+</button>
       </td>
       <td class="c" style="width:70px;font-size:10px;color:var(--muted);">${getPortfolioLabel(r.sym)}</td>
-      <td class="r" style="font-size:11px;color:var(--muted);">${r.mktCapB ? '$'+r.mktCapB.toFixed(0)+'B' : '--'}</td>
       <td class="r" style="font-size:11px;color:var(--muted);">${r.mktCapB ? '$'+r.mktCapB.toFixed(0)+'B' : '--'}</td>
       <td class="r">
         <div class="w52-bar">
@@ -1708,6 +1710,7 @@ async function loadOMXData() {
       sym: r.sym, name: r.name, price: r.price,
       preChgPct: r.pre_mkt_chg_pct ?? null,
       preMktPrice: r.pre_mkt_price ?? null,
+      mktCapB: r.mkt_cap_b ?? null,
       chg: r.chg, chgPct: r.chg_pct,
       chg2h: r.chg_2h, chgPct2h: r.chg_pct_2h,
       chg4h: r.chg_4h, chgPct4h: r.chg_pct_4h,
