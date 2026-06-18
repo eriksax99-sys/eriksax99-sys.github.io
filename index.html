@@ -761,7 +761,7 @@ function checkPw() {
   if (pw === 'GM26') {
     document.getElementById('authWall').style.display = 'none';
     loadFromSupabase();
-    Promise.all([loadPortfolios(), loadWatchlists()]).then(() => render());
+    Promise.all([loadPortfolios(), loadWatchlists(), loadFavorites()]).then(() => render());
   } else {
     document.getElementById('pwError').style.display = 'block';
     document.getElementById('pwInput').value = '';
@@ -773,7 +773,7 @@ window.addEventListener('DOMContentLoaded', () => {
   document.getElementById('pwInput').focus();
 });
 
-window.addEventListener('DOMContentLoaded_disabled', () => { loadFromSupabase(); Promise.all([loadPortfolios(), loadWatchlists()]).then(() => render()); });
+window.addEventListener('DOMContentLoaded_disabled', () => { loadFromSupabase(); Promise.all([loadPortfolios(), loadWatchlists(), loadFavorites()]).then(() => render()); });
 
 // -- SUPABASE READ -------------------------------------------------------------
 async function loadFromSupabase() {
@@ -941,6 +941,9 @@ function render() {
     }
   }
 
+  // Favorites always pinned to top
+  rows.sort((a, b) => (favorites.has(b.sym) ? 1 : 0) - (favorites.has(a.sym) ? 1 : 0));
+
   // Sort always applies -- filter first, then sort within filtered results
   // (like Excel: filter limits rows, sort orders them within that limit)
   if (curSort === 'preprice_d')   rows.sort((a,b) => (b.preMktPrice||0)-(a.preMktPrice||0));
@@ -1026,7 +1029,7 @@ function render() {
       : `<span style="color:var(--dim);font-family:var(--mono);font-size:11px;">--</span>`;
 
     return `<tr>
-      <td><div class="ticker-sym"><a href="https://www.tradingview.com/chart/?symbol=NASDAQ:${r.sym}" target="_blank" rel="noopener" style="color:inherit;text-decoration:none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">${r.sym}</a></div><div class="ticker-name">${r.name}</div></td>
+      <td><div style="display:flex;align-items:center;gap:6px;"><span onclick="toggleFavorite('${r.sym}')" style="cursor:pointer;font-size:14px;color:${favorites.has(r.sym)?'#f59e0b':'var(--dim)'};flex-shrink:0;" title="Favorite">${favorites.has(r.sym)?'★':'☆'}</span><div><div class="ticker-sym"><a href="https://www.tradingview.com/chart/?symbol=NASDAQ:${r.sym}" target="_blank" rel="noopener" style="color:inherit;text-decoration:none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">${r.sym}</a></div><div class="ticker-name">${r.name}</div></div></div></td>
       <td class="r"><span class="price-val">${r.preMktPrice != null ? (r.preMktPrice >= 1000 ? '$'+r.preMktPrice.toLocaleString('en-US',{maximumFractionDigits:0}) : '$'+Number(r.preMktPrice).toFixed(2)) : '<span style="color:var(--dim)">--</span>'}</span></td>
       <td class="r">${r.preChgPct != null ? '<span class="'+(r.preChgPct>0?'chg-pos':r.preChgPct<0?'chg-neg':'chg-neu')+'">'+(r.preChgPct>=0?'+':'')+Number(r.preChgPct).toFixed(2)+'%</span>' : '<span style="color:var(--dim)">--</span>'}</td>
       <td class="r"><span class="price-val">${priceFmt}</span></td>
@@ -1297,6 +1300,7 @@ function cryptoRender() {
   });
 
   // Apply sort
+  rows.sort((a, b) => (favorites.has(b.sym) ? 1 : 0) - (favorites.has(a.sym) ? 1 : 0));
   if (cryptoCurSort === 'chg_d')      rows.sort((a,b) => cryptoGetChgPct(b)-cryptoGetChgPct(a));
   else if (cryptoCurSort === 'chg_a') rows.sort((a,b) => cryptoGetChgPct(a)-cryptoGetChgPct(b));
   else if (cryptoCurSort === 'price_d') rows.sort((a,b) => (b.price||0)-(a.price||0));
@@ -1344,7 +1348,7 @@ function cryptoRender() {
       return v.toFixed(2);
     };
     return `<tr>
-      <td><div class="ticker-sym"><a href="https://www.tradingview.com/chart/?symbol=${r.sym}USDT" target="_blank" rel="noopener" style="color:inherit;text-decoration:none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">${r.sym}</a></div><div class="ticker-name">${r.name}</div></td>
+      <td><div style="display:flex;align-items:center;gap:6px;"><span onclick="toggleFavorite('${r.sym}')" style="cursor:pointer;font-size:14px;color:${favorites.has(r.sym)?'#f59e0b':'var(--dim)'};flex-shrink:0;" title="Favorite">${favorites.has(r.sym)?'★':'☆'}</span><div><div class="ticker-sym"><a href="https://www.tradingview.com/chart/?symbol=${r.sym}USDT" target="_blank" rel="noopener" style="color:inherit;text-decoration:none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">${r.sym}</a></div><div class="ticker-name">${r.name}</div></div></div></td>
       <td class="r"><span class="price-val">${priceFmt}</span></td>
       <td class="r"><span class="${pc}">${chgSign}${Number(chgPct).toFixed(2)}%</span></td>
       <td class="r" style="font-size:11px;color:var(--muted);">${r.mktCapB ? '$'+r.mktCapB.toFixed(1)+'B' : '--'}</td>
@@ -1546,6 +1550,7 @@ function omxRender() {
   });
 
   // Sort
+  rows.sort((a, b) => (favorites.has(b.sym) ? 1 : 0) - (favorites.has(a.sym) ? 1 : 0));
   if      (omxCurSort === 'preprice_d') rows.sort((a,b) => (b.preMktPrice||0)-(a.preMktPrice||0));
   else if (omxCurSort === 'preprice_a') rows.sort((a,b) => (a.preMktPrice||0)-(b.preMktPrice||0));
   else if (omxCurSort === 'prepct_d') rows.sort((a,b) => (b.preChgPct||0)-(a.preChgPct||0));
@@ -1612,7 +1617,7 @@ function omxRender() {
                    ? Math.max(0,Math.min(1,(r.price-r.lo52)/(r.hi52-r.lo52))) : null;
     const barColor = pos52!==null?(pos52>0.7?'var(--green)':pos52<0.3?'var(--red)':'var(--accent)'):'var(--dim)';
     return `<tr>
-      <td><div class="ticker-sym"><a href="https://www.tradingview.com/chart/?symbol=OMXSTO:${r.sym.replace('.ST','').replace('-','_')}" target="_blank" rel="noopener" style="color:inherit;text-decoration:none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">${r.sym.replace('.ST','')}</a></div><div class="ticker-name">${r.name}</div></td>
+      <td><div style="display:flex;align-items:center;gap:6px;"><span onclick="toggleFavorite('${r.sym}')" style="cursor:pointer;font-size:14px;color:${favorites.has(r.sym)?'#f59e0b':'var(--dim)'};flex-shrink:0;" title="Favorite">${favorites.has(r.sym)?'★':'☆'}</span><div><div class="ticker-sym"><a href="https://www.tradingview.com/chart/?symbol=NASDAQ:${r.sym}" target="_blank" rel="noopener" style="color:inherit;text-decoration:none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">${r.sym}</a></div><div class="ticker-name">${r.name}</div></div></div></td>
       <td class="r"><span class="price-val">${r.preMktPrice != null ? (r.preMktPrice >= 1000 ? '$'+r.preMktPrice.toLocaleString('en-US',{maximumFractionDigits:0}) : '$'+Number(r.preMktPrice).toFixed(2)) : '<span style="color:var(--dim)">--</span>'}</span></td>
       <td class="r">${r.preChgPct != null ? '<span class="'+(r.preChgPct>0?'chg-pos':r.preChgPct<0?'chg-neg':'chg-neu')+'">'+(r.preChgPct>=0?'+':'')+Number(r.preChgPct).toFixed(2)+'%</span>' : '<span style="color:var(--dim)">--</span>'}</td>
       <td class="r"><span class="price-val">${priceFmt}</span></td>
@@ -2012,7 +2017,7 @@ function renderPortfolioTable() {
       : `<span style="color:var(--dim);font-family:var(--mono);font-size:11px;">--</span>`;
     const volFmtP = v => !v?'--':v>=1e9?(v/1e9).toFixed(1)+'B':v>=1e6?(v/1e6).toFixed(1)+'M':(v/1e3).toFixed(0)+'K';
     return `<tr>
-      <td><div class="ticker-sym"><a href="https://www.tradingview.com/chart/?symbol=NASDAQ:${r.sym}" target="_blank" rel="noopener" style="color:inherit;text-decoration:none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">${r.sym}</a></div><div class="ticker-name">${r.name}</div></td>
+      <td><div style="display:flex;align-items:center;gap:6px;"><span onclick="toggleFavorite('${r.sym}')" style="cursor:pointer;font-size:14px;color:${favorites.has(r.sym)?'#f59e0b':'var(--dim)'};flex-shrink:0;" title="Favorite">${favorites.has(r.sym)?'★':'☆'}</span><div><div class="ticker-sym"><a href="https://www.tradingview.com/chart/?symbol=NASDAQ:${r.sym}" target="_blank" rel="noopener" style="color:inherit;text-decoration:none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">${r.sym}</a></div><div class="ticker-name">${r.name}</div></div></div></td>
       <td class="r"><span class="price-val">${r.preMktPrice != null ? (r.preMktPrice >= 1000 ? '$'+r.preMktPrice.toLocaleString('en-US',{maximumFractionDigits:0}) : '$'+Number(r.preMktPrice).toFixed(2)) : '<span style="color:var(--dim)">--</span>'}</span></td>
       <td class="r">${r.preChgPct != null ? '<span class="'+(r.preChgPct>0?'chg-pos':r.preChgPct<0?'chg-neg':'chg-neu')+'">'+(r.preChgPct>=0?'+':'')+Number(r.preChgPct).toFixed(2)+'%</span>' : '<span style="color:var(--dim)">--</span>'}</td>
       <td class="r"><span class="price-val">${priceFmt}</span></td>
@@ -2090,6 +2095,36 @@ let activeWatchlist = null;
 let pendingWLSym    = null;
 let wlFilter        = 'all';
 let wlSort          = '';
+
+// -- FAVORITES --
+let favorites = new Set(); // set of sym strings
+
+// -- FAVORITES FUNCTIONS --
+async function loadFavorites() {
+  const res = await supaFetch('favorites?select=sym');
+  favorites = new Set((res || []).map(r => r.sym));
+}
+
+async function toggleFavorite(sym) {
+  if (favorites.has(sym)) {
+    await supaFetch(`favorites?sym=eq.${sym}`, { method: 'DELETE', prefer: '' });
+    favorites.delete(sym);
+  } else {
+    await supaFetch('favorites', {
+      method: 'POST',
+      prefer: 'return=minimal',
+      body: JSON.stringify({ sym }),
+    });
+    favorites.add(sym);
+  }
+  // Re-render all tabs that are currently loaded
+  render();
+  if (sp5AllData.length)  sp5Render();
+  if (omxAllData.length)  omxRender();
+  if (cryptoAllData.length) cryptoRender();
+  renderWatchlistTable();
+  renderPortfolioTable();
+}
 
 async function loadWatchlists() {
   const [w, i] = await Promise.all([
@@ -2318,7 +2353,7 @@ function renderWatchlistTable() {
       : `<span style="color:var(--dim);font-family:var(--mono);font-size:11px;">--</span>`;
     const volFmtWL = v => !v?'--':v>=1e9?(v/1e9).toFixed(1)+'B':v>=1e6?(v/1e6).toFixed(1)+'M':(v/1e3).toFixed(0)+'K';
     return `<tr>
-      <td><div class="ticker-sym"><a href="https://www.tradingview.com/chart/?symbol=NASDAQ:${r.sym}" target="_blank" rel="noopener" style="color:inherit;text-decoration:none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">${r.sym}</a></div><div class="ticker-name">${r.name}</div></td>
+      <td><div style="display:flex;align-items:center;gap:6px;"><span onclick="toggleFavorite('${r.sym}')" style="cursor:pointer;font-size:14px;color:${favorites.has(r.sym)?'#f59e0b':'var(--dim)'};flex-shrink:0;" title="Favorite">${favorites.has(r.sym)?'★':'☆'}</span><div><div class="ticker-sym"><a href="https://www.tradingview.com/chart/?symbol=NASDAQ:${r.sym}" target="_blank" rel="noopener" style="color:inherit;text-decoration:none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">${r.sym}</a></div><div class="ticker-name">${r.name}</div></div></div></td>
       <td class="r"><span class="price-val">${r.preMktPrice != null ? (r.preMktPrice >= 1000 ? '$'+r.preMktPrice.toLocaleString('en-US',{maximumFractionDigits:0}) : '$'+Number(r.preMktPrice).toFixed(2)) : '<span style="color:var(--dim)">--</span>'}</span></td>
       <td class="r">${r.preChgPct != null ? '<span class="'+(r.preChgPct>0?'chg-pos':r.preChgPct<0?'chg-neg':'chg-neu')+'">'+(r.preChgPct>=0?'+':'')+Number(r.preChgPct).toFixed(2)+'%</span>' : '<span style="color:var(--dim)">--</span>'}</td>
       <td class="r"><span class="price-val">${priceFmt}</span></td>
@@ -2516,6 +2551,7 @@ function sp5Render() {
   else if (sp5CurFilter === 'double') rows = rows.filter(r => ((r.tf||{})[sp5CurTF]||{}).b==='bull' && ((r.tf||{})[sp5CurTF]||{}).l==='gold');
   else if (sp5CurFilter === 'triple') rows = rows.filter(r => r.sentiment==='bull' && ((r.tf||{})[sp5CurTF]||{}).b==='bull' && ((r.tf||{})[sp5CurTF]||{}).l==='gold');
   // Sort
+  rows.sort((a, b) => (favorites.has(b.sym) ? 1 : 0) - (favorites.has(a.sym) ? 1 : 0));
   if (sp5CurSort === 'mktcap_d') rows.sort((a,b) => (b.mktCapB||0)-(a.mktCapB||0));
   else if (sp5CurSort === 'mktcap_a') rows.sort((a,b) => (a.mktCapB||0)-(b.mktCapB||0));
   else if (sp5CurSort === 'az')       rows.sort((a,b) => a.sym.localeCompare(b.sym));
@@ -2568,7 +2604,7 @@ function sp5Render() {
     const barColor = pos52>0.7?'var(--green)':pos52<0.3?'var(--red)':'var(--accent)';
     const fmtVol  = v => { if(!v) return '--'; if(v>=1e9) return (v/1e9).toFixed(1)+'B'; if(v>=1e6) return (v/1e6).toFixed(1)+'M'; if(v>=1e3) return (v/1e3).toFixed(1)+'K'; return v.toFixed(0); };
     return `<tr>
-      <td><div class="ticker-sym"><a href="https://www.tradingview.com/chart/?symbol=${r.sym}" target="_blank" rel="noopener" style="color:inherit;text-decoration:none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">${r.sym}</a></div><div class="ticker-name">${r.name}</div></td>
+      <td><div style="display:flex;align-items:center;gap:6px;"><span onclick="toggleFavorite('${r.sym}')" style="cursor:pointer;font-size:14px;color:${favorites.has(r.sym)?'#f59e0b':'var(--dim)'};flex-shrink:0;" title="Favorite">${favorites.has(r.sym)?'★':'☆'}</span><div><div class="ticker-sym"><a href="https://www.tradingview.com/chart/?symbol=${r.sym}" target="_blank" rel="noopener" style="color:inherit;text-decoration:none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">${r.sym}</a></div><div class="ticker-name">${r.name}</div></div></div></td>
       <td class="r"><span class="price-val">${r.preMktPrice != null ? (r.preMktPrice >= 1000 ? '$'+r.preMktPrice.toLocaleString('en-US',{maximumFractionDigits:0}) : '$'+Number(r.preMktPrice).toFixed(2)) : '<span style="color:var(--dim)">--</span>'}</span></td>
       <td class="r">${r.preChgPct != null ? '<span class="'+(r.preChgPct>0?'chg-pos':r.preChgPct<0?'chg-neg':'chg-neu')+'">'+(r.preChgPct>=0?'+':'')+Number(r.preChgPct).toFixed(2)+'%</span>' : '<span style="color:var(--dim)">--</span>'}</td>
       <td class="r"><span class="price-val">${priceFmt}</span></td>
