@@ -21,7 +21,7 @@
   *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
   body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14px;min-height:100vh;line-height:1.5;}
   body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,212,170,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,212,170,0.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0;}
-  .container{max-width:1600px;margin:0 auto;padding:0 24px 60px;isolation:isolate;overflow-x:auto;}
+  .container{max-width:1600px;margin:0 auto;padding:0 24px 60px;isolation:isolate;}
 
   header{display:flex;align-items:flex-end;justify-content:space-between;padding:8px 0 6px;border-bottom:1px solid var(--border);gap:8px;flex-wrap:wrap;}
   .logo{font-family:var(--mono);font-size:11px;font-weight:500;letter-spacing:0.15em;color:var(--accent);text-transform:uppercase;margin-bottom:6px;}
@@ -73,7 +73,8 @@
   .sort-select{margin-left:auto;background:var(--bg2);border:1px solid var(--border);border-radius:6px;color:var(--muted);font-family:var(--mono);font-size:11px;padding:5px 10px;cursor:pointer;outline:none;}
   .sort-select:focus{border-color:var(--accent);}
 
-  .table-wrap{overflow-x:auto;}
+  thead th{position:sticky;top:0;background:var(--bg);z-index:2;box-shadow:0 1px 0 var(--border);}
+  .table-wrap{overflow:auto;height:calc(100vh - 146px);}
   table{width:100%;border-collapse:collapse;min-width:1000px;}
   thead th{font-family:var(--mono);font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--dim);padding:10px 10px;text-align:left;border-bottom:1px solid var(--border);cursor:pointer;user-select:none;white-space:nowrap;transition:color 0.15s;vertical-align:top;}
   thead th:hover{color:var(--muted);}
@@ -953,9 +954,6 @@ function render() {
     }
   }
 
-  // Favorites always pinned to top
-  rows.sort((a, b) => (favorites.has(b.sym) ? 1 : 0) - (favorites.has(a.sym) ? 1 : 0));
-
   // Sort always applies -- filter first, then sort within filtered results
   // (like Excel: filter limits rows, sort orders them within that limit)
   if (curSort === 'preprice_d')   rows.sort((a,b) => (b.preMktPrice||0)-(a.preMktPrice||0));
@@ -1003,6 +1001,9 @@ function render() {
   // Triple Bull: if no column sort active, the auto-sort inside the filter block applies
 
   // Update sort arrow indicators
+  // Favorites always pinned to top - runs after column sort so stars always win
+  rows.sort((a, b) => (favorites.has(b.sym) ? 1 : 0) - (favorites.has(a.sym) ? 1 : 0));
+
   document.getElementById('bflipArrow').textContent =
     curSort==='bflip_d' ? '' : curSort==='bflip_a' ? '' : '';
   document.getElementById('lflipArrow').textContent =
@@ -1300,6 +1301,7 @@ function cryptoCalcSentiment(r) {
 }
 
 function cryptoRender() {
+
   const tbody = document.getElementById('cryptoTbody');
   if (!tbody) return;
   if (!cryptoAllData.length) {
@@ -1323,7 +1325,6 @@ function cryptoRender() {
   });
 
   // Apply sort
-  rows.sort((a, b) => (favorites.has(b.sym) ? 1 : 0) - (favorites.has(a.sym) ? 1 : 0));
   if (cryptoCurSort === 'chg_d')      rows.sort((a,b) => cryptoGetChgPct(b)-cryptoGetChgPct(a));
   else if (cryptoCurSort === 'chg_a') rows.sort((a,b) => cryptoGetChgPct(a)-cryptoGetChgPct(b));
   else if (cryptoCurSort === 'price_d') rows.sort((a,b) => (b.price||0)-(a.price||0));
@@ -1334,6 +1335,9 @@ function cryptoRender() {
   else if (cryptoCurSort === 'lflip_d') rows.sort((a,b) => cryptoParseDateStr(cryptoGetLFlip(b))-cryptoParseDateStr(cryptoGetLFlip(a)));
   else if (cryptoCurFilter === 'triple') {
     rows.sort((a,b) => {
+
+  // Favorites always pinned to top - runs after column sort
+  rows.sort((a, b) => (favorites.has(b.sym) ? 1 : 0) - (favorites.has(a.sym) ? 1 : 0));
       const d = cryptoParseDateStr(cryptoGetBFlip(b))-cryptoParseDateStr(cryptoGetBFlip(a));
       return d !== 0 ? d : cryptoParseDateStr(cryptoGetLFlip(b))-cryptoParseDateStr(cryptoGetLFlip(a));
     });
@@ -1551,6 +1555,7 @@ function omxParseDateStr(s) {
 }
 
 function omxRender() {
+
   const tbody = document.getElementById('omxTbody');
   if (!tbody) return;
   if (!omxAllData.length) {
@@ -1573,7 +1578,6 @@ function omxRender() {
   });
 
   // Sort
-  rows.sort((a, b) => (favorites.has(b.sym) ? 1 : 0) - (favorites.has(a.sym) ? 1 : 0));
   if      (omxCurSort === 'preprice_d') rows.sort((a,b) => (b.preMktPrice||0)-(a.preMktPrice||0));
   else if (omxCurSort === 'preprice_a') rows.sort((a,b) => (a.preMktPrice||0)-(b.preMktPrice||0));
   else if (omxCurSort === 'prepct_d') rows.sort((a,b) => (b.preChgPct||0)-(a.preChgPct||0));
@@ -1605,6 +1609,9 @@ function omxRender() {
   else if (omxCurSort === 'wl_a') rows.sort((a,b) => { const la=getWatchlistLabel(a.sym).replace(/<[^>]+>/g,''); const lb=getWatchlistLabel(b.sym).replace(/<[^>]+>/g,''); return la.localeCompare(lb); });
   else if (omxCurSort === 'in_d') rows.sort((a,b) => { const la=getPortfolioLabel(a.sym).replace(/<[^>]+>/g,''); const lb=getPortfolioLabel(b.sym).replace(/<[^>]+>/g,''); return lb.localeCompare(la); });
   else if (omxCurSort === 'in_a') rows.sort((a,b) => { const la=getPortfolioLabel(a.sym).replace(/<[^>]+>/g,''); const lb=getPortfolioLabel(b.sym).replace(/<[^>]+>/g,''); return la.localeCompare(lb); });
+
+  // Favorites always pinned to top - runs after column sort
+  rows.sort((a, b) => (favorites.has(b.sym) ? 1 : 0) - (favorites.has(a.sym) ? 1 : 0));
 
   const flipCell = t => t
     ? `<span class="flip-time">${t}</span>`
@@ -2563,6 +2570,7 @@ function sp5RenderSummary() {
 }
 
 function sp5Render() {
+
   const tbody = document.getElementById('sp5Tbody');
   if (!tbody) return;
   if (!sp5AllData.length) { tbody.innerHTML = '<tr class="state-row"><td colspan="19">Loading...</td></tr>'; return; }
@@ -2577,7 +2585,6 @@ function sp5Render() {
   else if (sp5CurFilter === 'double') rows = rows.filter(r => ((r.tf||{})[sp5CurTF]||{}).b==='bull' && ((r.tf||{})[sp5CurTF]||{}).l==='gold');
   else if (sp5CurFilter === 'triple') rows = rows.filter(r => r.sentiment==='bull' && ((r.tf||{})[sp5CurTF]||{}).b==='bull' && ((r.tf||{})[sp5CurTF]||{}).l==='gold');
   // Sort
-  rows.sort((a, b) => (favorites.has(b.sym) ? 1 : 0) - (favorites.has(a.sym) ? 1 : 0));
   if (sp5CurSort === 'mktcap_d') rows.sort((a,b) => (b.mktCapB||0)-(a.mktCapB||0));
   else if (sp5CurSort === 'mktcap_a') rows.sort((a,b) => (a.mktCapB||0)-(b.mktCapB||0));
   else if (sp5CurSort === 'az')       rows.sort((a,b) => a.sym.localeCompare(b.sym));
@@ -2602,6 +2609,9 @@ function sp5Render() {
   else if (sp5CurSort === 'wl_a') rows.sort((a,b) => { const la=getWatchlistLabel(a.sym).replace(/<[^>]+>/g,''); const lb=getWatchlistLabel(b.sym).replace(/<[^>]+>/g,''); return la.localeCompare(lb); });
   else if (sp5CurSort === 'in_d') rows.sort((a,b) => { const la=getPortfolioLabel(a.sym).replace(/<[^>]+>/g,''); const lb=getPortfolioLabel(b.sym).replace(/<[^>]+>/g,''); return lb.localeCompare(la); });
   else if (sp5CurSort === 'in_a') rows.sort((a,b) => { const la=getPortfolioLabel(a.sym).replace(/<[^>]+>/g,''); const lb=getPortfolioLabel(b.sym).replace(/<[^>]+>/g,''); return la.localeCompare(lb); });
+
+  // Favorites always pinned to top - runs after column sort
+  rows.sort((a, b) => (favorites.has(b.sym) ? 1 : 0) - (favorites.has(a.sym) ? 1 : 0));
 
   const flipCell = t => t
     ? `<span class="flip-time">${t}</span>`
