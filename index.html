@@ -219,6 +219,7 @@
     <button class="filter-btn" onclick="setFilter('lgold',this)" style="border-color:var(--amber-border);color:var(--amber);">★ L:Gold</button>
     <button class="filter-btn" onclick="setFilter('lblue',this)" style="border-color:var(--blue-border);color:var(--blue);">● L:Blue</button>
     <button class="filter-btn has-tip" id="tripleBtn" onclick="setFilter('triple',this)" style="border-color:var(--accent);color:var(--accent);font-weight:600;" data-tip="Triple Bull: Trend bullish + B bullish + L gold on selected timeframe">&#9889; Triple Bull</button>
+    <button class="filter-btn has-tip" id="quadBtn" onclick="setFilter('quad',this)" data-tip="Quad Bull: Triple Bull AND Analyst is Buy or Strong Buy">&#9889;&#9889; Quad Bull</button>
     <button class="filter-btn has-tip" id="doubleBtn" onclick="setFilter('double',this)" style="border-color:var(--accent);color:var(--accent);font-weight:600;" data-tip="Double Bull: B bullish + L gold on selected timeframe">&#9889; Double Bull</button>
     <select class="sort-select" id="tfSelect" onchange="setTF(this.value)" style="margin-left:0;border-color:var(--accent);color:var(--accent);">
       <option value="D" selected>Daily</option>
@@ -256,8 +257,8 @@
           <th class="r" style="cursor:pointer;" onclick="setSort(curSort==='mktcap_d'?'mktcap_a':'mktcap_d')" title="Sort by market cap">Mkt Cap</th>
           <th class="r" style="cursor:pointer;" onclick="setSort(curSort==='w52_d'?'w52_a':'w52_d')" title="Sort by 52-week range position">52W</th>
           <th class="c">Trend</th>
-          <th class="c has-tip" data-tip="Yahoo Finance analyst consensus rating (Strong Buy / Buy / Hold / Sell / Strong Sell).">Analyst</th>
-          <th class="c">A. Date</th>
+          <th class="c has-tip" data-tip="Yahoo Finance analyst consensus rating (Strong Buy / Buy / Hold / Sell / Strong Sell)." style="cursor:pointer" onclick="setSort(curSort==='analyst_d'?'analyst_a':'analyst_d')">Analyst</th>
+          <th class="c" style="cursor:pointer" onclick="setSort(curSort==='analyst_date_d'?'analyst_date_a':'analyst_date_d')">A. Date</th>
           <th class="c b-col has-tip" data-tip="B = Momentum signal. SMMA21 of close with ATR14×2.5 volatility band. State-based and sticky.">B</th>
           <th class="c has-tip" style="font-size:10px;color:var(--green);border-bottom:2px solid var(--green-border);cursor:pointer;" data-tip="When the B signal last flipped (CET). Click to sort." onclick="setSort(curSort==='bflip_d'?'bflip_a':'bflip_d')" title="Sort by B Flip date">B Flip <span id="bflipArrow"></span></th>
           <th class="c l-col has-tip" data-tip="L = Ribbon signal. SMMA15 vs SMMA25 on (H+L)/2. Gold = uptrend, Blue = downtrend.">L</th>
@@ -342,8 +343,8 @@
           <th class="r" style="cursor:pointer;" onclick="setSP5Sort(sp5CurSort==='mktcap_d'?'mktcap_a':'mktcap_d')" title="Sort by market cap">Mkt Cap</th>
           <th class="r" style="cursor:pointer;" onclick="setSP5Sort(sp5CurSort==='w52_d'?'w52_a':'w52_d')" title="Sort by 52-week range position">52W</th>
           <th class="c">Trend</th>
-          <th class="c has-tip" data-tip="Yahoo Finance analyst consensus rating (Strong Buy / Buy / Hold / Sell / Strong Sell).">Analyst</th>
-          <th class="c">A. Date</th>
+          <th class="c has-tip" data-tip="Yahoo Finance analyst consensus rating (Strong Buy / Buy / Hold / Sell / Strong Sell)." style="cursor:pointer" onclick="setSort(curSort==='analyst_d'?'analyst_a':'analyst_d')">Analyst</th>
+          <th class="c" style="cursor:pointer" onclick="setSort(curSort==='analyst_date_d'?'analyst_date_a':'analyst_date_d')">A. Date</th>
           <th class="c b-col has-tip" data-tip="B = Momentum signal. SMMA21 of close with ATR14×2.5 volatility band. State-based and sticky.">B</th>
           <th class="c has-tip" style="font-size:10px;color:var(--green);border-bottom:2px solid var(--green-border);cursor:pointer;" data-tip="When the B signal last flipped (CET). Click to sort." onclick="setSP5Sort(sp5CurSort==='bflip_d'?'bflip_a':'bflip_d')" title="Sort by B Flip date">B Flip <span id="sp5BflipArrow"></span></th>
           <th class="c l-col has-tip" data-tip="L = Ribbon signal. SMMA15 vs SMMA25 on (H+L)/2. Gold = uptrend, Blue = downtrend.">L</th>
@@ -505,7 +506,8 @@
             <th class="r" style="cursor:pointer;" onclick="setOMXSort(omxCurSort==='w52_d'?'w52_a':'w52_d')" title="Sort by market cap">Mkt Cap</th>
             <th class="r" style="cursor:pointer;" onclick="setOMXSort(omxCurSort==='w52_d'?'w52_a':'w52_d')" title="Sort by 52-week range position">52W</th>
             <th class="c">Trend</th>
-            <th class="c has-tip" data-tip="Yahoo Finance analyst consensus rating (Strong Buy / Buy / Hold / Sell / Strong Sell).">Analyst</th>
+            <th class="c has-tip" data-tip="Yahoo Finance analyst consensus rating (Strong Buy / Buy / Hold / Sell / Strong Sell)." style="cursor:pointer" onclick="setSort(curSort==='analyst_d'?'analyst_a':'analyst_d')">Analyst</th>
+          <th class="c">A. Date</th>
             <th class="c b-col has-tip" data-tip="B = Momentum signal. SMMA21 of close with ATR14x2.5 volatility band. State-based and sticky.">B</th>
             <th class="c has-tip" style="font-size:10px;color:var(--green);border-bottom:2px solid var(--green-border);cursor:pointer;" onclick="setOMXSort(omxCurSort==='bflip_d'?'bflip_a':'bflip_d')" data-tip="When the B signal last flipped (CET). Click to sort.">B Flip</th>
             <th class="c l-col has-tip" data-tip="L = Ribbon signal. SMMA15 vs SMMA25 on (H+L)/2. Gold = uptrend, Blue = downtrend.">L</th>
@@ -578,6 +580,7 @@
             <th class="r">52W</th>
             <th class="c">Trend</th>
             <th class="c">Analyst</th>
+            <th class="c">A. Date</th>
             <th class="c">B</th>
             <th class="c" style="font-size:10px;">B Flip</th>
             <th class="c">L</th>
@@ -656,6 +659,7 @@
             <th class="r" style="cursor:pointer;" onclick="setPortSort(portSort==='w52_d'?'w52_a':'w52_d')">52W</th>
             <th class="c" style="cursor:pointer;" onclick="setPortSort(portSort==='trend_d'?'trend_a':'trend_d')">Trend</th>
             <th class="c">Analyst</th>
+            <th class="c">A. Date</th>
             <th class="c b-col">B</th>
             <th class="c" style="font-size:10px;color:var(--green);border-bottom:2px solid var(--green-border);cursor:pointer;" onclick="setPortSort(portSort==='bflip_d'?'bflip_a':'bflip_d')">B Flip</th>
             <th class="c l-col">L</th>
@@ -931,6 +935,23 @@ function render() {
       });
     }
   }
+  else if (curFilter === 'quad') {
+    // Quad Bull: Triple Bull AND Analyst = strong_buy or buy
+    rows = rows.filter(r => {
+      const activeTF = (r.tf || {})[curTF] || {b:'neutral', l:'gray'};
+      return r.sentiment === 'bull' &&
+             activeTF.b  === 'bull' &&
+             activeTF.l  === 'gold' &&
+             (r.analystRating === 'strong_buy' || r.analystRating === 'buy');
+    });
+    if (!curSort) {
+      rows.sort((a, b) => {
+        const bDiff = parseDateStr(getBFlip(b)) - parseDateStr(getBFlip(a));
+        if (bDiff !== 0) return bDiff;
+        return parseDateStr(getLFlip(b)) - parseDateStr(getLFlip(a));
+      });
+    }
+  }
 
   // Favorites always pinned to top
   rows.sort((a, b) => (favorites.has(b.sym) ? 1 : 0) - (favorites.has(a.sym) ? 1 : 0));
@@ -969,6 +990,16 @@ function render() {
   else if (curSort === 'in_a') rows.sort((a,b) => { const la=getPortfolioLabel(a.sym).replace(/<[^>]+>/g,''); const lb=getPortfolioLabel(b.sym).replace(/<[^>]+>/g,''); return la.localeCompare(lb); });
   else if (curSort === 'wl_d') rows.sort((a,b) => { const la=getWatchlistLabel(a.sym).replace(/<[^>]+>/g,''); const lb=getWatchlistLabel(b.sym).replace(/<[^>]+>/g,''); return lb.localeCompare(la); });
   else if (curSort === 'wl_a') rows.sort((a,b) => { const la=getWatchlistLabel(a.sym).replace(/<[^>]+>/g,''); const lb=getWatchlistLabel(b.sym).replace(/<[^>]+>/g,''); return la.localeCompare(lb); });
+  else if (curSort === 'analyst_d') rows.sort((a,b) => {
+    const order = ['strong_buy','buy','hold','sell'];
+    return (order.indexOf(a.analystRating||'sell')) - (order.indexOf(b.analystRating||'sell'));
+  });
+  else if (curSort === 'analyst_a') rows.sort((a,b) => {
+    const order = ['strong_buy','buy','hold','sell'];
+    return (order.indexOf(b.analystRating||'sell')) - (order.indexOf(a.analystRating||'sell'));
+  });
+  else if (curSort === 'analyst_date_d') rows.sort((a,b) => (b.analystDate||'').localeCompare(a.analystDate||''));
+  else if (curSort === 'analyst_date_a') rows.sort((a,b) => (a.analystDate||'').localeCompare(b.analystDate||''));
   // Triple Bull: if no column sort active, the auto-sort inside the filter block applies
 
   // Update sort arrow indicators
@@ -1043,7 +1074,7 @@ function render() {
       </td>
       <td class="c"><span class="badge ${badgeCls}">${badgeLabel}</span></td>
       <td class="c">${analystCell(r.analystRating)}</td>
-      <td class="c" style="font-size:10px;color:var(--muted)">${r.analystDate ? r.analystDate.slice(2,4)+"/"+r.analystDate.slice(0,2)+"/"+r.analystDate.slice(4,6) : '--'}</td>
+      <td class="c" style="font-size:10px;color:var(--muted)">${r.analystDate ? r.analystDate.slice(0,2)+"/"+r.analystDate.slice(2,4)+"/"+r.analystDate.slice(4,6) : '--'}</td>
       <td class="c"><span class="${bCls}">${bLabel}</span></td>
       <td class="c">${flipCell(getBFlip(r))}</td>
       <td class="c"><span class="${lCls}">${lLabel}</span></td>
@@ -1113,7 +1144,7 @@ function setFilter(f, el) {
     el.style.background = 'var(--red-bg)';
     el.style.color = 'var(--red)';
     el.classList.add('active-bear');
-  } else if (f==='triple' || f==='double') {
+  } else if (f==='triple' || f==='double' || f==='quad') {
     el.classList.add('active');
     el.style.color = '#000';
     el.style.background = 'var(--accent)';
@@ -1632,7 +1663,7 @@ function omxRender() {
       </td>
       <td class="c"><span class="trend-pill ${sentCls}">${sentLbl}</span></td>
       <td class="c">${analystCell(r.analystRating)}</td>
-      <td class="c" style="font-size:10px;color:var(--muted)">${r.analystDate ? r.analystDate.slice(2,4)+"/"+r.analystDate.slice(0,2)+"/"+r.analystDate.slice(4,6) : '--'}</td>
+      <td class="c" style="font-size:10px;color:var(--muted)">${r.analystDate ? r.analystDate.slice(0,2)+"/"+r.analystDate.slice(2,4)+"/"+r.analystDate.slice(4,6) : '--'}</td>
       <td class="c"><span class="${bCls}">${bLabel}</span></td>
       <td class="c">${flipCell(omxGetBFlip(r))}</td>
       <td class="c"><span class="${lCls}">${lLabel}</span></td>
@@ -2029,7 +2060,7 @@ function renderPortfolioTable() {
       </td>
       <td class="c"><span class="badge ${sentCls==='chg-pos'?'badge-bull':sentCls==='chg-neg'?'badge-bear':'badge-neut'}">${sentLbl==='BULL'?' BULL':sentLbl==='BEAR'?' BEAR':' NEUT'}</span></td>
       <td class="c">${analystCell(r.analystRating)}</td>
-      <td class="c" style="font-size:10px;color:var(--muted)">${r.analystDate ? r.analystDate.slice(2,4)+"/"+r.analystDate.slice(0,2)+"/"+r.analystDate.slice(4,6) : '--'}</td>
+      <td class="c" style="font-size:10px;color:var(--muted)">${r.analystDate ? r.analystDate.slice(0,2)+"/"+r.analystDate.slice(2,4)+"/"+r.analystDate.slice(4,6) : '--'}</td>
       <td class="c"><span class="${bCls}">${bLabel}</span></td>
       <td class="c">${flipCell(getBFlip(r))}</td>
       <td class="c"><span class="${lCls}">${lLabel}</span></td>
@@ -2365,7 +2396,7 @@ function renderWatchlistTable() {
       </td>
       <td class="c"><span class="badge ${sentCls==='chg-pos'?'badge-bull':sentCls==='chg-neg'?'badge-bear':'badge-neut'}">${sentLbl==='BULL'?' BULL':sentLbl==='BEAR'?' BEAR':' NEUT'}</span></td>
       <td class="c">${analystCell(r.analystRating)}</td>
-      <td class="c" style="font-size:10px;color:var(--muted)">${r.analystDate ? r.analystDate.slice(2,4)+"/"+r.analystDate.slice(0,2)+"/"+r.analystDate.slice(4,6) : '--'}</td>
+      <td class="c" style="font-size:10px;color:var(--muted)">${r.analystDate ? r.analystDate.slice(0,2)+"/"+r.analystDate.slice(2,4)+"/"+r.analystDate.slice(4,6) : '--'}</td>
       <td class="c"><span class="${bCls}">${bLabel}</span></td>
       <td class="c">${flipCell(getBFlip(r))}</td>
       <td class="c"><span class="${lCls}">${lLabel}</span></td>
@@ -2622,7 +2653,7 @@ function sp5Render() {
       </td>
       <td class="c"><span class="badge ${badgeCls}">${badgeLabel}</span></td>
       <td class="c">${analystCell(r.analystRating)}</td>
-      <td class="c" style="font-size:10px;color:var(--muted)">${r.analystDate ? r.analystDate.slice(2,4)+"/"+r.analystDate.slice(0,2)+"/"+r.analystDate.slice(4,6) : '--'}</td>
+      <td class="c" style="font-size:10px;color:var(--muted)">${r.analystDate ? r.analystDate.slice(0,2)+"/"+r.analystDate.slice(2,4)+"/"+r.analystDate.slice(4,6) : '--'}</td>
       <td class="c"><span class="${bCls}">${bLabel}</span></td>
       <td class="c">${flipCell(sp5GetBFlip(r))}</td>
       <td class="c"><span class="${lCls}">${lLabel}</span></td>
