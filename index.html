@@ -78,7 +78,7 @@
   thead th *{background:inherit;}
   .table-wrap{overflow:auto;height:calc(100vh - 146px);}
   table{width:100%;border-collapse:collapse;min-width:820px;}
-  thead th{font-family:var(--mono);font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--dim);padding:10px 5px;text-align:left;border-bottom:1px solid var(--border);cursor:pointer;user-select:none;white-space:nowrap;transition:color 0.15s;vertical-align:top;}
+  thead th{font-family:var(--mono);font-size:10px;letter-spacing:0.05em;text-transform:uppercase;color:var(--dim);padding:10px 3px;text-align:left;border-bottom:1px solid var(--border);cursor:pointer;user-select:none;white-space:nowrap;transition:color 0.15s;vertical-align:top;}
   thead th:hover{color:var(--muted);}
   thead th.r{text-align:center;}
   thead th.c{text-align:center;}
@@ -87,7 +87,7 @@
   thead th.l-col{text-align:center;color:var(--amber);border-bottom:2px solid var(--amber-border);}
   tbody tr{border-bottom:1px solid var(--border);transition:background 0.1s;}
   tbody tr:hover{background:var(--bg2);}
-  td{padding:10px 5px;vertical-align:middle;white-space:nowrap;}
+  td{padding:8px 3px;vertical-align:middle;white-space:nowrap;}
   td.r{text-align:right;}
   td.c{text-align:center;}
 
@@ -99,8 +99,8 @@
   .chg-neu{color:var(--muted);font-family:var(--mono);font-size:12px;}
 
   /* Tighten left numeric cols */
-  th.col-pre,th.col-price,th.col-chg,th.col-pct{padding:10px 3px;font-size:9px;letter-spacing:0;}
-  td.col-pre,td.col-price,td.col-chg,td.col-pct{padding:10px 3px;}
+  th.col-pre,th.col-price,th.col-chg,th.col-pct{padding:10px 2px;font-size:9px;letter-spacing:0;}
+  td.col-pre,td.col-price,td.col-chg,td.col-pct{padding:8px 2px;}
   td.col-pre .price-val,td.col-price .price-val{font-size:10px !important;font-weight:400 !important;}
   td.col-chg .chg-pos,td.col-chg .chg-neg,td.col-chg .chg-neu,
   td.col-pct .chg-pos,td.col-pct .chg-neg,td.col-pct .chg-neu{font-size:10px !important;}
@@ -121,13 +121,13 @@
   .l-blue{font-family:var(--mono);font-size:9px;font-weight:700;padding:2px 5px;border-radius:4px;border:1px solid var(--blue-border);background:var(--blue-bg);color:var(--blue);letter-spacing:0;display:inline-block;}
   .l-gray{font-family:var(--mono);font-size:9px;font-weight:700;padding:2px 5px;border-radius:4px;border:1px solid var(--border);background:var(--bg3);color:var(--muted);letter-spacing:0;display:inline-block;}
 
-  .w52-bar{display:flex;align-items:center;gap:6px;justify-content:flex-end;}
+  .w52-bar{display:flex;align-items:center;gap:3px;justify-content:flex-end;}
   .w52-track{width:38px;height:3px;background:var(--bg3);border-radius:2px;overflow:hidden;flex-shrink:0;}
   .w52-fill{height:100%;border-radius:2px;}
-  .w52-pct{font-family:var(--mono);font-size:9px;color:var(--muted);min-width:22px;}
-  .vol-text{font-family:var(--mono);font-size:11px;color:var(--dim);}
+  .w52-pct{font-family:var(--mono);font-size:9px;color:var(--muted);min-width:18px;}
+  .vol-text{font-family:var(--mono);font-size:9px;color:var(--dim);}
   .sig-text{font-size:11px;color:var(--muted);max-width:130px;overflow:hidden;text-overflow:ellipsis;}
-  .flip-time{display:block;font-family:var(--mono);font-size:11px;color:rgba(255,255,255,0.35);letter-spacing:0.04em;font-weight:400;}
+  .flip-time{display:block;font-family:var(--mono);font-size:9px;color:rgba(255,255,255,0.35);letter-spacing:0;font-weight:400;}
   .flip-time.new{color:var(--amber);font-weight:500;}
 
 
@@ -1057,8 +1057,8 @@ function render() {
 
     // Select flip date matching active timeframe (uses module-scope functions)
     const flipCell = (t) => t
-      ? `<span class="flip-time" style="font-size:11px;">${t}</span>`
-      : `<span style="color:var(--dim);font-family:var(--mono);font-size:11px;">--</span>`;
+      ? `<span class="flip-time">${t}</span>`
+      : `<span style="color:var(--dim);font-family:var(--mono);font-size:9px;">--</span>`;
 
     return `<tr>
       <td><div style="display:flex;align-items:center;gap:6px;"><span onclick="toggleFavorite('${r.sym}')" style="cursor:pointer;font-size:14px;color:${favorites.has(r.sym)?'#f59e0b':'var(--dim)'};flex-shrink:0;" title="Favorite">${favorites.has(r.sym)?'★':'☆'}</span><div><div class="ticker-sym"><a href="https://www.tradingview.com/chart/?symbol=NASDAQ:${r.sym}" target="_blank" rel="noopener" style="color:inherit;text-decoration:none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">${r.sym}</a></div><div class="ticker-name">${r.name}</div></div></div></td>
@@ -1075,7 +1075,7 @@ function render() {
         <button onclick="openAddToPortfolio('${r.sym}')" style="background:none;border:1px solid var(--muted);color:var(--muted);border-radius:3px;width:20px;height:20px;cursor:pointer;font-size:13px;line-height:1;padding:0;" title="Add to portfolio">+</button>
       </td>
       <td class="c" style="width:40px;font-size:9px;color:var(--muted);">${getPortfolioLabel(r.sym)}</td>
-      <td class="r" style="font-size:11px;color:var(--muted);">${r.mktCapB ? '$'+r.mktCapB.toFixed(0)+'B' : '--'}</td>
+      <td class="r" style="font-size:9px;color:var(--muted);">${r.mktCapB ? '$'+r.mktCapB.toFixed(0)+'B' : '--'}</td>
       <td class="r">
         <div class="w52-bar">
           <span class="w52-pct">${Math.round(pos52*100)}%</span>
@@ -1084,7 +1084,7 @@ function render() {
       </td>
       <td class="c"><span class="badge ${badgeCls}">${badgeLabel}</span></td>
       <td class="c">${analystCell(r.analystRating)}</td>
-      <td class="c" style="font-size:10px;color:var(--muted)">${r.analystDate ? r.analystDate.slice(0,2)+"/"+r.analystDate.slice(2,4)+"/"+r.analystDate.slice(4,6) : '--'}</td>
+      <td class="c" style="font-size:9px;color:var(--muted)">${r.analystDate ? r.analystDate.slice(0,2)+"/"+r.analystDate.slice(2,4)+"/"+r.analystDate.slice(4,6) : '--'}</td>
       <td class="c"><span class="${bCls}">${bLabel}</span></td>
       <td class="c">${flipCell(getBFlip(r))}</td>
       <td class="c"><span class="${lCls}">${lLabel}</span></td>
@@ -1387,7 +1387,7 @@ function cryptoRender() {
       <td><div style="display:flex;align-items:center;gap:6px;"><span onclick="toggleFavorite('${r.sym}')" style="cursor:pointer;font-size:14px;color:${favorites.has(r.sym)?'#f59e0b':'var(--dim)'};flex-shrink:0;" title="Favorite">${favorites.has(r.sym)?'★':'☆'}</span><div><div class="ticker-sym"><a href="https://www.tradingview.com/chart/?symbol=${r.sym}USDT" target="_blank" rel="noopener" style="color:inherit;text-decoration:none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">${r.sym}</a></div><div class="ticker-name">${r.name}</div></div></div></td>
       <td class="r"><span class="price-val">${priceFmt}</span></td>
       <td class="r"><span class="${pc}">${chgSign}${Number(chgPct).toFixed(2)}%</span></td>
-      <td class="r" style="font-size:11px;color:var(--muted);">${r.mktCapB ? '$'+r.mktCapB.toFixed(1)+'B' : '--'}</td>
+      <td class="r" style="font-size:9px;color:var(--muted);">${r.mktCapB ? '$'+r.mktCapB.toFixed(1)+'B' : '--'}</td>
       <td class="r">
         <div class="w52-bar">
           <span class="w52-pct">${Math.round(pos52*100)}%</span>
@@ -1670,7 +1670,7 @@ function omxRender() {
         <button onclick="openAddToPortfolio('${r.sym}')" style="background:none;border:1px solid var(--muted);color:var(--muted);border-radius:3px;width:20px;height:20px;cursor:pointer;font-size:13px;line-height:1;padding:0;" title="Add to portfolio">+</button>
       </td>
       <td class="c" style="width:40px;font-size:9px;color:var(--muted);">${getPortfolioLabel(r.sym)}</td>
-      <td class="r" style="font-size:11px;color:var(--muted);">${r.mktCapB ? '$'+r.mktCapB.toFixed(0)+'B' : '--'}</td>
+      <td class="r" style="font-size:9px;color:var(--muted);">${r.mktCapB ? '$'+r.mktCapB.toFixed(0)+'B' : '--'}</td>
       <td class="r">
         <div class="w52-bar">
           <span class="w52-pct">${pos52!==null?Math.round(pos52*100)+'%':'--'}</span>
@@ -1679,7 +1679,7 @@ function omxRender() {
       </td>
       <td class="c"><span class="trend-pill ${sentCls}">${sentLbl}</span></td>
       <td class="c">${analystCell(r.analystRating)}</td>
-      <td class="c" style="font-size:10px;color:var(--muted)">${r.analystDate ? r.analystDate.slice(0,2)+"/"+r.analystDate.slice(2,4)+"/"+r.analystDate.slice(4,6) : '--'}</td>
+      <td class="c" style="font-size:9px;color:var(--muted)">${r.analystDate ? r.analystDate.slice(0,2)+"/"+r.analystDate.slice(2,4)+"/"+r.analystDate.slice(4,6) : '--'}</td>
       <td class="c"><span class="${bCls}">${bLabel}</span></td>
       <td class="c">${flipCell(omxGetBFlip(r))}</td>
       <td class="c"><span class="${lCls}">${lLabel}</span></td>
@@ -2067,7 +2067,7 @@ function renderPortfolioTable() {
       <td class="c" style="width:40px;font-size:9px;color:var(--muted);">${getWatchlistLabel(r.sym)}</td>
       <td class="c" style="width:20px;"><button onclick="openAddToPortfolio('${r.sym}')" style="background:none;border:1px solid var(--muted);color:var(--muted);border-radius:3px;width:20px;height:20px;cursor:pointer;font-size:13px;line-height:1;padding:0;" title="Add to portfolio">+</button></td>
       <td class="c" style="width:40px;font-size:9px;color:var(--muted);">${getPortfolioLabel(r.sym)}</td>
-      <td class="r" style="font-size:11px;color:var(--muted);">${r.mktCapB ? '$'+r.mktCapB.toFixed(0)+'B' : '--'}</td>
+      <td class="r" style="font-size:9px;color:var(--muted);">${r.mktCapB ? '$'+r.mktCapB.toFixed(0)+'B' : '--'}</td>
       <td class="r">
         <div class="w52-bar">
           <span class="w52-pct">${Math.round(pos52*100)}%</span>
@@ -2076,7 +2076,7 @@ function renderPortfolioTable() {
       </td>
       <td class="c"><span class="badge ${sentCls==='chg-pos'?'badge-bull':sentCls==='chg-neg'?'badge-bear':'badge-neut'}">${sentLbl==='BULL'?' BULL':sentLbl==='BEAR'?' BEAR':' NEUT'}</span></td>
       <td class="c">${analystCell(r.analystRating)}</td>
-      <td class="c" style="font-size:10px;color:var(--muted)">${r.analystDate ? r.analystDate.slice(0,2)+"/"+r.analystDate.slice(2,4)+"/"+r.analystDate.slice(4,6) : '--'}</td>
+      <td class="c" style="font-size:9px;color:var(--muted)">${r.analystDate ? r.analystDate.slice(0,2)+"/"+r.analystDate.slice(2,4)+"/"+r.analystDate.slice(4,6) : '--'}</td>
       <td class="c"><span class="${bCls}">${bLabel}</span></td>
       <td class="c">${flipCell(getBFlip(r))}</td>
       <td class="c"><span class="${lCls}">${lLabel}</span></td>
@@ -2403,7 +2403,7 @@ function renderWatchlistTable() {
       <td class="c" style="width:40px;font-size:9px;color:var(--muted);">${getWatchlistLabel(r.sym)}</td>
       <td class="c" style="width:20px;"><button onclick="openAddToPortfolio('${r.sym}')" style="background:none;border:1px solid var(--muted);color:var(--muted);border-radius:3px;width:20px;height:20px;cursor:pointer;font-size:13px;line-height:1;padding:0;" title="Add to portfolio">+</button></td>
       <td class="c" style="width:40px;font-size:9px;color:var(--muted);">${getPortfolioLabel(r.sym)}</td>
-      <td class="r" style="font-size:11px;color:var(--muted);">${r.mktCapB ? '$'+r.mktCapB.toFixed(0)+'B' : '--'}</td>
+      <td class="r" style="font-size:9px;color:var(--muted);">${r.mktCapB ? '$'+r.mktCapB.toFixed(0)+'B' : '--'}</td>
       <td class="r">
         <div class="w52-bar">
           <span class="w52-pct">${Math.round(pos52*100)}%</span>
@@ -2412,7 +2412,7 @@ function renderWatchlistTable() {
       </td>
       <td class="c"><span class="badge ${sentCls==='chg-pos'?'badge-bull':sentCls==='chg-neg'?'badge-bear':'badge-neut'}">${sentLbl==='BULL'?' BULL':sentLbl==='BEAR'?' BEAR':' NEUT'}</span></td>
       <td class="c">${analystCell(r.analystRating)}</td>
-      <td class="c" style="font-size:10px;color:var(--muted)">${r.analystDate ? r.analystDate.slice(0,2)+"/"+r.analystDate.slice(2,4)+"/"+r.analystDate.slice(4,6) : '--'}</td>
+      <td class="c" style="font-size:9px;color:var(--muted)">${r.analystDate ? r.analystDate.slice(0,2)+"/"+r.analystDate.slice(2,4)+"/"+r.analystDate.slice(4,6) : '--'}</td>
       <td class="c"><span class="${bCls}">${bLabel}</span></td>
       <td class="c">${flipCell(getBFlip(r))}</td>
       <td class="c"><span class="${lCls}">${lLabel}</span></td>
@@ -2663,7 +2663,7 @@ function sp5Render() {
         <button onclick="openAddToPortfolio('${r.sym}')" style="background:none;border:1px solid var(--muted);color:var(--muted);border-radius:3px;width:20px;height:20px;cursor:pointer;font-size:13px;line-height:1;padding:0;" title="Add to portfolio">+</button>
       </td>
       <td class="c" style="width:40px;font-size:9px;color:var(--muted);">${getPortfolioLabel(r.sym)}</td>
-      <td class="r" style="font-size:11px;color:var(--muted);">${r.mktCapB ? '$'+r.mktCapB.toFixed(0)+'B' : '--'}</td>
+      <td class="r" style="font-size:9px;color:var(--muted);">${r.mktCapB ? '$'+r.mktCapB.toFixed(0)+'B' : '--'}</td>
       <td class="r">
         <div class="w52-bar">
           <span class="w52-pct">${Math.round(pos52*100)}%</span>
@@ -2672,7 +2672,7 @@ function sp5Render() {
       </td>
       <td class="c"><span class="badge ${badgeCls}">${badgeLabel}</span></td>
       <td class="c">${analystCell(r.analystRating)}</td>
-      <td class="c" style="font-size:10px;color:var(--muted)">${r.analystDate ? r.analystDate.slice(0,2)+"/"+r.analystDate.slice(2,4)+"/"+r.analystDate.slice(4,6) : '--'}</td>
+      <td class="c" style="font-size:9px;color:var(--muted)">${r.analystDate ? r.analystDate.slice(0,2)+"/"+r.analystDate.slice(2,4)+"/"+r.analystDate.slice(4,6) : '--'}</td>
       <td class="c"><span class="${bCls}">${bLabel}</span></td>
       <td class="c">${flipCell(sp5GetBFlip(r))}</td>
       <td class="c"><span class="${lCls}">${lLabel}</span></td>
