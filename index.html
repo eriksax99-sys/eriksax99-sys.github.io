@@ -77,7 +77,7 @@
   thead th{position:sticky;top:0;background:var(--bg);z-index:2;box-shadow:0 1px 0 var(--border);}
   thead th *{background:inherit;}
   .table-wrap{overflow:auto;height:calc(100vh - 146px);}
-  table{width:100%;border-collapse:collapse;min-width:900px;}
+  table{width:100%;border-collapse:collapse;min-width:820px;}
   thead th{font-family:var(--mono);font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--dim);padding:10px 5px;text-align:left;border-bottom:1px solid var(--border);cursor:pointer;user-select:none;white-space:nowrap;transition:color 0.15s;vertical-align:top;}
   thead th:hover{color:var(--muted);}
   thead th.r{text-align:center;}
@@ -88,6 +88,12 @@
   tbody tr{border-bottom:1px solid var(--border);transition:background 0.1s;}
   tbody tr:hover{background:var(--bg2);}
   td{padding:10px 5px;vertical-align:middle;white-space:nowrap;}
+  /* Tighten numeric columns to match right-side density */
+  .col-pre{width:60px;max-width:60px;}
+  .col-price{width:65px;max-width:65px;}
+  .col-chg{width:50px;max-width:50px;}
+  .col-pct{width:55px;max-width:55px;}
+  td.col-pre, td.col-price, td.col-chg, td.col-pct{overflow:hidden;text-overflow:ellipsis;}
   td.r{text-align:right;}
   td.c{text-align:center;}
 
@@ -248,11 +254,11 @@
       <thead>
         <tr>
           <th style="cursor:pointer;" onclick="setSort(curSort==='az'?'az_r':'az')">Ticker <span id="nqStockCount" style="font-weight:normal;opacity:0.7;"></span></th>
-          <th class="r has-tip" style="cursor:pointer;" data-tip="Pre-market price" onclick="setSort(curSort==='preprice_d'?'preprice_a':'preprice_d')">Pre Price<br><span style="font-size:9px;font-weight:normal;opacity:0.6">CTN</span></th>
-          <th class="r has-tip" style="cursor:pointer;" data-tip="Pre-market % change vs yesterday's close." onclick="setSort(curSort==='prepct_d'?'prepct_a':'prepct_d')">% Pre Price<br><span style="font-size:9px;font-weight:normal;opacity:0.6">CTN</span></th>
-          <th class="r" style="cursor:pointer;" onclick="setSort(curSort==='price_d'?'price_a':'price_d')" title="Sort by Live Price">Live Price</th>
-          <th class="r" style="cursor:pointer;" onclick="setSort(curSort==='chgabs_d'?'chgabs_a':'chgabs_d')" title="Sort by absolute change">Chg<br><span style="font-size:9px;font-weight:normal;opacity:0.6">CTC</span></th>
-          <th class="r" style="cursor:pointer;" onclick="setSort(curSort==='chg_d'?'chg_a':'chg_d')" title="Sort by % change">% Chg<br><span style="font-size:9px;font-weight:normal;opacity:0.6">CTC</span></th>
+          <th class="r has-tip col-pre" style="cursor:pointer;" data-tip="Pre-market price" onclick="setSort(curSort==='preprice_d'?'preprice_a':'preprice_d')">Pre<br><span style="font-size:9px;font-weight:normal;opacity:0.6">CTN</span></th>
+          <th class="r has-tip col-pre" style="cursor:pointer;" data-tip="Pre-market % change vs yesterday's close." onclick="setSort(curSort==='prepct_d'?'prepct_a':'prepct_d')">%Pre<br><span style="font-size:9px;font-weight:normal;opacity:0.6">CTN</span></th>
+          <th class="r col-price" style="cursor:pointer;" onclick="setSort(curSort==='price_d'?'price_a':'price_d')" title="Sort by Live Price">Price</th>
+          <th class="r col-chg" style="cursor:pointer;" onclick="setSort(curSort==='chgabs_d'?'chgabs_a':'chgabs_d')" title="Sort by absolute change">Chg<br><span style="font-size:9px;font-weight:normal;opacity:0.6">CTC</span></th>
+          <th class="r col-pct" style="cursor:pointer;" onclick="setSort(curSort==='chg_d'?'chg_a':'chg_d')" title="Sort by % change">%Chg<br><span style="font-size:9px;font-weight:normal;opacity:0.6">CTC</span></th>
           <th class="c" style="width:28px;" title="Add to watchlist">W+</th>
           <th class="c" style="width:70px;font-size:10px;cursor:pointer;" onclick="setSort(curSort==='wl_d'?'wl_a':'wl_d')">In Watch</th>
           <th class="c" style="width:28px;" title="Add to portfolio">P+</th>
@@ -334,11 +340,11 @@
       <thead>
         <tr>
           <th style="cursor:pointer;" onclick="setSP5Sort(sp5CurSort==='az'?'az_r':'az')">Ticker <span id="sp5StockCount" style="font-weight:normal;opacity:0.7;"></span></th>
-          <th class="r has-tip" style="cursor:pointer;" data-tip="Pre-market price" onclick="setSP5Sort(sp5CurSort==='preprice_d'?'preprice_a':'preprice_d')">Pre Price<br><span style="font-size:9px;font-weight:normal;opacity:0.6">CTN</span></th>
-          <th class="r has-tip" style="cursor:pointer;" data-tip="Pre-market % change vs yesterday's close." onclick="setSP5Sort(sp5CurSort==='prepct_d'?'prepct_a':'prepct_d')">% Pre Price<br><span style="font-size:9px;font-weight:normal;opacity:0.6">CTN</span></th>
-          <th class="r" style="cursor:pointer;" onclick="setSP5Sort(sp5CurSort==='price_d'?'price_a':'price_d')" title="Sort by Live Price">Live Price</th>
-          <th class="r" style="cursor:pointer;" onclick="setSP5Sort(sp5CurSort==='chgabs_d'?'chgabs_a':'chgabs_d')" title="Sort by absolute change">Chg<br><span style="font-size:9px;font-weight:normal;opacity:0.6">CTC</span></th>
-          <th class="r" style="cursor:pointer;" onclick="setSP5Sort(sp5CurSort==='chg_d'?'chg_a':'chg_d')" title="Sort by % change">% Chg<br><span style="font-size:9px;font-weight:normal;opacity:0.6">CTC</span></th>
+          <th class="r has-tip col-pre" style="cursor:pointer;" data-tip="Pre-market price" onclick="setSP5Sort(sp5CurSort==='preprice_d'?'preprice_a':'preprice_d')">Pre<br><span style="font-size:9px;font-weight:normal;opacity:0.6">CTN</span></th>
+          <th class="r has-tip col-pre" style="cursor:pointer;" data-tip="Pre-market % change vs yesterday's close." onclick="setSP5Sort(sp5CurSort==='prepct_d'?'prepct_a':'prepct_d')">%Pre<br><span style="font-size:9px;font-weight:normal;opacity:0.6">CTN</span></th>
+          <th class="r col-price" style="cursor:pointer;" onclick="setSP5Sort(sp5CurSort==='price_d'?'price_a':'price_d')" title="Sort by Live Price">Price</th>
+          <th class="r col-chg" style="cursor:pointer;" onclick="setSP5Sort(sp5CurSort==='chgabs_d'?'chgabs_a':'chgabs_d')" title="Sort by absolute change">Chg<br><span style="font-size:9px;font-weight:normal;opacity:0.6">CTC</span></th>
+          <th class="r col-pct" style="cursor:pointer;" onclick="setSP5Sort(sp5CurSort==='chg_d'?'chg_a':'chg_d')" title="Sort by % change">%Chg<br><span style="font-size:9px;font-weight:normal;opacity:0.6">CTC</span></th>
           <th class="c" style="width:28px;" title="Add to watchlist">W+</th>
           <th class="c" style="width:70px;font-size:10px;cursor:pointer;" onclick="setSP5Sort(sp5CurSort==='wl_d'?'wl_a':'wl_d')">In Watch</th>
           <th class="c" style="width:28px;" title="Add to portfolio">P+</th>
@@ -497,11 +503,11 @@
         <thead>
           <tr>
             <th style="cursor:pointer;" onclick="setOMXSort(omxCurSort==='az'?'az_r':'az')">Ticker <span id="omxStockCount" style="font-weight:normal;opacity:0.7;"></span></th>
-            <th class="r has-tip" style="cursor:pointer;" data-tip="Pre-market price" onclick="setOMXSort(omxCurSort==='preprice_d'?'preprice_a':'preprice_d')">Pre Price<br><span style="font-size:9px;font-weight:normal;opacity:0.6">CTN</span></th>
-            <th class="r has-tip" style="cursor:pointer;" data-tip="Pre-market % change vs yesterday's close." onclick="setOMXSort(omxCurSort==='prepct_d'?'prepct_a':'prepct_d')">% Pre Price<br><span style="font-size:9px;font-weight:normal;opacity:0.6">CTN</span></th>
-            <th class="r" style="cursor:pointer;" onclick="setOMXSort(omxCurSort==='price_d'?'price_a':'price_d')" title="Sort by Live Price">Live Price</th>
-            <th class="r" style="cursor:pointer;" onclick="setOMXSort(omxCurSort==='chgabs_d'?'chgabs_a':'chgabs_d')" title="Sort by absolute change">Chg<br><span style="font-size:9px;font-weight:normal;opacity:0.6">CTC</span></th>
-            <th class="r" style="cursor:pointer;" onclick="setOMXSort(omxCurSort==='chg_d'?'chg_a':'chg_d')" title="Sort by % change">% Chg<br><span style="font-size:9px;font-weight:normal;opacity:0.6">CTC</span></th>
+            <th class="r has-tip col-pre" style="cursor:pointer;" data-tip="Pre-market price" onclick="setOMXSort(omxCurSort==='preprice_d'?'preprice_a':'preprice_d')">Pre<br><span style="font-size:9px;font-weight:normal;opacity:0.6">CTN</span></th>
+            <th class="r has-tip col-pre" style="cursor:pointer;" data-tip="Pre-market % change vs yesterday's close." onclick="setOMXSort(omxCurSort==='prepct_d'?'prepct_a':'prepct_d')">%Pre<br><span style="font-size:9px;font-weight:normal;opacity:0.6">CTN</span></th>
+            <th class="r col-price" style="cursor:pointer;" onclick="setOMXSort(omxCurSort==='price_d'?'price_a':'price_d')" title="Sort by Live Price">Price</th>
+            <th class="r col-chg" style="cursor:pointer;" onclick="setOMXSort(omxCurSort==='chgabs_d'?'chgabs_a':'chgabs_d')" title="Sort by absolute change">Chg<br><span style="font-size:9px;font-weight:normal;opacity:0.6">CTC</span></th>
+            <th class="r col-pct" style="cursor:pointer;" onclick="setOMXSort(omxCurSort==='chg_d'?'chg_a':'chg_d')" title="Sort by % change">%Chg<br><span style="font-size:9px;font-weight:normal;opacity:0.6">CTC</span></th>
             <th class="c" style="width:28px;" title="Add to watchlist">W+</th>
             <th class="c" style="width:70px;font-size:10px;cursor:pointer;" onclick="setOMXSort(omxCurSort==='wl_d'?'wl_a':'wl_d')">In Watch</th>
             <th class="c" style="width:28px;" title="Add to portfolio">P+</th>
@@ -570,11 +576,11 @@
         <thead>
           <tr>
             <th>Ticker</th>
-            <th class="r">Pre Price</th>
-            <th class="r">% Pre</th>
-            <th class="r">Price</th>
-            <th class="r">Chg</th>
-            <th class="r">% Chg</th>
+            <th class="r col-pre">Pre</th>
+            <th class="r col-pre">%Pre</th>
+            <th class="r col-price">Price</th>
+            <th class="r col-chg">Chg</th>
+            <th class="r col-pct">%Chg</th>
             <th class="c" style="width:28px;">W+</th>
             <th class="c" style="width:70px;">In Watch</th>
             <th class="c" style="width:28px;">P+</th>
@@ -649,11 +655,11 @@
         <thead>
           <tr>
             <th style="cursor:pointer;" onclick="setPortSort(portSort==='az'?'az_r':'az')">Ticker</th>
-            <th class="r">Pre Price</th>
-            <th class="r">% Pre</th>
-            <th class="r" style="cursor:pointer;" onclick="setPortSort(portSort==='price_d'?'price_a':'price_d')">Price</th>
-            <th class="r">Chg</th>
-            <th class="r" style="cursor:pointer;" onclick="setPortSort(portSort==='chg_d'?'chg_a':'chg_d')">% Chg</th>
+            <th class="r col-pre">Pre</th>
+            <th class="r col-pre">%Pre</th>
+            <th class="r col-price" style="cursor:pointer;" onclick="setPortSort(portSort==='price_d'?'price_a':'price_d')">Price</th>
+            <th class="r col-chg">Chg</th>
+            <th class="r col-pct" style="cursor:pointer;" onclick="setPortSort(portSort==='chg_d'?'chg_a':'chg_d')">%Chg</th>
             <th class="c" style="width:28px;">W+</th>
             <th class="c" style="width:70px;">In Watch</th>
             <th class="c" style="width:28px;">P+</th>
@@ -1055,11 +1061,11 @@ function render() {
 
     return `<tr>
       <td><div style="display:flex;align-items:center;gap:6px;"><span onclick="toggleFavorite('${r.sym}')" style="cursor:pointer;font-size:14px;color:${favorites.has(r.sym)?'#f59e0b':'var(--dim)'};flex-shrink:0;" title="Favorite">${favorites.has(r.sym)?'★':'☆'}</span><div><div class="ticker-sym"><a href="https://www.tradingview.com/chart/?symbol=NASDAQ:${r.sym}" target="_blank" rel="noopener" style="color:inherit;text-decoration:none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">${r.sym}</a></div><div class="ticker-name">${r.name}</div></div></div></td>
-      <td class="r"><span class="price-val">${r.preMktPrice != null ? (r.preMktPrice >= 1000 ? '$'+r.preMktPrice.toLocaleString('en-US',{maximumFractionDigits:0}) : '$'+Number(r.preMktPrice).toFixed(2)) : '<span style="color:var(--dim)">--</span>'}</span></td>
-      <td class="r">${r.preChgPct != null ? '<span class="'+(r.preChgPct>0?'chg-pos':r.preChgPct<0?'chg-neg':'chg-neu')+'">'+(r.preChgPct>=0?'+':'')+Number(r.preChgPct).toFixed(2)+'%</span>' : '<span style="color:var(--dim)">--</span>'}</td>
-      <td class="r"><span class="price-val">${priceFmt}</span></td>
-      <td class="r"><span class="${pc}">${chgSign}${Number(tfChg).toFixed(2)}</span></td>
-      <td class="r"><span class="${pc}">${pctSign}${Number(tfChgPct).toFixed(2)}%</span></td>
+      <td class="r col-pre"><span class="price-val">${r.preMktPrice != null ? (r.preMktPrice >= 1000 ? '$'+r.preMktPrice.toLocaleString('en-US',{maximumFractionDigits:0}) : '$'+Number(r.preMktPrice).toFixed(2)) : '<span style="color:var(--dim)">--</span>'}</span></td>
+      <td class="r col-pre">${r.preChgPct != null ? '<span class="'+(r.preChgPct>0?'chg-pos':r.preChgPct<0?'chg-neg':'chg-neu')+'">'+(r.preChgPct>=0?'+':'')+Number(r.preChgPct).toFixed(2)+'%</span>' : '<span style="color:var(--dim)">--</span>'}</td>
+      <td class="r col-price"><span class="price-val">${priceFmt}</span></td>
+      <td class="r col-chg"><span class="${pc}">${chgSign}${Number(tfChg).toFixed(2)}</span></td>
+      <td class="r col-pct"><span class="${pc}">${pctSign}${Number(tfChgPct).toFixed(2)}%</span></td>
       <td class="c" style="width:28px;">
         <button onclick="openAddToWatchlist('${r.sym}')" style="background:none;border:1px solid var(--muted);color:var(--muted);border-radius:3px;width:20px;height:20px;cursor:pointer;font-size:13px;line-height:1;padding:0;" title="Add to watchlist">+</button>
       </td>
@@ -1650,11 +1656,11 @@ function omxRender() {
     const barColor = pos52!==null?(pos52>0.7?'var(--green)':pos52<0.3?'var(--red)':'var(--accent)'):'var(--dim)';
     return `<tr>
       <td><div style="display:flex;align-items:center;gap:6px;"><span onclick="toggleFavorite('${r.sym}')" style="cursor:pointer;font-size:14px;color:${favorites.has(r.sym)?'#f59e0b':'var(--dim)'};flex-shrink:0;" title="Favorite">${favorites.has(r.sym)?'★':'☆'}</span><div><div class="ticker-sym"><a href="https://www.tradingview.com/chart/?symbol=OMXSTO:${r.sym.replace('.ST','').replace('-','_')}" target="_blank" rel="noopener" style="color:inherit;text-decoration:none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">${r.sym.replace('.ST','')}</a></div><div class="ticker-name">${r.name}</div></div></div></td>
-      <td class="r"><span class="price-val">${r.preMktPrice != null ? (r.preMktPrice >= 1000 ? '$'+r.preMktPrice.toLocaleString('en-US',{maximumFractionDigits:0}) : '$'+Number(r.preMktPrice).toFixed(2)) : '<span style="color:var(--dim)">--</span>'}</span></td>
-      <td class="r">${r.preChgPct != null ? '<span class="'+(r.preChgPct>0?'chg-pos':r.preChgPct<0?'chg-neg':'chg-neu')+'">'+(r.preChgPct>=0?'+':'')+Number(r.preChgPct).toFixed(2)+'%</span>' : '<span style="color:var(--dim)">--</span>'}</td>
-      <td class="r"><span class="price-val">${priceFmt}</span></td>
-      <td class="r"><span class="${pc}">${chgSign}${Number(chg).toFixed(2)}</span></td>
-      <td class="r"><span class="${pc}">${chgSign}${Number(chgPct).toFixed(2)}%</span></td>
+      <td class="r col-pre"><span class="price-val">${r.preMktPrice != null ? (r.preMktPrice >= 1000 ? '$'+r.preMktPrice.toLocaleString('en-US',{maximumFractionDigits:0}) : '$'+Number(r.preMktPrice).toFixed(2)) : '<span style="color:var(--dim)">--</span>'}</span></td>
+      <td class="r col-pre">${r.preChgPct != null ? '<span class="'+(r.preChgPct>0?'chg-pos':r.preChgPct<0?'chg-neg':'chg-neu')+'">'+(r.preChgPct>=0?'+':'')+Number(r.preChgPct).toFixed(2)+'%</span>' : '<span style="color:var(--dim)">--</span>'}</td>
+      <td class="r col-price"><span class="price-val">${priceFmt}</span></td>
+      <td class="r col-chg"><span class="${pc}">${chgSign}${Number(chg).toFixed(2)}</span></td>
+      <td class="r col-pct"><span class="${pc}">${chgSign}${Number(chgPct).toFixed(2)}%</span></td>
       <td class="c" style="width:28px;">
         <button onclick="openAddToWatchlist('${r.sym}')" style="background:none;border:1px solid var(--muted);color:var(--muted);border-radius:3px;width:20px;height:20px;cursor:pointer;font-size:13px;line-height:1;padding:0;" title="Add to watchlist">+</button>
       </td>
@@ -2051,11 +2057,11 @@ function renderPortfolioTable() {
     const volFmtP = v => !v?'--':v>=1e9?(v/1e9).toFixed(1)+'B':v>=1e6?(v/1e6).toFixed(1)+'M':(v/1e3).toFixed(0)+'K';
     return `<tr>
       <td><div style="display:flex;align-items:center;gap:6px;"><span onclick="toggleFavorite('${r.sym}')" style="cursor:pointer;font-size:14px;color:${favorites.has(r.sym)?'#f59e0b':'var(--dim)'};flex-shrink:0;" title="Favorite">${favorites.has(r.sym)?'★':'☆'}</span><div><div class="ticker-sym"><a href="https://www.tradingview.com/chart/?symbol=NASDAQ:${r.sym}" target="_blank" rel="noopener" style="color:inherit;text-decoration:none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">${r.sym}</a></div><div class="ticker-name">${r.name}</div></div></div></td>
-      <td class="r"><span class="price-val">${r.preMktPrice != null ? (r.preMktPrice >= 1000 ? '$'+r.preMktPrice.toLocaleString('en-US',{maximumFractionDigits:0}) : '$'+Number(r.preMktPrice).toFixed(2)) : '<span style="color:var(--dim)">--</span>'}</span></td>
-      <td class="r">${r.preChgPct != null ? '<span class="'+(r.preChgPct>0?'chg-pos':r.preChgPct<0?'chg-neg':'chg-neu')+'">'+(r.preChgPct>=0?'+':'')+Number(r.preChgPct).toFixed(2)+'%</span>' : '<span style="color:var(--dim)">--</span>'}</td>
-      <td class="r"><span class="price-val">${priceFmt}</span></td>
-      <td class="r"><span class="${pc}">${chgSign}${Number(tfChg).toFixed(2)}</span></td>
-      <td class="r"><span class="${pc}">${chgSign}${Number(tfChgPct).toFixed(2)}%</span></td>
+      <td class="r col-pre"><span class="price-val">${r.preMktPrice != null ? (r.preMktPrice >= 1000 ? '$'+r.preMktPrice.toLocaleString('en-US',{maximumFractionDigits:0}) : '$'+Number(r.preMktPrice).toFixed(2)) : '<span style="color:var(--dim)">--</span>'}</span></td>
+      <td class="r col-pre">${r.preChgPct != null ? '<span class="'+(r.preChgPct>0?'chg-pos':r.preChgPct<0?'chg-neg':'chg-neu')+'">'+(r.preChgPct>=0?'+':'')+Number(r.preChgPct).toFixed(2)+'%</span>' : '<span style="color:var(--dim)">--</span>'}</td>
+      <td class="r col-price"><span class="price-val">${priceFmt}</span></td>
+      <td class="r col-chg"><span class="${pc}">${chgSign}${Number(tfChg).toFixed(2)}</span></td>
+      <td class="r col-pct"><span class="${pc}">${chgSign}${Number(tfChgPct).toFixed(2)}%</span></td>
       <td class="c" style="width:28px;"><button onclick="openAddToWatchlist('${r.sym}')" style="background:none;border:1px solid var(--muted);color:var(--muted);border-radius:3px;width:20px;height:20px;cursor:pointer;font-size:13px;line-height:1;padding:0;" title="Add to watchlist">+</button></td>
       <td class="c" style="width:70px;font-size:10px;color:var(--muted);">${getWatchlistLabel(r.sym)}</td>
       <td class="c" style="width:28px;"><button onclick="openAddToPortfolio('${r.sym}')" style="background:none;border:1px solid var(--muted);color:var(--muted);border-radius:3px;width:20px;height:20px;cursor:pointer;font-size:13px;line-height:1;padding:0;" title="Add to portfolio">+</button></td>
@@ -2387,11 +2393,11 @@ function renderWatchlistTable() {
     const volFmtWL = v => !v?'--':v>=1e9?(v/1e9).toFixed(1)+'B':v>=1e6?(v/1e6).toFixed(1)+'M':(v/1e3).toFixed(0)+'K';
     return `<tr>
       <td><div style="display:flex;align-items:center;gap:6px;"><span onclick="toggleFavorite('${r.sym}')" style="cursor:pointer;font-size:14px;color:${favorites.has(r.sym)?'#f59e0b':'var(--dim)'};flex-shrink:0;" title="Favorite">${favorites.has(r.sym)?'★':'☆'}</span><div><div class="ticker-sym"><a href="https://www.tradingview.com/chart/?symbol=NASDAQ:${r.sym}" target="_blank" rel="noopener" style="color:inherit;text-decoration:none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">${r.sym}</a></div><div class="ticker-name">${r.name}</div></div></div></td>
-      <td class="r"><span class="price-val">${r.preMktPrice != null ? (r.preMktPrice >= 1000 ? '$'+r.preMktPrice.toLocaleString('en-US',{maximumFractionDigits:0}) : '$'+Number(r.preMktPrice).toFixed(2)) : '<span style="color:var(--dim)">--</span>'}</span></td>
-      <td class="r">${r.preChgPct != null ? '<span class="'+(r.preChgPct>0?'chg-pos':r.preChgPct<0?'chg-neg':'chg-neu')+'">'+(r.preChgPct>=0?'+':'')+Number(r.preChgPct).toFixed(2)+'%</span>' : '<span style="color:var(--dim)">--</span>'}</td>
-      <td class="r"><span class="price-val">${priceFmt}</span></td>
-      <td class="r"><span class="${pc}">${chgSign}${Number(tfChg).toFixed(2)}</span></td>
-      <td class="r"><span class="${pc}">${chgSign}${Number(tfChgPct).toFixed(2)}%</span></td>
+      <td class="r col-pre"><span class="price-val">${r.preMktPrice != null ? (r.preMktPrice >= 1000 ? '$'+r.preMktPrice.toLocaleString('en-US',{maximumFractionDigits:0}) : '$'+Number(r.preMktPrice).toFixed(2)) : '<span style="color:var(--dim)">--</span>'}</span></td>
+      <td class="r col-pre">${r.preChgPct != null ? '<span class="'+(r.preChgPct>0?'chg-pos':r.preChgPct<0?'chg-neg':'chg-neu')+'">'+(r.preChgPct>=0?'+':'')+Number(r.preChgPct).toFixed(2)+'%</span>' : '<span style="color:var(--dim)">--</span>'}</td>
+      <td class="r col-price"><span class="price-val">${priceFmt}</span></td>
+      <td class="r col-chg"><span class="${pc}">${chgSign}${Number(tfChg).toFixed(2)}</span></td>
+      <td class="r col-pct"><span class="${pc}">${chgSign}${Number(tfChgPct).toFixed(2)}%</span></td>
       <td class="c" style="width:28px;"><button onclick="openAddToWatchlist('${r.sym}')" style="background:none;border:1px solid var(--muted);color:var(--muted);border-radius:3px;width:20px;height:20px;cursor:pointer;font-size:13px;line-height:1;padding:0;" title="Add to watchlist">+</button></td>
       <td class="c" style="width:70px;font-size:10px;color:var(--muted);">${getWatchlistLabel(r.sym)}</td>
       <td class="c" style="width:28px;"><button onclick="openAddToPortfolio('${r.sym}')" style="background:none;border:1px solid var(--muted);color:var(--muted);border-radius:3px;width:20px;height:20px;cursor:pointer;font-size:13px;line-height:1;padding:0;" title="Add to portfolio">+</button></td>
@@ -2643,11 +2649,11 @@ function sp5Render() {
     const fmtVol  = v => { if(!v) return '--'; if(v>=1e9) return (v/1e9).toFixed(1)+'B'; if(v>=1e6) return (v/1e6).toFixed(1)+'M'; if(v>=1e3) return (v/1e3).toFixed(1)+'K'; return v.toFixed(0); };
     return `<tr>
       <td><div style="display:flex;align-items:center;gap:6px;"><span onclick="toggleFavorite('${r.sym}')" style="cursor:pointer;font-size:14px;color:${favorites.has(r.sym)?'#f59e0b':'var(--dim)'};flex-shrink:0;" title="Favorite">${favorites.has(r.sym)?'★':'☆'}</span><div><div class="ticker-sym"><a href="https://www.tradingview.com/chart/?symbol=${r.sym}" target="_blank" rel="noopener" style="color:inherit;text-decoration:none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">${r.sym}</a></div><div class="ticker-name">${r.name}</div></div></div></td>
-      <td class="r"><span class="price-val">${r.preMktPrice != null ? (r.preMktPrice >= 1000 ? '$'+r.preMktPrice.toLocaleString('en-US',{maximumFractionDigits:0}) : '$'+Number(r.preMktPrice).toFixed(2)) : '<span style="color:var(--dim)">--</span>'}</span></td>
-      <td class="r">${r.preChgPct != null ? '<span class="'+(r.preChgPct>0?'chg-pos':r.preChgPct<0?'chg-neg':'chg-neu')+'">'+(r.preChgPct>=0?'+':'')+Number(r.preChgPct).toFixed(2)+'%</span>' : '<span style="color:var(--dim)">--</span>'}</td>
-      <td class="r"><span class="price-val">${priceFmt}</span></td>
-      <td class="r"><span class="${pc}">${chgSign}${Number(tfChg).toFixed(2)}</span></td>
-      <td class="r"><span class="${pc}">${pctSign}${Number(tfChgPct).toFixed(2)}%</span></td>
+      <td class="r col-pre"><span class="price-val">${r.preMktPrice != null ? (r.preMktPrice >= 1000 ? '$'+r.preMktPrice.toLocaleString('en-US',{maximumFractionDigits:0}) : '$'+Number(r.preMktPrice).toFixed(2)) : '<span style="color:var(--dim)">--</span>'}</span></td>
+      <td class="r col-pre">${r.preChgPct != null ? '<span class="'+(r.preChgPct>0?'chg-pos':r.preChgPct<0?'chg-neg':'chg-neu')+'">'+(r.preChgPct>=0?'+':'')+Number(r.preChgPct).toFixed(2)+'%</span>' : '<span style="color:var(--dim)">--</span>'}</td>
+      <td class="r col-price"><span class="price-val">${priceFmt}</span></td>
+      <td class="r col-chg"><span class="${pc}">${chgSign}${Number(tfChg).toFixed(2)}</span></td>
+      <td class="r col-pct"><span class="${pc}">${pctSign}${Number(tfChgPct).toFixed(2)}%</span></td>
       <td class="c" style="width:28px;">
         <button onclick="openAddToWatchlist('${r.sym}')" style="background:none;border:1px solid var(--muted);color:var(--muted);border-radius:3px;width:20px;height:20px;cursor:pointer;font-size:13px;line-height:1;padding:0;" title="Add to watchlist">+</button>
       </td>
@@ -2919,13 +2925,4 @@ function statsRetry(procKey, procName, btn) {
   <div id="createPortfolioModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:1000;align-items:center;justify-content:center;">
     <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:24px;min-width:280px;max-width:360px;">
       <div style="font-size:14px;font-weight:600;margin-bottom:16px;">Create New Portfolio</div>
-      <input id="portfolioNameInput" type="text" value="Portfolio 1" style="width:100%;background:var(--bg3);color:var(--fg);border:1px solid var(--border);border-radius:4px;padding:8px;font-size:13px;margin-bottom:12px;box-sizing:border-box;" />
-      <div style="display:flex;gap:8px;justify-content:flex-end;">
-        <button onclick="closeCreateModal()" style="background:none;border:1px solid var(--border);color:var(--fg);border-radius:4px;padding:6px 16px;cursor:pointer;font-size:12px;">Cancel</button>
-        <button onclick="confirmCreatePortfolio()" style="background:var(--accent);color:#000;border:none;border-radius:4px;padding:6px 16px;cursor:pointer;font-size:12px;font-weight:600;">Create</button>
-      </div>
-    </div>
-  </div>
-
-</body>
-</html>
+      <input id="portfolioNameInput" type="text" value="Portfolio 1" style="width:100%;background:var(--bg3);c
