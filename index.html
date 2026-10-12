@@ -92,7 +92,7 @@
   td.c{text-align:center;}
 
   .ticker-sym{font-family:var(--mono);font-weight:600;font-size:13px;color:var(--text);}
-  .ticker-name{font-size:11px;color:var(--muted);margin-top:1px;max-width:100px;overflow:hidden;text-overflow:ellipsis;}
+  .ticker-name{font-size:10px;color:var(--muted);margin-top:1px;max-width:70px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   .price-val{font-family:var(--mono);font-size:13px;font-weight:500;}
   .chg-pos{color:var(--green);font-family:var(--mono);font-size:12px;}
   .chg-neg{color:var(--red);font-family:var(--mono);font-size:12px;}
@@ -106,25 +106,25 @@
   td.col-pct .chg-pos,td.col-pct .chg-neg,td.col-pct .chg-neu{font-size:10px !important;}
 
   /* Main sentiment badge */
-  .badge{display:inline-flex;align-items:center;gap:4px;font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;padding:3px 8px;border-radius:4px;border:1px solid;}
+  .badge{display:inline-flex;align-items:center;gap:4px;font-family:var(--mono);font-size:9px;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;padding:2px 5px;border-radius:4px;border:1px solid;}
   .badge-bull{background:var(--green-bg);border-color:var(--green-border);color:var(--green);}
   .badge-bear{background:var(--red-bg);border-color:var(--red-border);color:var(--red);}
   .badge-neut{background:var(--bg3);border-color:var(--border);color:var(--muted);}
 
   /* B column — momentum trend signal (price vs SMMA20) */
-  .b-bull{font-family:var(--mono);font-size:10px;font-weight:700;padding:3px 8px;border-radius:4px;border:1px solid var(--green-border);background:var(--green-bg);color:var(--green);letter-spacing:0.05em;display:inline-block;}
-  .b-bear{font-family:var(--mono);font-size:10px;font-weight:700;padding:3px 8px;border-radius:4px;border:1px solid var(--red-border);background:var(--red-bg);color:var(--red);letter-spacing:0.05em;display:inline-block;}
-  .b-neut{font-family:var(--mono);font-size:10px;font-weight:700;padding:3px 8px;border-radius:4px;border:1px solid var(--border);background:var(--bg3);color:var(--muted);letter-spacing:0.05em;display:inline-block;}
+  .b-bull{font-family:var(--mono);font-size:9px;font-weight:700;padding:2px 5px;border-radius:4px;border:1px solid var(--green-border);background:var(--green-bg);color:var(--green);letter-spacing:0;display:inline-block;}
+  .b-bear{font-family:var(--mono);font-size:9px;font-weight:700;padding:2px 5px;border-radius:4px;border:1px solid var(--red-border);background:var(--red-bg);color:var(--red);letter-spacing:0;display:inline-block;}
+  .b-neut{font-family:var(--mono);font-size:9px;font-weight:700;padding:2px 5px;border-radius:4px;border:1px solid var(--border);background:var(--bg3);color:var(--muted);letter-spacing:0;display:inline-block;}
 
   /* L column — dual SMMA trend signal (SMMA15 vs SMMA29) */
-  .l-gold{font-family:var(--mono);font-size:10px;font-weight:700;padding:3px 8px;border-radius:4px;border:1px solid var(--amber-border);background:var(--amber-bg);color:var(--amber);letter-spacing:0.05em;display:inline-block;}
-  .l-blue{font-family:var(--mono);font-size:10px;font-weight:700;padding:3px 8px;border-radius:4px;border:1px solid var(--blue-border);background:var(--blue-bg);color:var(--blue);letter-spacing:0.05em;display:inline-block;}
-  .l-gray{font-family:var(--mono);font-size:10px;font-weight:700;padding:3px 8px;border-radius:4px;border:1px solid var(--border);background:var(--bg3);color:var(--muted);letter-spacing:0.05em;display:inline-block;}
+  .l-gold{font-family:var(--mono);font-size:9px;font-weight:700;padding:2px 5px;border-radius:4px;border:1px solid var(--amber-border);background:var(--amber-bg);color:var(--amber);letter-spacing:0;display:inline-block;}
+  .l-blue{font-family:var(--mono);font-size:9px;font-weight:700;padding:2px 5px;border-radius:4px;border:1px solid var(--blue-border);background:var(--blue-bg);color:var(--blue);letter-spacing:0;display:inline-block;}
+  .l-gray{font-family:var(--mono);font-size:9px;font-weight:700;padding:2px 5px;border-radius:4px;border:1px solid var(--border);background:var(--bg3);color:var(--muted);letter-spacing:0;display:inline-block;}
 
   .w52-bar{display:flex;align-items:center;gap:6px;justify-content:flex-end;}
-  .w52-track{width:54px;height:3px;background:var(--bg3);border-radius:2px;overflow:hidden;flex-shrink:0;}
+  .w52-track{width:38px;height:3px;background:var(--bg3);border-radius:2px;overflow:hidden;flex-shrink:0;}
   .w52-fill{height:100%;border-radius:2px;}
-  .w52-pct{font-family:var(--mono);font-size:10px;color:var(--muted);min-width:26px;}
+  .w52-pct{font-family:var(--mono);font-size:9px;color:var(--muted);min-width:22px;}
   .vol-text{font-family:var(--mono);font-size:11px;color:var(--dim);}
   .sig-text{font-size:11px;color:var(--muted);max-width:130px;overflow:hidden;text-overflow:ellipsis;}
   .flip-time{display:block;font-family:var(--mono);font-size:11px;color:rgba(255,255,255,0.35);letter-spacing:0.04em;font-weight:400;}
@@ -900,12 +900,12 @@ async function loadFromSupabase() {
 function analystCell(r) {
   if (!r) return '<span style="color:var(--dim);font-family:var(--mono);font-size:10px;">--</span>';
   const map = {
-    'strong_buy':  {label:'Strong Buy',  cls:'chg-pos', weight: 700},
-    'buy':         {label:'Buy',         cls:'chg-pos', weight: 400},
-    'hold':        {label:'Hold',        cls:'chg-neu', weight: 400},
-    'underperform':{label:'Underperform',cls:'chg-neg', weight: 400},
-    'sell':        {label:'Sell',        cls:'chg-neg', weight: 400},
-    'strong_sell': {label:'Strong Sell', cls:'chg-neg', weight: 700},
+    'strong_buy':  {label:'S.Buy',  cls:'chg-pos', weight: 700},
+    'buy':         {label:'Buy',    cls:'chg-pos', weight: 400},
+    'hold':        {label:'Hold',   cls:'chg-neu', weight: 400},
+    'underperform':{label:'Undprf', cls:'chg-neg', weight: 400},
+    'sell':        {label:'Sell',   cls:'chg-neg', weight: 400},
+    'strong_sell': {label:'S.Sell', cls:'chg-neg', weight: 700},
   };
   const m = map[r] || {label: r, cls: 'chg-neu', weight: 400};
   return `<span style="font-family:var(--mono);font-size:10px;font-weight:${m.weight};" class="${m.cls}">${m.label}</span>`;
