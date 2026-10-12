@@ -78,7 +78,19 @@
   thead th *{background:inherit;}
   .table-wrap{overflow:auto;height:calc(100vh - 146px);}
   table{width:100%;border-collapse:collapse;}
-  td:first-child{max-width:120px;overflow:hidden;}
+  /* Ticker column — constrain via inner wrapper since overflow:hidden needs table-layout:fixed */
+  td:first-child{white-space:normal;}
+  td:first-child .ticker-inner{display:flex;align-items:center;gap:4px;width:70px;overflow:hidden;}
+  td:first-child .ticker-inner .ticker-sym{font-size:10px;}
+  td:first-child .ticker-inner .ticker-name{font-size:8px;max-width:44px;}
+  th.col-ticker{width:74px;}
+  /* Mkt cap — shrink to ~25% of original ~55px */
+  th.col-mktcap,td.col-mktcap{width:32px;max-width:32px;overflow:hidden;font-size:8px !important;padding:8px 1px !important;}
+  th.col-mktcap{padding:10px 1px !important;font-size:8px !important;}
+  td.col-mktcap span{font-size:8px !important;}
+  /* Volume — shrink ~50% */
+  th.col-vol,td.col-vol{width:42px;max-width:42px;overflow:hidden;font-size:8px;text-align:center !important;padding:8px 1px !important;}
+  th.col-vol{padding:10px 1px !important;font-size:8px !important;}
   thead th{font-family:var(--mono);font-size:10px;letter-spacing:0.05em;text-transform:uppercase;color:var(--dim);padding:10px 3px;text-align:left;border-bottom:1px solid var(--border);cursor:pointer;user-select:none;white-space:nowrap;transition:color 0.15s;vertical-align:top;}
   thead th:hover{color:var(--muted);}
   thead th.r{text-align:center;}
@@ -265,7 +277,7 @@
           <th class="c" style="width:40px;font-size:9px;cursor:pointer;display:none;" onclick="setSort(curSort==='wl_d'?'wl_a':'wl_d')">In Watch</th>
           <th class="c" style="width:20px;display:none;" title="Add to portfolio">P+</th>
           <th class="c" style="width:40px;font-size:9px;cursor:pointer;display:none;" onclick="setSort(curSort==='in_d'?'in_a':'in_d')">In Port</th>
-          <th class="r" style="cursor:pointer;" onclick="setSort(curSort==='mktcap_d'?'mktcap_a':'mktcap_d')" title="Sort by market cap">Mkt Cap</th>
+          <th class="r col-mktcap" style="cursor:pointer;" onclick="setSort(curSort==='mktcap_d'?'mktcap_a':'mktcap_d')" title="Sort by market cap">Mkt Cap</th>
           <th class="r" style="cursor:pointer;" onclick="setSort(curSort==='w52_d'?'w52_a':'w52_d')" title="Sort by 52-week range position">52W</th>
           <th class="c">Trend</th>
           <th class="c has-tip" data-tip="Yahoo Finance analyst consensus rating (Strong Buy / Buy / Hold / Sell / Strong Sell)." style="cursor:pointer" onclick="setSort(curSort==='analyst_d'?'analyst_a':'analyst_d')">Analyst</th>
@@ -274,7 +286,7 @@
           <th class="c has-tip" style="font-size:10px;color:var(--green);border-bottom:2px solid var(--green-border);cursor:pointer;" data-tip="When the B signal last flipped (CET). Click to sort." onclick="setSort(curSort==='bflip_d'?'bflip_a':'bflip_d')" title="Sort by B Flip date">B Flip <span id="bflipArrow"></span></th>
           <th class="c l-col has-tip" data-tip="L = Ribbon signal. SMMA15 vs SMMA25 on (H+L)/2. Gold = uptrend, Blue = downtrend.">L</th>
           <th class="c has-tip" style="font-size:10px;color:var(--amber);border-bottom:2px solid var(--amber-border);cursor:pointer;" data-tip="When the L signal last flipped (CET). Click to sort." onclick="setSort(curSort==='lflip_d'?'lflip_a':'lflip_d')" title="Sort by L Flip date">L Flip <span id="lflipArrow"></span></th>
-          <th class="r">Volume</th>
+          <th class="r col-vol">Volume</th>
         </tr>
       </thead>
       <tbody id="tbody">
@@ -351,7 +363,7 @@
           <th class="c" style="width:40px;font-size:9px;cursor:pointer;display:none;" onclick="setSP5Sort(sp5CurSort==='wl_d'?'wl_a':'wl_d')">In Watch</th>
           <th class="c" style="width:20px;display:none;" title="Add to portfolio">P+</th>
           <th class="c" style="width:40px;font-size:9px;cursor:pointer;display:none;" onclick="setSP5Sort(sp5CurSort==='in_d'?'in_a':'in_d')">In Port</th>
-          <th class="r" style="cursor:pointer;" onclick="setSP5Sort(sp5CurSort==='mktcap_d'?'mktcap_a':'mktcap_d')" title="Sort by market cap">Mkt Cap</th>
+          <th class="r col-mktcap" style="cursor:pointer;" onclick="setSP5Sort(sp5CurSort==='mktcap_d'?'mktcap_a':'mktcap_d')" title="Sort by market cap">Mkt Cap</th>
           <th class="r" style="cursor:pointer;" onclick="setSP5Sort(sp5CurSort==='w52_d'?'w52_a':'w52_d')" title="Sort by 52-week range position">52W</th>
           <th class="c">Trend</th>
           <th class="c has-tip" data-tip="Yahoo Finance analyst consensus rating (Strong Buy / Buy / Hold / Sell / Strong Sell)." style="cursor:pointer" onclick="setSort(curSort==='analyst_d'?'analyst_a':'analyst_d')">Analyst</th>
@@ -360,7 +372,7 @@
           <th class="c has-tip" style="font-size:10px;color:var(--green);border-bottom:2px solid var(--green-border);cursor:pointer;" data-tip="When the B signal last flipped (CET). Click to sort." onclick="setSP5Sort(sp5CurSort==='bflip_d'?'bflip_a':'bflip_d')" title="Sort by B Flip date">B Flip <span id="sp5BflipArrow"></span></th>
           <th class="c l-col has-tip" data-tip="L = Ribbon signal. SMMA15 vs SMMA25 on (H+L)/2. Gold = uptrend, Blue = downtrend.">L</th>
           <th class="c has-tip" style="font-size:10px;color:var(--amber);border-bottom:2px solid var(--amber-border);cursor:pointer;" data-tip="When the L signal last flipped (CET). Click to sort." onclick="setSP5Sort(sp5CurSort==='lflip_d'?'lflip_a':'lflip_d')" title="Sort by L Flip date">L Flip <span id="sp5LflipArrow"></span></th>
-          <th class="r">Volume</th>
+          <th class="r col-vol">Volume</th>
         </tr>
       </thead>
       <tbody id="sp5Tbody">
@@ -430,14 +442,14 @@
           <th style="cursor:pointer;" onclick="setCryptoSort(cryptoCurSort==='az'?'az_r':'az')">Coin <span id="cryptoStockCount" style="font-weight:normal;opacity:0.7;"></span></th>
           <th class="r" style="cursor:pointer;" onclick="setCryptoSort(cryptoCurSort==='price_d'?'price_a':'price_d')">Price</th>
           <th class="r" style="cursor:pointer;" onclick="setCryptoSort(cryptoCurSort==='chg_d'?'chg_a':'chg_d')">% Chg</th>
-          <th class="r" style="cursor:pointer;" onclick="setCryptoSort(cryptoCurSort==='mktcap_d'?'mktcap_a':'mktcap_d')" title="Sort by market cap">Mkt Cap</th>
+          <th class="r col-mktcap" style="cursor:pointer;" onclick="setCryptoSort(cryptoCurSort==='mktcap_d'?'mktcap_a':'mktcap_d')" title="Sort by market cap">Mkt Cap</th>
           <th class="r" style="cursor:pointer;" onclick="setCryptoSort(cryptoCurSort==='w52_d'?'w52_a':'w52_d')" title="Sort by 52-week range position">52W</th>
           <th class="c">Trend</th>
           <th class="c b-col has-tip" data-tip="B = Momentum signal. Highest-high/lowest-low + ATR14x2.5 bands.">B</th>
           <th class="c has-tip" style="font-size:10px;color:var(--green);border-bottom:2px solid var(--green-border);cursor:pointer;" onclick="setCryptoSort(cryptoCurSort==='bflip_d'?'bflip_a':'bflip_d')" data-tip="When the B signal last flipped (CET). Click to sort.">B Flip</th>
           <th class="c l-col has-tip" data-tip="L = Ribbon signal. SMMA15 vs SMMA25 on (H+L)/2.">L</th>
           <th class="c has-tip" style="font-size:10px;color:var(--amber);border-bottom:2px solid var(--amber-border);cursor:pointer;" onclick="setCryptoSort(cryptoCurSort==='lflip_d'?'lflip_a':'lflip_d')" data-tip="When the L signal last flipped (CET). Click to sort.">L Flip</th>
-          <th class="r">Volume</th>
+          <th class="r col-vol">Volume</th>
         </tr>
       </thead>
       <tbody id="cryptoTbody">
@@ -514,7 +526,7 @@
             <th class="c" style="width:40px;font-size:9px;cursor:pointer;display:none;" onclick="setOMXSort(omxCurSort==='wl_d'?'wl_a':'wl_d')">In Watch</th>
             <th class="c" style="width:20px;display:none;" title="Add to portfolio">P+</th>
             <th class="c" style="width:40px;font-size:9px;cursor:pointer;display:none;" onclick="setOMXSort(omxCurSort==='in_d'?'in_a':'in_d')">In Port</th>
-            <th class="r" style="cursor:pointer;" onclick="setOMXSort(omxCurSort==='w52_d'?'w52_a':'w52_d')" title="Sort by market cap">Mkt Cap</th>
+            <th class="r col-mktcap" style="cursor:pointer;" onclick="setOMXSort(omxCurSort==='w52_d'?'w52_a':'w52_d')" title="Sort by market cap">Mkt Cap</th>
             <th class="r" style="cursor:pointer;" onclick="setOMXSort(omxCurSort==='w52_d'?'w52_a':'w52_d')" title="Sort by 52-week range position">52W</th>
             <th class="c">Trend</th>
             <th class="c has-tip" data-tip="Yahoo Finance analyst consensus rating (Strong Buy / Buy / Hold / Sell / Strong Sell)." style="cursor:pointer" onclick="setSort(curSort==='analyst_d'?'analyst_a':'analyst_d')">Analyst</th>
@@ -523,7 +535,7 @@
             <th class="c has-tip" style="font-size:10px;color:var(--green);border-bottom:2px solid var(--green-border);cursor:pointer;" onclick="setOMXSort(omxCurSort==='bflip_d'?'bflip_a':'bflip_d')" data-tip="When the B signal last flipped (CET). Click to sort.">B Flip</th>
             <th class="c l-col has-tip" data-tip="L = Ribbon signal. SMMA15 vs SMMA25 on (H+L)/2. Gold = uptrend, Blue = downtrend.">L</th>
             <th class="c has-tip" style="font-size:10px;color:var(--amber);border-bottom:2px solid var(--amber-border);cursor:pointer;" onclick="setOMXSort(omxCurSort==='lflip_d'?'lflip_a':'lflip_d')" data-tip="When the L signal last flipped (CET). Click to sort.">L Flip</th>
-            <th class="r">Volume</th>
+            <th class="r col-vol">Volume</th>
           </tr>
         </thead>
         <tbody id="omxTbody">
@@ -587,7 +599,7 @@
             <th class="c" style="width:40px;display:none;">In Watch</th>
             <th class="c" style="width:20px;display:none;">P+</th>
             <th class="c" style="width:40px;display:none;">In Port</th>
-            <th class="r">Mkt Cap</th>
+            <th class="r col-mktcap">Mkt Cap</th>
             <th class="r">52W</th>
             <th class="c">Trend</th>
             <th class="c">Analyst</th>
@@ -666,7 +678,7 @@
             <th class="c" style="width:40px;display:none;">In Watch</th>
             <th class="c" style="width:20px;display:none;">P+</th>
             <th class="c" style="width:40px;display:none;">In Port</th>
-            <th class="r">Mkt Cap</th>
+            <th class="r col-mktcap">Mkt Cap</th>
             <th class="r" style="cursor:pointer;" onclick="setPortSort(portSort==='w52_d'?'w52_a':'w52_d')">52W</th>
             <th class="c" style="cursor:pointer;" onclick="setPortSort(portSort==='trend_d'?'trend_a':'trend_d')">Trend</th>
             <th class="c">Analyst</th>
@@ -1062,7 +1074,7 @@ function render() {
       : `<span style="color:var(--dim);font-family:var(--mono);font-size:9px;">--</span>`;
 
     return `<tr>
-      <td><div style="display:flex;align-items:center;gap:6px;"><span onclick="toggleFavorite('${r.sym}')" style="cursor:pointer;font-size:14px;color:${favorites.has(r.sym)?'#f59e0b':'var(--dim)'};flex-shrink:0;" title="Favorite">${favorites.has(r.sym)?'★':'☆'}</span><div><div class="ticker-sym"><a href="https://www.tradingview.com/chart/?symbol=NASDAQ:${r.sym}" target="_blank" rel="noopener" style="color:inherit;text-decoration:none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">${r.sym}</a></div><div class="ticker-name">${r.name}</div></div></div></td>
+      <td><div class="ticker-inner"><span onclick="toggleFavorite('${r.sym}')" style="cursor:pointer;font-size:14px;color:${favorites.has(r.sym)?'#f59e0b':'var(--dim)'};flex-shrink:0;" title="Favorite">${favorites.has(r.sym)?'★':'☆'}</span><div style="overflow:hidden;"><div class="ticker-sym"><a href="https://www.tradingview.com/chart/?symbol=NASDAQ:${r.sym}" target="_blank" rel="noopener" style="color:inherit;text-decoration:none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">${r.sym}</a></div><div class="ticker-name">${r.name}</div></div></div></td>
       <td class="r col-pre"><span class="price-val">${r.preMktPrice != null ? (r.preMktPrice >= 1000 ? '$'+r.preMktPrice.toLocaleString('en-US',{maximumFractionDigits:0}) : '$'+Number(r.preMktPrice).toFixed(2)) : '<span style="color:var(--dim)">--</span>'}</span></td>
       <td class="r col-pre">${r.preChgPct != null ? '<span class="'+(r.preChgPct>0?'chg-pos':r.preChgPct<0?'chg-neg':'chg-neu')+'">'+(r.preChgPct>=0?'+':'')+Number(r.preChgPct).toFixed(2)+'%</span>' : '<span style="color:var(--dim)">--</span>'}</td>
       <td class="r col-price"><span class="price-val">${priceFmt}</span></td>
@@ -1076,7 +1088,7 @@ function render() {
         <button onclick="openAddToPortfolio('${r.sym}')" style="background:none;border:1px solid var(--muted);color:var(--muted);border-radius:3px;width:20px;height:20px;cursor:pointer;font-size:13px;line-height:1;padding:0;" title="Add to portfolio">+</button>
       </td>
       <td class="c" style="width:40px;font-size:9px;color:var(--muted);display:none;">${getPortfolioLabel(r.sym)}</td>
-      <td class="r" style="font-size:9px;color:var(--muted);">${r.mktCapB ? '$'+r.mktCapB.toFixed(0)+'B' : '--'}</td>
+      <td class="r col-mktcap" style="font-size:8px;color:var(--muted);">${r.mktCapB ? '$'+r.mktCapB.toFixed(0)+'B' : '--'}</td>
       <td class="r">
         <div class="w52-bar">
           <span class="w52-pct">${Math.round(pos52*100)}%</span>
@@ -1090,7 +1102,7 @@ function render() {
       <td class="c">${flipCell(getBFlip(r))}</td>
       <td class="c"><span class="${lCls}">${lLabel}</span></td>
       <td class="c">${flipCell(getLFlip(r))}</td>
-      <td class="r"><span class="vol-text">${volFmt}</span></td>
+      <td class="r col-vol"><span class="vol-text">${volFmt}</span></td>
     </tr>`;
   }).join('');
 }
@@ -1385,10 +1397,10 @@ function cryptoRender() {
       return v.toFixed(2);
     };
     return `<tr>
-      <td><div style="display:flex;align-items:center;gap:6px;"><span onclick="toggleFavorite('${r.sym}')" style="cursor:pointer;font-size:14px;color:${favorites.has(r.sym)?'#f59e0b':'var(--dim)'};flex-shrink:0;" title="Favorite">${favorites.has(r.sym)?'★':'☆'}</span><div><div class="ticker-sym"><a href="https://www.tradingview.com/chart/?symbol=${r.sym}USDT" target="_blank" rel="noopener" style="color:inherit;text-decoration:none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">${r.sym}</a></div><div class="ticker-name">${r.name}</div></div></div></td>
+      <td><div class="ticker-inner"><span onclick="toggleFavorite('${r.sym}')" style="cursor:pointer;font-size:14px;color:${favorites.has(r.sym)?'#f59e0b':'var(--dim)'};flex-shrink:0;" title="Favorite">${favorites.has(r.sym)?'★':'☆'}</span><div style="overflow:hidden;"><div class="ticker-sym"><a href="https://www.tradingview.com/chart/?symbol=${r.sym}USDT" target="_blank" rel="noopener" style="color:inherit;text-decoration:none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">${r.sym}</a></div><div class="ticker-name">${r.name}</div></div></div></td>
       <td class="r"><span class="price-val">${priceFmt}</span></td>
       <td class="r"><span class="${pc}">${chgSign}${Number(chgPct).toFixed(2)}%</span></td>
-      <td class="r" style="font-size:9px;color:var(--muted);">${r.mktCapB ? '$'+r.mktCapB.toFixed(1)+'B' : '--'}</td>
+      <td class="r col-mktcap" style="font-size:8px;color:var(--muted);">${r.mktCapB ? '$'+r.mktCapB.toFixed(1)+'B' : '--'}</td>
       <td class="r">
         <div class="w52-bar">
           <span class="w52-pct">${Math.round(pos52*100)}%</span>
@@ -1400,7 +1412,7 @@ function cryptoRender() {
       <td class="c">${flipCell(cryptoGetBFlip(r))}</td>
       <td class="c"><span class="${lCls}">${lLabel}</span></td>
       <td class="c">${flipCell(cryptoGetLFlip(r))}</td>
-      <td class="r" style="font-size:11px;color:var(--muted);">${fmtVol(r.vol)}</td>
+      <td class="r col-vol" style="font-size:8px;color:var(--muted);text-align:center;">${fmtVol(r.vol)}</td>
     </tr>`;
   }).join('');
 
@@ -1657,7 +1669,7 @@ function omxRender() {
                    ? Math.max(0,Math.min(1,(r.price-r.lo52)/(r.hi52-r.lo52))) : null;
     const barColor = pos52!==null?(pos52>0.7?'var(--green)':pos52<0.3?'var(--red)':'var(--accent)'):'var(--dim)';
     return `<tr>
-      <td><div style="display:flex;align-items:center;gap:6px;"><span onclick="toggleFavorite('${r.sym}')" style="cursor:pointer;font-size:14px;color:${favorites.has(r.sym)?'#f59e0b':'var(--dim)'};flex-shrink:0;" title="Favorite">${favorites.has(r.sym)?'★':'☆'}</span><div><div class="ticker-sym"><a href="https://www.tradingview.com/chart/?symbol=OMXSTO:${r.sym.replace('.ST','').replace('-','_')}" target="_blank" rel="noopener" style="color:inherit;text-decoration:none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">${r.sym.replace('.ST','')}</a></div><div class="ticker-name">${r.name}</div></div></div></td>
+      <td><div class="ticker-inner"><span onclick="toggleFavorite('${r.sym}')" style="cursor:pointer;font-size:14px;color:${favorites.has(r.sym)?'#f59e0b':'var(--dim)'};flex-shrink:0;" title="Favorite">${favorites.has(r.sym)?'★':'☆'}</span><div style="overflow:hidden;"><div class="ticker-sym"><a href="https://www.tradingview.com/chart/?symbol=OMXSTO:${r.sym.replace('.ST','').replace('-','_')}" target="_blank" rel="noopener" style="color:inherit;text-decoration:none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">${r.sym.replace('.ST','')}</a></div><div class="ticker-name">${r.name}</div></div></div></td>
       <td class="r col-pre"><span class="price-val">${r.preMktPrice != null ? (r.preMktPrice >= 1000 ? '$'+r.preMktPrice.toLocaleString('en-US',{maximumFractionDigits:0}) : '$'+Number(r.preMktPrice).toFixed(2)) : '<span style="color:var(--dim)">--</span>'}</span></td>
       <td class="r col-pre">${r.preChgPct != null ? '<span class="'+(r.preChgPct>0?'chg-pos':r.preChgPct<0?'chg-neg':'chg-neu')+'">'+(r.preChgPct>=0?'+':'')+Number(r.preChgPct).toFixed(2)+'%</span>' : '<span style="color:var(--dim)">--</span>'}</td>
       <td class="r col-price"><span class="price-val">${priceFmt}</span></td>
@@ -1671,7 +1683,7 @@ function omxRender() {
         <button onclick="openAddToPortfolio('${r.sym}')" style="background:none;border:1px solid var(--muted);color:var(--muted);border-radius:3px;width:20px;height:20px;cursor:pointer;font-size:13px;line-height:1;padding:0;" title="Add to portfolio">+</button>
       </td>
       <td class="c" style="width:40px;font-size:9px;color:var(--muted);display:none;">${getPortfolioLabel(r.sym)}</td>
-      <td class="r" style="font-size:9px;color:var(--muted);">${r.mktCapB ? '$'+r.mktCapB.toFixed(0)+'B' : '--'}</td>
+      <td class="r col-mktcap" style="font-size:8px;color:var(--muted);">${r.mktCapB ? '$'+r.mktCapB.toFixed(0)+'B' : '--'}</td>
       <td class="r">
         <div class="w52-bar">
           <span class="w52-pct">${pos52!==null?Math.round(pos52*100)+'%':'--'}</span>
@@ -1685,7 +1697,7 @@ function omxRender() {
       <td class="c">${flipCell(omxGetBFlip(r))}</td>
       <td class="c"><span class="${lCls}">${lLabel}</span></td>
       <td class="c">${flipCell(omxGetLFlip(r))}</td>
-      <td class="r"><span class="vol-text">${fmtVol(r.vol)}</span></td>
+      <td class="r col-vol"><span class="vol-text">${fmtVol(r.vol)}</span></td>
     </tr>`;
   }).join('');
 
@@ -2058,7 +2070,7 @@ function renderPortfolioTable() {
       : `<span style="color:var(--dim);font-family:var(--mono);font-size:11px;">--</span>`;
     const volFmtP = v => !v?'--':v>=1e9?(v/1e9).toFixed(1)+'B':v>=1e6?(v/1e6).toFixed(1)+'M':(v/1e3).toFixed(0)+'K';
     return `<tr>
-      <td><div style="display:flex;align-items:center;gap:6px;"><span onclick="toggleFavorite('${r.sym}')" style="cursor:pointer;font-size:14px;color:${favorites.has(r.sym)?'#f59e0b':'var(--dim)'};flex-shrink:0;" title="Favorite">${favorites.has(r.sym)?'★':'☆'}</span><div><div class="ticker-sym"><a href="https://www.tradingview.com/chart/?symbol=NASDAQ:${r.sym}" target="_blank" rel="noopener" style="color:inherit;text-decoration:none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">${r.sym}</a></div><div class="ticker-name">${r.name}</div></div></div></td>
+      <td><div class="ticker-inner"><span onclick="toggleFavorite('${r.sym}')" style="cursor:pointer;font-size:14px;color:${favorites.has(r.sym)?'#f59e0b':'var(--dim)'};flex-shrink:0;" title="Favorite">${favorites.has(r.sym)?'★':'☆'}</span><div style="overflow:hidden;"><div class="ticker-sym"><a href="https://www.tradingview.com/chart/?symbol=NASDAQ:${r.sym}" target="_blank" rel="noopener" style="color:inherit;text-decoration:none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">${r.sym}</a></div><div class="ticker-name">${r.name}</div></div></div></td>
       <td class="r col-pre"><span class="price-val">${r.preMktPrice != null ? (r.preMktPrice >= 1000 ? '$'+r.preMktPrice.toLocaleString('en-US',{maximumFractionDigits:0}) : '$'+Number(r.preMktPrice).toFixed(2)) : '<span style="color:var(--dim)">--</span>'}</span></td>
       <td class="r col-pre">${r.preChgPct != null ? '<span class="'+(r.preChgPct>0?'chg-pos':r.preChgPct<0?'chg-neg':'chg-neu')+'">'+(r.preChgPct>=0?'+':'')+Number(r.preChgPct).toFixed(2)+'%</span>' : '<span style="color:var(--dim)">--</span>'}</td>
       <td class="r col-price"><span class="price-val">${priceFmt}</span></td>
@@ -2068,7 +2080,7 @@ function renderPortfolioTable() {
       <td class="c" style="width:40px;font-size:9px;color:var(--muted);display:none;">${getWatchlistLabel(r.sym)}</td>
       <td class="c" style="width:20px;display:none;"><button onclick="openAddToPortfolio('${r.sym}')" style="background:none;border:1px solid var(--muted);color:var(--muted);border-radius:3px;width:20px;height:20px;cursor:pointer;font-size:13px;line-height:1;padding:0;" title="Add to portfolio">+</button></td>
       <td class="c" style="width:40px;font-size:9px;color:var(--muted);display:none;">${getPortfolioLabel(r.sym)}</td>
-      <td class="r" style="font-size:9px;color:var(--muted);">${r.mktCapB ? '$'+r.mktCapB.toFixed(0)+'B' : '--'}</td>
+      <td class="r col-mktcap" style="font-size:8px;color:var(--muted);">${r.mktCapB ? '$'+r.mktCapB.toFixed(0)+'B' : '--'}</td>
       <td class="r">
         <div class="w52-bar">
           <span class="w52-pct">${Math.round(pos52*100)}%</span>
@@ -2082,7 +2094,7 @@ function renderPortfolioTable() {
       <td class="c">${flipCell(getBFlip(r))}</td>
       <td class="c"><span class="${lCls}">${lLabel}</span></td>
       <td class="c">${flipCell(getLFlip(r))}</td>
-      <td class="r"><span class="vol-text">${volFmtP(r.vol)}</span></td>
+      <td class="r col-vol"><span class="vol-text">${volFmtP(r.vol)}</span></td>
       <td class="c"><button onclick="removeHolding('${r._hid}','${r._pid}','${r.sym}')" style="background:none;border:1px solid var(--red);color:var(--red);border-radius:3px;padding:2px 7px;cursor:pointer;font-size:11px;">✕</button></td>
     </tr>`;
   }).join('');
@@ -2394,7 +2406,7 @@ function renderWatchlistTable() {
       : `<span style="color:var(--dim);font-family:var(--mono);font-size:11px;">--</span>`;
     const volFmtWL = v => !v?'--':v>=1e9?(v/1e9).toFixed(1)+'B':v>=1e6?(v/1e6).toFixed(1)+'M':(v/1e3).toFixed(0)+'K';
     return `<tr>
-      <td><div style="display:flex;align-items:center;gap:6px;"><span onclick="toggleFavorite('${r.sym}')" style="cursor:pointer;font-size:14px;color:${favorites.has(r.sym)?'#f59e0b':'var(--dim)'};flex-shrink:0;" title="Favorite">${favorites.has(r.sym)?'★':'☆'}</span><div><div class="ticker-sym"><a href="https://www.tradingview.com/chart/?symbol=NASDAQ:${r.sym}" target="_blank" rel="noopener" style="color:inherit;text-decoration:none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">${r.sym}</a></div><div class="ticker-name">${r.name}</div></div></div></td>
+      <td><div class="ticker-inner"><span onclick="toggleFavorite('${r.sym}')" style="cursor:pointer;font-size:14px;color:${favorites.has(r.sym)?'#f59e0b':'var(--dim)'};flex-shrink:0;" title="Favorite">${favorites.has(r.sym)?'★':'☆'}</span><div style="overflow:hidden;"><div class="ticker-sym"><a href="https://www.tradingview.com/chart/?symbol=NASDAQ:${r.sym}" target="_blank" rel="noopener" style="color:inherit;text-decoration:none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">${r.sym}</a></div><div class="ticker-name">${r.name}</div></div></div></td>
       <td class="r col-pre"><span class="price-val">${r.preMktPrice != null ? (r.preMktPrice >= 1000 ? '$'+r.preMktPrice.toLocaleString('en-US',{maximumFractionDigits:0}) : '$'+Number(r.preMktPrice).toFixed(2)) : '<span style="color:var(--dim)">--</span>'}</span></td>
       <td class="r col-pre">${r.preChgPct != null ? '<span class="'+(r.preChgPct>0?'chg-pos':r.preChgPct<0?'chg-neg':'chg-neu')+'">'+(r.preChgPct>=0?'+':'')+Number(r.preChgPct).toFixed(2)+'%</span>' : '<span style="color:var(--dim)">--</span>'}</td>
       <td class="r col-price"><span class="price-val">${priceFmt}</span></td>
@@ -2404,7 +2416,7 @@ function renderWatchlistTable() {
       <td class="c" style="width:40px;font-size:9px;color:var(--muted);display:none;">${getWatchlistLabel(r.sym)}</td>
       <td class="c" style="width:20px;display:none;"><button onclick="openAddToPortfolio('${r.sym}')" style="background:none;border:1px solid var(--muted);color:var(--muted);border-radius:3px;width:20px;height:20px;cursor:pointer;font-size:13px;line-height:1;padding:0;" title="Add to portfolio">+</button></td>
       <td class="c" style="width:40px;font-size:9px;color:var(--muted);display:none;">${getPortfolioLabel(r.sym)}</td>
-      <td class="r" style="font-size:9px;color:var(--muted);">${r.mktCapB ? '$'+r.mktCapB.toFixed(0)+'B' : '--'}</td>
+      <td class="r col-mktcap" style="font-size:8px;color:var(--muted);">${r.mktCapB ? '$'+r.mktCapB.toFixed(0)+'B' : '--'}</td>
       <td class="r">
         <div class="w52-bar">
           <span class="w52-pct">${Math.round(pos52*100)}%</span>
@@ -2418,7 +2430,7 @@ function renderWatchlistTable() {
       <td class="c">${flipCell(getBFlip(r))}</td>
       <td class="c"><span class="${lCls}">${lLabel}</span></td>
       <td class="c">${flipCell(getLFlip(r))}</td>
-      <td class="r"><span class="vol-text">${volFmtWL(r.vol)}</span></td>
+      <td class="r col-vol"><span class="vol-text">${volFmtWL(r.vol)}</span></td>
       <td class="c"><button onclick="removeWLItem('${r._iid}','${r._wid}','${r.sym}')" style="background:none;border:1px solid var(--red);color:var(--red);border-radius:3px;padding:2px 7px;cursor:pointer;font-size:11px;">✕</button></td>
     </tr>`;
   }).join('');
@@ -2650,7 +2662,7 @@ function sp5Render() {
     const barColor = pos52>0.7?'var(--green)':pos52<0.3?'var(--red)':'var(--accent)';
     const fmtVol  = v => { if(!v) return '--'; if(v>=1e9) return (v/1e9).toFixed(1)+'B'; if(v>=1e6) return (v/1e6).toFixed(1)+'M'; if(v>=1e3) return (v/1e3).toFixed(1)+'K'; return v.toFixed(0); };
     return `<tr>
-      <td><div style="display:flex;align-items:center;gap:6px;"><span onclick="toggleFavorite('${r.sym}')" style="cursor:pointer;font-size:14px;color:${favorites.has(r.sym)?'#f59e0b':'var(--dim)'};flex-shrink:0;" title="Favorite">${favorites.has(r.sym)?'★':'☆'}</span><div><div class="ticker-sym"><a href="https://www.tradingview.com/chart/?symbol=${r.sym}" target="_blank" rel="noopener" style="color:inherit;text-decoration:none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">${r.sym}</a></div><div class="ticker-name">${r.name}</div></div></div></td>
+      <td><div class="ticker-inner"><span onclick="toggleFavorite('${r.sym}')" style="cursor:pointer;font-size:14px;color:${favorites.has(r.sym)?'#f59e0b':'var(--dim)'};flex-shrink:0;" title="Favorite">${favorites.has(r.sym)?'★':'☆'}</span><div style="overflow:hidden;"><div class="ticker-sym"><a href="https://www.tradingview.com/chart/?symbol=${r.sym}" target="_blank" rel="noopener" style="color:inherit;text-decoration:none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">${r.sym}</a></div><div class="ticker-name">${r.name}</div></div></div></td>
       <td class="r col-pre"><span class="price-val">${r.preMktPrice != null ? (r.preMktPrice >= 1000 ? '$'+r.preMktPrice.toLocaleString('en-US',{maximumFractionDigits:0}) : '$'+Number(r.preMktPrice).toFixed(2)) : '<span style="color:var(--dim)">--</span>'}</span></td>
       <td class="r col-pre">${r.preChgPct != null ? '<span class="'+(r.preChgPct>0?'chg-pos':r.preChgPct<0?'chg-neg':'chg-neu')+'">'+(r.preChgPct>=0?'+':'')+Number(r.preChgPct).toFixed(2)+'%</span>' : '<span style="color:var(--dim)">--</span>'}</td>
       <td class="r col-price"><span class="price-val">${priceFmt}</span></td>
@@ -2664,7 +2676,7 @@ function sp5Render() {
         <button onclick="openAddToPortfolio('${r.sym}')" style="background:none;border:1px solid var(--muted);color:var(--muted);border-radius:3px;width:20px;height:20px;cursor:pointer;font-size:13px;line-height:1;padding:0;" title="Add to portfolio">+</button>
       </td>
       <td class="c" style="width:40px;font-size:9px;color:var(--muted);display:none;">${getPortfolioLabel(r.sym)}</td>
-      <td class="r" style="font-size:9px;color:var(--muted);">${r.mktCapB ? '$'+r.mktCapB.toFixed(0)+'B' : '--'}</td>
+      <td class="r col-mktcap" style="font-size:8px;color:var(--muted);">${r.mktCapB ? '$'+r.mktCapB.toFixed(0)+'B' : '--'}</td>
       <td class="r">
         <div class="w52-bar">
           <span class="w52-pct">${Math.round(pos52*100)}%</span>
@@ -2678,7 +2690,7 @@ function sp5Render() {
       <td class="c">${flipCell(sp5GetBFlip(r))}</td>
       <td class="c"><span class="${lCls}">${lLabel}</span></td>
       <td class="c">${flipCell(sp5GetLFlip(r))}</td>
-      <td class="r"><span class="vol-text">${fmtVol(r.vol)}</span></td>
+      <td class="r col-vol"><span class="vol-text">${fmtVol(r.vol)}</span></td>
     </tr>`;
   }).join('');
 }
