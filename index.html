@@ -77,7 +77,8 @@
   thead th{position:sticky;top:0;background:var(--bg);z-index:2;box-shadow:0 1px 0 var(--border);}
   thead th *{background:inherit;}
   .table-wrap{overflow:auto;height:calc(100vh - 146px);}
-  table{width:100%;border-collapse:collapse;min-width:820px;}
+  table{width:100%;border-collapse:collapse;}
+  td:first-child{max-width:120px;overflow:hidden;}
   thead th{font-family:var(--mono);font-size:10px;letter-spacing:0.05em;text-transform:uppercase;color:var(--dim);padding:10px 3px;text-align:left;border-bottom:1px solid var(--border);cursor:pointer;user-select:none;white-space:nowrap;transition:color 0.15s;vertical-align:top;}
   thead th:hover{color:var(--muted);}
   thead th.r{text-align:center;}
@@ -91,8 +92,8 @@
   td.r{text-align:right;}
   td.c{text-align:center;}
 
-  .ticker-sym{font-family:var(--mono);font-weight:600;font-size:13px;color:var(--text);}
-  .ticker-name{font-size:10px;color:var(--muted);margin-top:1px;max-width:70px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .ticker-sym{font-family:var(--mono);font-weight:600;font-size:12px;color:var(--text);}
+  .ticker-name{font-size:9px;color:var(--muted);margin-top:1px;max-width:65px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   .price-val{font-family:var(--mono);font-size:13px;font-weight:500;}
   .chg-pos{color:var(--green);font-family:var(--mono);font-size:12px;}
   .chg-neg{color:var(--red);font-family:var(--mono);font-size:12px;}
@@ -260,10 +261,10 @@
           <th class="r col-price" style="cursor:pointer;" onclick="setSort(curSort==='price_d'?'price_a':'price_d')" title="Sort by Live Price">Price</th>
           <th class="r col-chg" style="cursor:pointer;" onclick="setSort(curSort==='chgabs_d'?'chgabs_a':'chgabs_d')" title="Sort by absolute change">Chg<br><span style="font-size:9px;font-weight:normal;opacity:0.6">CTC</span></th>
           <th class="r col-pct" style="cursor:pointer;" onclick="setSort(curSort==='chg_d'?'chg_a':'chg_d')" title="Sort by % change">%Chg<br><span style="font-size:9px;font-weight:normal;opacity:0.6">CTC</span></th>
-          <th class="c" style="width:20px;" title="Add to watchlist">W+</th>
-          <th class="c" style="width:40px;font-size:9px;cursor:pointer;" onclick="setSort(curSort==='wl_d'?'wl_a':'wl_d')">In Watch</th>
-          <th class="c" style="width:20px;" title="Add to portfolio">P+</th>
-          <th class="c" style="width:40px;font-size:9px;cursor:pointer;" onclick="setSort(curSort==='in_d'?'in_a':'in_d')">In Port</th>
+          <th class="c" style="width:20px;display:none;" title="Add to watchlist">W+</th>
+          <th class="c" style="width:40px;font-size:9px;cursor:pointer;display:none;" onclick="setSort(curSort==='wl_d'?'wl_a':'wl_d')">In Watch</th>
+          <th class="c" style="width:20px;display:none;" title="Add to portfolio">P+</th>
+          <th class="c" style="width:40px;font-size:9px;cursor:pointer;display:none;" onclick="setSort(curSort==='in_d'?'in_a':'in_d')">In Port</th>
           <th class="r" style="cursor:pointer;" onclick="setSort(curSort==='mktcap_d'?'mktcap_a':'mktcap_d')" title="Sort by market cap">Mkt Cap</th>
           <th class="r" style="cursor:pointer;" onclick="setSort(curSort==='w52_d'?'w52_a':'w52_d')" title="Sort by 52-week range position">52W</th>
           <th class="c">Trend</th>
@@ -346,10 +347,10 @@
           <th class="r col-price" style="cursor:pointer;" onclick="setSP5Sort(sp5CurSort==='price_d'?'price_a':'price_d')" title="Sort by Live Price">Price</th>
           <th class="r col-chg" style="cursor:pointer;" onclick="setSP5Sort(sp5CurSort==='chgabs_d'?'chgabs_a':'chgabs_d')" title="Sort by absolute change">Chg<br><span style="font-size:9px;font-weight:normal;opacity:0.6">CTC</span></th>
           <th class="r col-pct" style="cursor:pointer;" onclick="setSP5Sort(sp5CurSort==='chg_d'?'chg_a':'chg_d')" title="Sort by % change">%Chg<br><span style="font-size:9px;font-weight:normal;opacity:0.6">CTC</span></th>
-          <th class="c" style="width:20px;" title="Add to watchlist">W+</th>
-          <th class="c" style="width:40px;font-size:9px;cursor:pointer;" onclick="setSP5Sort(sp5CurSort==='wl_d'?'wl_a':'wl_d')">In Watch</th>
-          <th class="c" style="width:20px;" title="Add to portfolio">P+</th>
-          <th class="c" style="width:40px;font-size:9px;cursor:pointer;" onclick="setSP5Sort(sp5CurSort==='in_d'?'in_a':'in_d')">In Port</th>
+          <th class="c" style="width:20px;display:none;" title="Add to watchlist">W+</th>
+          <th class="c" style="width:40px;font-size:9px;cursor:pointer;display:none;" onclick="setSP5Sort(sp5CurSort==='wl_d'?'wl_a':'wl_d')">In Watch</th>
+          <th class="c" style="width:20px;display:none;" title="Add to portfolio">P+</th>
+          <th class="c" style="width:40px;font-size:9px;cursor:pointer;display:none;" onclick="setSP5Sort(sp5CurSort==='in_d'?'in_a':'in_d')">In Port</th>
           <th class="r" style="cursor:pointer;" onclick="setSP5Sort(sp5CurSort==='mktcap_d'?'mktcap_a':'mktcap_d')" title="Sort by market cap">Mkt Cap</th>
           <th class="r" style="cursor:pointer;" onclick="setSP5Sort(sp5CurSort==='w52_d'?'w52_a':'w52_d')" title="Sort by 52-week range position">52W</th>
           <th class="c">Trend</th>
@@ -509,10 +510,10 @@
             <th class="r col-price" style="cursor:pointer;" onclick="setOMXSort(omxCurSort==='price_d'?'price_a':'price_d')" title="Sort by Live Price">Price</th>
             <th class="r col-chg" style="cursor:pointer;" onclick="setOMXSort(omxCurSort==='chgabs_d'?'chgabs_a':'chgabs_d')" title="Sort by absolute change">Chg<br><span style="font-size:9px;font-weight:normal;opacity:0.6">CTC</span></th>
             <th class="r col-pct" style="cursor:pointer;" onclick="setOMXSort(omxCurSort==='chg_d'?'chg_a':'chg_d')" title="Sort by % change">%Chg<br><span style="font-size:9px;font-weight:normal;opacity:0.6">CTC</span></th>
-            <th class="c" style="width:20px;" title="Add to watchlist">W+</th>
-            <th class="c" style="width:40px;font-size:9px;cursor:pointer;" onclick="setOMXSort(omxCurSort==='wl_d'?'wl_a':'wl_d')">In Watch</th>
-            <th class="c" style="width:20px;" title="Add to portfolio">P+</th>
-            <th class="c" style="width:40px;font-size:9px;cursor:pointer;" onclick="setOMXSort(omxCurSort==='in_d'?'in_a':'in_d')">In Port</th>
+            <th class="c" style="width:20px;display:none;" title="Add to watchlist">W+</th>
+            <th class="c" style="width:40px;font-size:9px;cursor:pointer;display:none;" onclick="setOMXSort(omxCurSort==='wl_d'?'wl_a':'wl_d')">In Watch</th>
+            <th class="c" style="width:20px;display:none;" title="Add to portfolio">P+</th>
+            <th class="c" style="width:40px;font-size:9px;cursor:pointer;display:none;" onclick="setOMXSort(omxCurSort==='in_d'?'in_a':'in_d')">In Port</th>
             <th class="r" style="cursor:pointer;" onclick="setOMXSort(omxCurSort==='w52_d'?'w52_a':'w52_d')" title="Sort by market cap">Mkt Cap</th>
             <th class="r" style="cursor:pointer;" onclick="setOMXSort(omxCurSort==='w52_d'?'w52_a':'w52_d')" title="Sort by 52-week range position">52W</th>
             <th class="c">Trend</th>
@@ -582,10 +583,10 @@
             <th class="r col-price">Price</th>
             <th class="r col-chg">Chg</th>
             <th class="r col-pct">%Chg</th>
-            <th class="c" style="width:20px;">W+</th>
-            <th class="c" style="width:40px;">In Watch</th>
-            <th class="c" style="width:20px;">P+</th>
-            <th class="c" style="width:40px;">In Port</th>
+            <th class="c" style="width:20px;display:none;">W+</th>
+            <th class="c" style="width:40px;display:none;">In Watch</th>
+            <th class="c" style="width:20px;display:none;">P+</th>
+            <th class="c" style="width:40px;display:none;">In Port</th>
             <th class="r">Mkt Cap</th>
             <th class="r">52W</th>
             <th class="c">Trend</th>
@@ -661,10 +662,10 @@
             <th class="r col-price" style="cursor:pointer;" onclick="setPortSort(portSort==='price_d'?'price_a':'price_d')">Price</th>
             <th class="r col-chg">Chg</th>
             <th class="r col-pct" style="cursor:pointer;" onclick="setPortSort(portSort==='chg_d'?'chg_a':'chg_d')">%Chg</th>
-            <th class="c" style="width:20px;">W+</th>
-            <th class="c" style="width:40px;">In Watch</th>
-            <th class="c" style="width:20px;">P+</th>
-            <th class="c" style="width:40px;">In Port</th>
+            <th class="c" style="width:20px;display:none;">W+</th>
+            <th class="c" style="width:40px;display:none;">In Watch</th>
+            <th class="c" style="width:20px;display:none;">P+</th>
+            <th class="c" style="width:40px;display:none;">In Port</th>
             <th class="r">Mkt Cap</th>
             <th class="r" style="cursor:pointer;" onclick="setPortSort(portSort==='w52_d'?'w52_a':'w52_d')">52W</th>
             <th class="c" style="cursor:pointer;" onclick="setPortSort(portSort==='trend_d'?'trend_a':'trend_d')">Trend</th>
@@ -1067,14 +1068,14 @@ function render() {
       <td class="r col-price"><span class="price-val">${priceFmt}</span></td>
       <td class="r col-chg"><span class="${pc}">${chgSign}${Number(tfChg).toFixed(2)}</span></td>
       <td class="r col-pct"><span class="${pc}">${pctSign}${Number(tfChgPct).toFixed(2)}%</span></td>
-      <td class="c" style="width:20px;">
+      <td class="c" style="width:20px;display:none;">
         <button onclick="openAddToWatchlist('${r.sym}')" style="background:none;border:1px solid var(--muted);color:var(--muted);border-radius:3px;width:20px;height:20px;cursor:pointer;font-size:13px;line-height:1;padding:0;" title="Add to watchlist">+</button>
       </td>
-      <td class="c" style="width:40px;font-size:9px;color:var(--muted);">${getWatchlistLabel(r.sym)}</td>
-      <td class="c" style="width:20px;">
+      <td class="c" style="width:40px;font-size:9px;color:var(--muted);display:none;">${getWatchlistLabel(r.sym)}</td>
+      <td class="c" style="width:20px;display:none;">
         <button onclick="openAddToPortfolio('${r.sym}')" style="background:none;border:1px solid var(--muted);color:var(--muted);border-radius:3px;width:20px;height:20px;cursor:pointer;font-size:13px;line-height:1;padding:0;" title="Add to portfolio">+</button>
       </td>
-      <td class="c" style="width:40px;font-size:9px;color:var(--muted);">${getPortfolioLabel(r.sym)}</td>
+      <td class="c" style="width:40px;font-size:9px;color:var(--muted);display:none;">${getPortfolioLabel(r.sym)}</td>
       <td class="r" style="font-size:9px;color:var(--muted);">${r.mktCapB ? '$'+r.mktCapB.toFixed(0)+'B' : '--'}</td>
       <td class="r">
         <div class="w52-bar">
@@ -1662,14 +1663,14 @@ function omxRender() {
       <td class="r col-price"><span class="price-val">${priceFmt}</span></td>
       <td class="r col-chg"><span class="${pc}">${chgSign}${Number(chg).toFixed(2)}</span></td>
       <td class="r col-pct"><span class="${pc}">${chgSign}${Number(chgPct).toFixed(2)}%</span></td>
-      <td class="c" style="width:20px;">
+      <td class="c" style="width:20px;display:none;">
         <button onclick="openAddToWatchlist('${r.sym}')" style="background:none;border:1px solid var(--muted);color:var(--muted);border-radius:3px;width:20px;height:20px;cursor:pointer;font-size:13px;line-height:1;padding:0;" title="Add to watchlist">+</button>
       </td>
-      <td class="c" style="width:40px;font-size:9px;color:var(--muted);">${getWatchlistLabel(r.sym)}</td>
-      <td class="c" style="width:20px;">
+      <td class="c" style="width:40px;font-size:9px;color:var(--muted);display:none;">${getWatchlistLabel(r.sym)}</td>
+      <td class="c" style="width:20px;display:none;">
         <button onclick="openAddToPortfolio('${r.sym}')" style="background:none;border:1px solid var(--muted);color:var(--muted);border-radius:3px;width:20px;height:20px;cursor:pointer;font-size:13px;line-height:1;padding:0;" title="Add to portfolio">+</button>
       </td>
-      <td class="c" style="width:40px;font-size:9px;color:var(--muted);">${getPortfolioLabel(r.sym)}</td>
+      <td class="c" style="width:40px;font-size:9px;color:var(--muted);display:none;">${getPortfolioLabel(r.sym)}</td>
       <td class="r" style="font-size:9px;color:var(--muted);">${r.mktCapB ? '$'+r.mktCapB.toFixed(0)+'B' : '--'}</td>
       <td class="r">
         <div class="w52-bar">
@@ -2063,10 +2064,10 @@ function renderPortfolioTable() {
       <td class="r col-price"><span class="price-val">${priceFmt}</span></td>
       <td class="r col-chg"><span class="${pc}">${chgSign}${Number(tfChg).toFixed(2)}</span></td>
       <td class="r col-pct"><span class="${pc}">${chgSign}${Number(tfChgPct).toFixed(2)}%</span></td>
-      <td class="c" style="width:20px;"><button onclick="openAddToWatchlist('${r.sym}')" style="background:none;border:1px solid var(--muted);color:var(--muted);border-radius:3px;width:20px;height:20px;cursor:pointer;font-size:13px;line-height:1;padding:0;" title="Add to watchlist">+</button></td>
-      <td class="c" style="width:40px;font-size:9px;color:var(--muted);">${getWatchlistLabel(r.sym)}</td>
-      <td class="c" style="width:20px;"><button onclick="openAddToPortfolio('${r.sym}')" style="background:none;border:1px solid var(--muted);color:var(--muted);border-radius:3px;width:20px;height:20px;cursor:pointer;font-size:13px;line-height:1;padding:0;" title="Add to portfolio">+</button></td>
-      <td class="c" style="width:40px;font-size:9px;color:var(--muted);">${getPortfolioLabel(r.sym)}</td>
+      <td class="c" style="width:20px;display:none;"><button onclick="openAddToWatchlist('${r.sym}')" style="background:none;border:1px solid var(--muted);color:var(--muted);border-radius:3px;width:20px;height:20px;cursor:pointer;font-size:13px;line-height:1;padding:0;" title="Add to watchlist">+</button></td>
+      <td class="c" style="width:40px;font-size:9px;color:var(--muted);display:none;">${getWatchlistLabel(r.sym)}</td>
+      <td class="c" style="width:20px;display:none;"><button onclick="openAddToPortfolio('${r.sym}')" style="background:none;border:1px solid var(--muted);color:var(--muted);border-radius:3px;width:20px;height:20px;cursor:pointer;font-size:13px;line-height:1;padding:0;" title="Add to portfolio">+</button></td>
+      <td class="c" style="width:40px;font-size:9px;color:var(--muted);display:none;">${getPortfolioLabel(r.sym)}</td>
       <td class="r" style="font-size:9px;color:var(--muted);">${r.mktCapB ? '$'+r.mktCapB.toFixed(0)+'B' : '--'}</td>
       <td class="r">
         <div class="w52-bar">
@@ -2399,10 +2400,10 @@ function renderWatchlistTable() {
       <td class="r col-price"><span class="price-val">${priceFmt}</span></td>
       <td class="r col-chg"><span class="${pc}">${chgSign}${Number(tfChg).toFixed(2)}</span></td>
       <td class="r col-pct"><span class="${pc}">${chgSign}${Number(tfChgPct).toFixed(2)}%</span></td>
-      <td class="c" style="width:20px;"><button onclick="openAddToWatchlist('${r.sym}')" style="background:none;border:1px solid var(--muted);color:var(--muted);border-radius:3px;width:20px;height:20px;cursor:pointer;font-size:13px;line-height:1;padding:0;" title="Add to watchlist">+</button></td>
-      <td class="c" style="width:40px;font-size:9px;color:var(--muted);">${getWatchlistLabel(r.sym)}</td>
-      <td class="c" style="width:20px;"><button onclick="openAddToPortfolio('${r.sym}')" style="background:none;border:1px solid var(--muted);color:var(--muted);border-radius:3px;width:20px;height:20px;cursor:pointer;font-size:13px;line-height:1;padding:0;" title="Add to portfolio">+</button></td>
-      <td class="c" style="width:40px;font-size:9px;color:var(--muted);">${getPortfolioLabel(r.sym)}</td>
+      <td class="c" style="width:20px;display:none;"><button onclick="openAddToWatchlist('${r.sym}')" style="background:none;border:1px solid var(--muted);color:var(--muted);border-radius:3px;width:20px;height:20px;cursor:pointer;font-size:13px;line-height:1;padding:0;" title="Add to watchlist">+</button></td>
+      <td class="c" style="width:40px;font-size:9px;color:var(--muted);display:none;">${getWatchlistLabel(r.sym)}</td>
+      <td class="c" style="width:20px;display:none;"><button onclick="openAddToPortfolio('${r.sym}')" style="background:none;border:1px solid var(--muted);color:var(--muted);border-radius:3px;width:20px;height:20px;cursor:pointer;font-size:13px;line-height:1;padding:0;" title="Add to portfolio">+</button></td>
+      <td class="c" style="width:40px;font-size:9px;color:var(--muted);display:none;">${getPortfolioLabel(r.sym)}</td>
       <td class="r" style="font-size:9px;color:var(--muted);">${r.mktCapB ? '$'+r.mktCapB.toFixed(0)+'B' : '--'}</td>
       <td class="r">
         <div class="w52-bar">
@@ -2655,14 +2656,14 @@ function sp5Render() {
       <td class="r col-price"><span class="price-val">${priceFmt}</span></td>
       <td class="r col-chg"><span class="${pc}">${chgSign}${Number(tfChg).toFixed(2)}</span></td>
       <td class="r col-pct"><span class="${pc}">${pctSign}${Number(tfChgPct).toFixed(2)}%</span></td>
-      <td class="c" style="width:20px;">
+      <td class="c" style="width:20px;display:none;">
         <button onclick="openAddToWatchlist('${r.sym}')" style="background:none;border:1px solid var(--muted);color:var(--muted);border-radius:3px;width:20px;height:20px;cursor:pointer;font-size:13px;line-height:1;padding:0;" title="Add to watchlist">+</button>
       </td>
-      <td class="c" style="width:40px;font-size:9px;color:var(--muted);">${getWatchlistLabel(r.sym)}</td>
-      <td class="c" style="width:20px;">
+      <td class="c" style="width:40px;font-size:9px;color:var(--muted);display:none;">${getWatchlistLabel(r.sym)}</td>
+      <td class="c" style="width:20px;display:none;">
         <button onclick="openAddToPortfolio('${r.sym}')" style="background:none;border:1px solid var(--muted);color:var(--muted);border-radius:3px;width:20px;height:20px;cursor:pointer;font-size:13px;line-height:1;padding:0;" title="Add to portfolio">+</button>
       </td>
-      <td class="c" style="width:40px;font-size:9px;color:var(--muted);">${getPortfolioLabel(r.sym)}</td>
+      <td class="c" style="width:40px;font-size:9px;color:var(--muted);display:none;">${getPortfolioLabel(r.sym)}</td>
       <td class="r" style="font-size:9px;color:var(--muted);">${r.mktCapB ? '$'+r.mktCapB.toFixed(0)+'B' : '--'}</td>
       <td class="r">
         <div class="w52-bar">
