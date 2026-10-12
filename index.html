@@ -22,7 +22,7 @@
   *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
   body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14px;min-height:100vh;line-height:1.5;}
   body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,212,170,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,212,170,0.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0;}
-  .container{max-width:1600px;margin:0 auto;padding:0 24px 60px;isolation:isolate;}
+  .container{max-width:1600px;margin:0 auto;padding:0 24px 60px;isolation:isolate;overflow-x:hidden;}
 
   header{display:flex;align-items:flex-end;justify-content:space-between;padding:8px 0 6px;border-bottom:1px solid var(--border);gap:8px;flex-wrap:wrap;}
   .logo{font-family:var(--mono);font-size:11px;font-weight:500;letter-spacing:0.15em;color:var(--accent);text-transform:uppercase;margin-bottom:6px;}
@@ -76,8 +76,8 @@
 
   thead th{position:sticky;top:0;background:var(--bg);z-index:2;box-shadow:0 1px 0 var(--border);}
   thead th *{background:inherit;}
-  .table-wrap{overflow:auto;height:calc(100vh - 146px);}
-  table{width:100%;border-collapse:collapse;}
+  .table-wrap{overflow:auto;height:calc(100vh - 146px);max-width:100%;}
+  table{width:100%;border-collapse:collapse;min-width:0;}
   /* Ticker column — constrain via inner wrapper since overflow:hidden needs table-layout:fixed */
   td:first-child{white-space:normal;}
   td:first-child .ticker-inner{display:flex;align-items:center;gap:4px;width:70px;overflow:hidden;}
@@ -267,7 +267,7 @@
     <table>
       <thead>
         <tr>
-          <th style="cursor:pointer;" onclick="setSort(curSort==='az'?'az_r':'az')">Ticker <span id="nqStockCount" style="font-weight:normal;opacity:0.7;"></span></th>
+          <th class="col-ticker" style="cursor:pointer;" onclick="setSort(curSort==='az'?'az_r':'az')">Ticker <span id="nqStockCount" style="font-weight:normal;opacity:0.7;"></span></th>
           <th class="r has-tip col-pre" style="cursor:pointer;" data-tip="Pre-market price" onclick="setSort(curSort==='preprice_d'?'preprice_a':'preprice_d')">Pre<br><span style="font-size:9px;font-weight:normal;opacity:0.6">CTN</span></th>
           <th class="r has-tip col-pre" style="cursor:pointer;" data-tip="Pre-market % change vs yesterday's close." onclick="setSort(curSort==='prepct_d'?'prepct_a':'prepct_d')">%Pre<br><span style="font-size:9px;font-weight:normal;opacity:0.6">CTN</span></th>
           <th class="r col-price" style="cursor:pointer;" onclick="setSort(curSort==='price_d'?'price_a':'price_d')" title="Sort by Live Price">Price</th>
@@ -353,7 +353,7 @@
     <table>
       <thead>
         <tr>
-          <th style="cursor:pointer;" onclick="setSP5Sort(sp5CurSort==='az'?'az_r':'az')">Ticker <span id="sp5StockCount" style="font-weight:normal;opacity:0.7;"></span></th>
+          <th class="col-ticker" style="cursor:pointer;" onclick="setSP5Sort(sp5CurSort==='az'?'az_r':'az')">Ticker <span id="sp5StockCount" style="font-weight:normal;opacity:0.7;"></span></th>
           <th class="r has-tip col-pre" style="cursor:pointer;" data-tip="Pre-market price" onclick="setSP5Sort(sp5CurSort==='preprice_d'?'preprice_a':'preprice_d')">Pre<br><span style="font-size:9px;font-weight:normal;opacity:0.6">CTN</span></th>
           <th class="r has-tip col-pre" style="cursor:pointer;" data-tip="Pre-market % change vs yesterday's close." onclick="setSP5Sort(sp5CurSort==='prepct_d'?'prepct_a':'prepct_d')">%Pre<br><span style="font-size:9px;font-weight:normal;opacity:0.6">CTN</span></th>
           <th class="r col-price" style="cursor:pointer;" onclick="setSP5Sort(sp5CurSort==='price_d'?'price_a':'price_d')" title="Sort by Live Price">Price</th>
@@ -516,7 +516,7 @@
       <table>
         <thead>
           <tr>
-            <th style="cursor:pointer;" onclick="setOMXSort(omxCurSort==='az'?'az_r':'az')">Ticker <span id="omxStockCount" style="font-weight:normal;opacity:0.7;"></span></th>
+            <th class="col-ticker" style="cursor:pointer;" onclick="setOMXSort(omxCurSort==='az'?'az_r':'az')">Ticker <span id="omxStockCount" style="font-weight:normal;opacity:0.7;"></span></th>
             <th class="r has-tip col-pre" style="cursor:pointer;" data-tip="Pre-market price" onclick="setOMXSort(omxCurSort==='preprice_d'?'preprice_a':'preprice_d')">Pre<br><span style="font-size:9px;font-weight:normal;opacity:0.6">CTN</span></th>
             <th class="r has-tip col-pre" style="cursor:pointer;" data-tip="Pre-market % change vs yesterday's close." onclick="setOMXSort(omxCurSort==='prepct_d'?'prepct_a':'prepct_d')">%Pre<br><span style="font-size:9px;font-weight:normal;opacity:0.6">CTN</span></th>
             <th class="r col-price" style="cursor:pointer;" onclick="setOMXSort(omxCurSort==='price_d'?'price_a':'price_d')" title="Sort by Live Price">Price</th>
@@ -589,7 +589,7 @@
       <table>
         <thead>
           <tr>
-            <th>Ticker</th>
+            <th class="col-ticker">Ticker</th>
             <th class="r col-pre">Pre</th>
             <th class="r col-pre">%Pre</th>
             <th class="r col-price">Price</th>
@@ -668,7 +668,7 @@
       <table>
         <thead>
           <tr>
-            <th style="cursor:pointer;" onclick="setPortSort(portSort==='az'?'az_r':'az')">Ticker</th>
+            <th class="col-ticker" style="cursor:pointer;" onclick="setPortSort(portSort==='az'?'az_r':'az')">Ticker</th>
             <th class="r col-pre">Pre</th>
             <th class="r col-pre">%Pre</th>
             <th class="r col-price" style="cursor:pointer;" onclick="setPortSort(portSort==='price_d'?'price_a':'price_d')">Price</th>
